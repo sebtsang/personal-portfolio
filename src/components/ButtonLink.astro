@@ -1,0 +1,28 @@
+---
+interface Props {
+  href: string;
+  label: string;
+  variant?: "primary" | "secondary";
+}
+
+const { href, label, variant = "primary" } = Astro.props;
+
+const baseClasses =
+  "inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-medium transition-colors duration-200";
+
+const variantClasses =
+  variant === "primary"
+    ? "border-ink bg-ink text-paper hover:border-accent hover:bg-accent"
+    : "border-line bg-surface text-ink hover:border-ink";
+---
+
+<a
+  href={href}
+  target="_blank"
+  rel="noreferrer"
+  class:list={[baseClasses, variantClasses]}
+>
+  <span>{label}</span>
+  <span aria-hidden="true" class="font-mono text-xs">↗</span>
+</a>
+

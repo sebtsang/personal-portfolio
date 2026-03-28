@@ -1,0 +1,87 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "Sebastian Tsang",
+  description = "Single-page portfolio for Sebastian Tsang, a Computer Science student focused on practical AI and data systems.",
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f7f4ee" />
+    <title>{title}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script is:inline>
+      (() => {
+        const storedTheme = localStorage.getItem("portfolio-theme");
+        const theme =
+          storedTheme ??
+          (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <slot />
+    <script is:inline>
+      const root = document.documentElement;
+      const button = document.querySelector("[data-theme-toggle]");
+      const timeline = document.querySelector("[data-timeline]");
+      const timelineProgress = timeline?.querySelector(".experience-timeline__progress");
+
+      if (button) {
+        const syncThemeButton = () => {
+          const isDark = root.dataset.theme === "dark";
+          button.setAttribute("aria-pressed", isDark ? "true" : "false");
+        };
+
+        syncThemeButton();
+
+        button.addEventListener("click", () => {
+          root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+          localStorage.setItem("portfolio-theme", root.dataset.theme);
+          syncThemeButton();
+        });
+      }
+
+      if (timeline && timelineProgress) {
+        const updateTimeline = () => {
+          const timelineRect = timeline.getBoundingClientRect();
+          const logos = timeline.querySelectorAll(".experience-logo-shell");
+          const firstLogo = logos[0];
+          const lastLogo = logos[logos.length - 1];
+
+          if (!firstLogo || !lastLogo) return;
+
+          const firstRect = firstLogo.getBoundingClientRect();
+          const lastRect = lastLogo.getBoundingClientRect();
+          const start = firstRect.top - timelineRect.top + firstRect.height / 2;
+          const end = lastRect.top - timelineRect.top + lastRect.height / 2;
+          const total = Math.max(end - start, 1);
+          const viewport = window.innerHeight;
+          const trigger = viewport * 0.62;
+          const triggerWithinTimeline = trigger - timelineRect.top;
+          const raw = (triggerWithinTimeline - start) / total;
+          const progress = Math.max(0, Math.min(1, raw));
+          timeline.style.setProperty("--timeline-start", `${start}px`);
+          timeline.style.setProperty("--timeline-height", `${total}px`);
+          timelineProgress.style.setProperty("--timeline-progress", `${progress}`);
+        };
+
+        updateTimeline();
+        window.addEventListener("scroll", updateTimeline, { passive: true });
+        window.addEventListener("resize", updateTimeline);
+      }
+    </script>
+  </body>
+</html>

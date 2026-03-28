@@ -1,0 +1,233 @@
+@import "tailwindcss";
+@config "../../tailwind.config.mjs";
+
+@import "@fontsource-variable/newsreader";
+@import "@fontsource-variable/work-sans";
+@import "@fontsource/ibm-plex-mono";
+
+:root {
+  color-scheme: light;
+  --color-paper: 247 244 238;
+  --color-surface: 252 250 246;
+  --color-ink: 23 23 23;
+  --color-muted: 95 90 83;
+  --color-line: 214 205 193;
+  --color-accent: 35 90 122;
+  --color-accent-soft: 220 233 241;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-paper: 17 17 16;
+  --color-surface: 24 24 22;
+  --color-ink: 236 232 225;
+  --color-muted: 177 169 158;
+  --color-line: 67 63 58;
+  --color-accent: 161 197 221;
+  --color-accent-soft: 34 46 56;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-paper text-ink font-sans antialiased;
+  background-image:
+    linear-gradient(to bottom, rgba(var(--color-paper) / 0.78), rgba(var(--color-paper) / 0.84)),
+    radial-gradient(circle at top left, rgba(var(--color-accent) / 0.11), transparent 32%),
+    repeating-linear-gradient(
+      to right,
+      rgba(var(--color-line) / 0.34) 0,
+      rgba(var(--color-line) / 0.34) 1px,
+      transparent 1px,
+      transparent 40px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(var(--color-line) / 0.28) 0,
+      rgba(var(--color-line) / 0.28) 1px,
+      transparent 1px,
+      transparent 40px
+    );
+  background-attachment: fixed;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+::selection {
+  @apply bg-accent text-white;
+}
+
+.section-reveal {
+  @apply opacity-0 motion-safe:animate-rise;
+}
+
+.story-link {
+  @apply underline decoration-line/80 underline-offset-4 transition-colors duration-200 hover:text-accent;
+}
+
+.divider {
+  @apply border-t border-line/80;
+}
+
+.section-label {
+  @apply text-center font-mono text-xs uppercase tracking-[0.24em] text-muted;
+}
+
+.site-header {
+  @apply sticky top-0 z-40 border-b border-line/80 bg-paper/86 backdrop-blur-sm;
+}
+
+.site-header__inner {
+  @apply relative flex items-center gap-4 py-4;
+}
+
+.site-brand {
+  @apply shrink-0 font-mono text-sm font-semibold tracking-[0.02em] text-ink transition-colors duration-200 hover:text-accent;
+}
+
+.site-nav {
+  @apply ml-auto mr-0 flex items-center gap-5 overflow-x-auto;
+}
+
+.site-nav__link {
+  @apply font-mono text-xs uppercase tracking-[0.16em] text-muted transition-colors duration-200 hover:text-ink;
+}
+
+.header-theme-toggle {
+  @apply relative ml-3 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line/80 bg-surface/85 text-muted transition-colors duration-200 hover:border-accent hover:text-accent;
+}
+
+.header-theme-toggle__icon {
+  @apply absolute inset-0 flex items-center justify-center;
+}
+
+.header-theme-toggle__icon--moon {
+  display: inline-flex;
+}
+
+:root:not([data-theme="dark"]) .header-theme-toggle__icon--sun {
+  display: none;
+}
+
+:root[data-theme="dark"] .header-theme-toggle__icon--moon {
+  display: none;
+}
+
+:root[data-theme="dark"] .header-theme-toggle__icon--sun {
+  display: inline-flex;
+}
+
+.social-links {
+  @apply flex flex-wrap items-center gap-1.5;
+}
+
+.social-link {
+  @apply inline-flex h-11 w-11 items-center justify-center rounded-full text-muted transition-all duration-200 hover:bg-surface/80 hover:text-accent;
+}
+
+.experience-timeline {
+  @apply relative;
+}
+
+.experience-timeline::before {
+  content: "";
+  @apply absolute hidden w-px bg-line/70 md:block;
+  left: 2.28rem;
+  top: var(--timeline-start, 0px);
+  height: var(--timeline-height, 0px);
+}
+
+.experience-timeline__progress {
+  @apply absolute hidden w-px bg-accent md:block;
+  left: 2.28rem;
+  top: var(--timeline-start, 0px);
+  height: var(--timeline-height, 0px);
+  transform: scaleY(var(--timeline-progress, 0));
+  transform-origin: top;
+}
+
+.experience-entry {
+  @apply py-7 md:py-8;
+}
+
+.experience-logo-shell {
+  @apply relative z-10 flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-[1.05rem] border border-line/80 bg-surface/95 p-2 md:h-[4.5rem] md:w-[4.5rem];
+}
+
+.experience-logo-image {
+  @apply h-full w-full rounded-[0.75rem] object-contain;
+}
+
+.hero-photo-shell {
+  @apply relative mx-auto w-full max-w-[28rem];
+}
+
+.hero-photo-shell::before {
+  content: "";
+  @apply absolute -left-4 -top-4 h-28 w-28 rounded-full bg-accent/8 blur-2xl;
+}
+
+.hero-photo-shell::after {
+  content: "";
+  @apply absolute -bottom-6 -right-5 h-24 w-24 rounded-full border border-line/70 bg-surface/80;
+}
+
+.hero-photo-frame {
+  @apply relative overflow-hidden rounded-[2rem] border border-line/80 bg-surface/90 p-3 shadow-card;
+}
+
+.hero-photo-frame::before {
+  content: "";
+  @apply absolute inset-3 rounded-[1.4rem] border border-white/60;
+}
+
+.hero-photo {
+  @apply relative z-10 h-auto w-full rounded-[1.5rem] object-cover;
+  aspect-ratio: 5 / 6;
+  object-position: center 38%;
+}
+
+:root[data-theme="dark"] .hero-photo-frame::before {
+  @apply border-white/8;
+}
+
+@media (max-width: 767px) {
+  body {
+    background-attachment: scroll;
+    background-size: auto, auto, 28px 28px, 28px 28px;
+  }
+
+  .hero-photo-shell {
+    @apply max-w-[24rem];
+  }
+
+  .hero-photo {
+    aspect-ratio: 4 / 5;
+    object-position: center 34%;
+  }
+}
+
+@media (max-width: 900px) {
+  .site-header__inner {
+    @apply flex-wrap justify-center py-3;
+  }
+
+  .site-brand {
+    @apply w-full text-center;
+  }
+
+  .site-nav {
+    @apply order-3 w-full justify-center pb-1;
+  }
+
+  .site-nav__link {
+    @apply whitespace-nowrap;
+  }
+
+  .header-theme-toggle {
+    @apply absolute right-0 top-1/2 -translate-y-1/2;
+  }
+}

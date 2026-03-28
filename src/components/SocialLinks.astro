@@ -1,0 +1,30 @@
+---
+import Icon from "./Icon.astro";
+
+interface LinkItem {
+  href: string;
+  label: string;
+  icon: "github" | "linkedin" | "mail" | "instagram" | "x";
+}
+
+interface Props {
+  links: LinkItem[];
+}
+
+const { links } = Astro.props;
+---
+
+<div class="social-links" aria-label="Social links">
+  {links.map((link) => (
+    <a
+      href={link.href}
+      class="social-link"
+      aria-label={link.label}
+      title={link.label}
+      target={link.href.startsWith("mailto:") ? undefined : "_blank"}
+      rel={link.href.startsWith("mailto:") ? undefined : "noreferrer"}
+    >
+      <Icon name={link.icon} class="h-[1.35rem] w-[1.35rem]" />
+    </a>
+  ))}
+</div>
