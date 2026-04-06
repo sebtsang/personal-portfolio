@@ -19,6 +19,8 @@ const { links } = Astro.props;
     <a
       href={link.href}
       class="social-link"
+      data-cursor-hover
+      data-magnetic
       aria-label={link.label}
       title={link.label}
       target={link.href.startsWith("mailto:") ? undefined : "_blank"}

@@ -1,8 +1,8 @@
 export const profile = {
   name: "Sebastian Tsang",
-  headline: "From data systems to practical AI tooling.",
+  headline: "Data systems, automation, and practical AI tooling.",
   intro:
-    "I started in data engineering and internal systems, which is probably why I care more about useful AI than flashy demos. I’m interested in workflows, retrieval, automation, and the kind of tooling that holds up after the demo ends.",
+    "Computer Science student at the University of Guelph. Previously at Interac and BMO, incoming at EY.",
   email: "sebrtsang@gmail.com",
   linkedin: "https://www.linkedin.com/in/sebtsang/",
   github: "https://github.com/sebtsang",
@@ -11,10 +11,7 @@ export const profile = {
 };
 
 export const navItems = [
-  { href: "#experience", label: "Work" },
-  { href: "#now", label: "Focus" },
-  { href: "#public", label: "Writing" },
-  { href: "#work", label: "Projects" },
+  { href: "#experience", label: "Experience" },
   { href: "#contact", label: "Contact" },
 ];
 

@@ -16,16 +16,17 @@ const { name, navItems } = Astro.props;
 
 <header class="site-header">
   <div class="site-header__inner">
-    <a href="#top" class="site-brand">{name}</a>
+    <a href="#top" class="site-brand" data-cursor-hover data-magnetic>{name}</a>
 
     <nav class="site-nav" aria-label="Section navigation">
       {navItems.map((item) => (
-        <a href={item.href} class="site-nav__link">{item.label}</a>
+        <a href={item.href} class="site-nav__link" data-cursor-hover data-magnetic>{item.label}</a>
       ))}
     </nav>
 
     <button
       class="header-theme-toggle"
+      data-cursor-hover
       type="button"
       aria-label="Toggle color theme"
       aria-pressed="false"

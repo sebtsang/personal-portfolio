@@ -2,17 +2,12 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 import ExperienceItem from "../components/ExperienceItem.astro";
 import HeaderBar from "../components/HeaderBar.astro";
-import Section from "../components/Section.astro";
 import SocialLinks from "../components/SocialLinks.astro";
-import WorkCard from "../components/WorkCard.astro";
 import {
-  currentFocus,
   experience,
   navItems,
   profile,
-  publicWriting,
   socialLinks,
-  selectedWork,
 } from "../data/site";
 ---
 
@@ -21,24 +16,24 @@ import {
     <HeaderBar name={profile.name} navItems={navItems} />
 
     <main class="py-8 md:py-10">
-    <section class="section-reveal border-b border-line/80 pb-16 pt-10 motion-safe:animate-rise md:pb-24 md:pt-14">
-      <div class="grid gap-14 md:grid-cols-[minmax(0,1.12fr)_minmax(300px,0.88fr)] md:items-center md:gap-14 lg:gap-18">
+    <section class="border-b border-line/80 pb-14 pt-10 md:pb-18 md:pt-14" data-hero-section>
+      <div class="mx-auto grid max-w-4xl gap-10 md:grid-cols-[minmax(0,1fr)_120px] md:items-center md:gap-10">
         <div class="max-w-3xl">
-          <h1 class="max-w-4xl font-sans text-[4rem] font-light leading-[0.92] tracking-[-0.055em] text-ink md:text-[6.9rem]">
+          <h1 class="hero-load hero-load-1 max-w-4xl font-sans text-[3.7rem] font-light leading-[0.94] tracking-[-0.055em] text-ink md:text-[5.4rem]">
             {profile.name}
           </h1>
-          <p class="mt-6 max-w-2xl font-mono text-sm uppercase tracking-[0.18em] text-muted md:text-[0.95rem]">
+          <p class="hero-load hero-load-2 mt-4 max-w-2xl font-mono text-sm uppercase tracking-[0.18em] text-muted md:text-[0.95rem]">
             {profile.headline}
           </p>
-          <p class="mt-8 max-w-xl text-base leading-8 text-muted md:text-lg">
+          <p class="hero-load hero-load-3 mt-5 max-w-xl text-base leading-7 text-muted md:text-[1.02rem]">
             {profile.intro}
           </p>
-          <div class="mt-8">
+          <div class="hero-load hero-load-4 mt-6">
             <SocialLinks links={socialLinks} />
           </div>
         </div>
 
-        <div class="hero-photo-shell">
+        <div class="hero-load hero-load-5 hero-photo-shell hero-photo-shell--compact" data-3d-photo>
           <div class="hero-photo-frame">
             <img
               src={profile.photo}
@@ -52,91 +47,31 @@ import {
       </div>
     </section>
 
-    <section id="experience" class="divider section-reveal scroll-mt-24 py-14 md:py-18" style="animation-delay:80ms;">
+    <section id="experience" class="divider scroll-mt-24 py-14 md:py-18">
       <div class="mx-auto max-w-4xl">
-        <p class="section-label">Work</p>
-        <div class="experience-timeline mt-7 md:mt-8" data-timeline>
+        <p class="section-label reveal">Experience</p>
+        <div class="experience-timeline reveal reveal-stagger-1 mt-6 md:mt-7" data-timeline>
           <div class="experience-timeline__progress" aria-hidden="true"></div>
           {experience.map((item) => <ExperienceItem {...item} />)}
         </div>
       </div>
     </section>
 
-    <Section
-      id="now"
-      label="Focus"
-      intro="I’m especially interested in the layer where LLMs become useful systems: tooling, context, retrieval, and workflow design."
-      delay="140ms"
-    >
-      <div class="grid gap-4 md:grid-cols-2">
-        {currentFocus.map((item) => (
-          <article class="rounded-3xl border border-line/80 bg-surface/90 p-6 shadow-card">
-            <h3 class="font-serif text-2xl text-ink">{item.title}</h3>
-            <p class="mt-3 text-base leading-8 text-muted">{item.description}</p>
-          </article>
-        ))}
-      </div>
-    </Section>
-
-    <Section
-      id="public"
-      label="Writing"
-      intro="LinkedIn is currently my main public channel. I’m using it to document what I’m learning, sharpen my thinking, and build a visible body of work over time."
-      delay="200ms"
-    >
-      <div class="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-        <div class="rounded-3xl border border-line/80 bg-surface/90 p-6 shadow-card">
-          <p class="font-mono text-xs uppercase tracking-[0.2em] text-muted">What I write about</p>
-          <ul class="mt-5 space-y-3 text-base leading-8 text-ink/90">
-            {publicWriting.map((item) => (
-              <li class="flex gap-3">
-                <span class="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-accent"></span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div class="rounded-3xl border border-dashed border-line bg-surface/60 p-6 shadow-card">
-          <p class="font-mono text-xs uppercase tracking-[0.2em] text-muted">LinkedIn posts</p>
-          <div class="mt-5 space-y-4">
-            <article class="rounded-2xl border border-line/80 bg-paper/80 p-5">
-              <p class="font-serif text-xl text-ink">Workflow notes, project breakdowns, and internship lessons will live here.</p>
-              <p class="mt-3 text-sm leading-7 text-muted">
-                This block is intentionally static for now. You can later replace it with embedded posts or curated links without changing the structure of the page.
-              </p>
-            </article>
-            <a class="story-link font-mono text-xs uppercase tracking-[0.18em]" href={profile.linkedin} target="_blank" rel="noreferrer">
-              Visit LinkedIn
-            </a>
+    <section id="contact" class="divider scroll-mt-24 py-14 md:py-18">
+      <div class="mx-auto max-w-4xl">
+        <p class="section-label reveal">Contact</p>
+        <div class="mt-6 text-center reveal reveal-stagger-1">
+          <p class="mx-auto max-w-xl text-base leading-7 text-muted md:text-[1.02rem]">
+            Reach out by email or connect on LinkedIn.
+          </p>
+          <div class="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-sm md:text-base">
+            <a class="story-link" href={`mailto:${profile.email}`} data-cursor-hover>Email</a>
+            <a class="story-link" href={profile.linkedin} target="_blank" rel="noreferrer" data-cursor-hover>LinkedIn</a>
+            <a class="story-link" href={profile.github} target="_blank" rel="noreferrer" data-cursor-hover>GitHub</a>
           </div>
         </div>
       </div>
-    </Section>
-
-    <Section
-      id="work"
-      label="Projects"
-      intro="I’m keeping this section tight. The goal is to show the kinds of problems I like working on: practical automation, orchestration, and AI systems that do useful work."
-      delay="260ms"
-    >
-      <div class="grid gap-4 lg:grid-cols-2">
-        {selectedWork.map((item) => <WorkCard {...item} />)}
-      </div>
-    </Section>
-
-    <Section
-      id="contact"
-      label="Contact"
-      intro="I’m especially interested in conversations around applied AI, data infrastructure, agent tooling, and teams that value systems thinking."
-      delay="320ms"
-    >
-      <div class="flex flex-wrap items-center gap-x-5 gap-y-3 text-sm md:text-base">
-        <a class="story-link" href={`mailto:${profile.email}`}>Email</a>
-        <a class="story-link" href={profile.linkedin} target="_blank" rel="noreferrer">LinkedIn</a>
-        <a class="story-link" href={profile.github} target="_blank" rel="noreferrer">GitHub</a>
-      </div>
-    </Section>
+    </section>
     </main>
   </div>
 </BaseLayout>

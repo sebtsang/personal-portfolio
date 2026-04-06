@@ -65,7 +65,7 @@ body {
 }
 
 .story-link {
-  @apply underline decoration-line/80 underline-offset-4 transition-colors duration-200 hover:text-accent;
+  @apply transition-colors duration-200 hover:text-accent;
 }
 
 .divider {
@@ -89,7 +89,7 @@ body {
 }
 
 .site-nav {
-  @apply ml-auto mr-0 flex items-center gap-5 overflow-x-auto;
+  @apply ml-auto mr-0 flex items-center gap-5;
 }
 
 .site-nav__link {
@@ -138,6 +138,8 @@ body {
   left: 2.28rem;
   top: var(--timeline-start, 0px);
   height: var(--timeline-height, 0px);
+  transform: scaleY(var(--timeline-bg-progress, 0));
+  transform-origin: top;
 }
 
 .experience-timeline__progress {
@@ -163,6 +165,10 @@ body {
 
 .hero-photo-shell {
   @apply relative mx-auto w-full max-w-[28rem];
+}
+
+.hero-photo-shell--compact {
+  @apply max-w-[8rem] md:max-w-[9rem];
 }
 
 .hero-photo-shell::before {
@@ -204,6 +210,10 @@ body {
     @apply max-w-[24rem];
   }
 
+  .hero-photo-shell--compact {
+    @apply max-w-[8rem];
+  }
+
   .hero-photo {
     aspect-ratio: 4 / 5;
     object-position: center 34%;
@@ -230,4 +240,159 @@ body {
   .header-theme-toggle {
     @apply absolute right-0 top-1/2 -translate-y-1/2;
   }
+}
+
+/* ── Custom cursor ── */
+
+.custom-cursor-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgb(var(--color-accent));
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: transform 120ms ease-out, opacity 200ms ease;
+}
+
+.custom-cursor-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1.5px solid rgb(var(--color-accent) / 0.5);
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: width 100ms ease-out, height 100ms ease-out, opacity 100ms ease-out, border-color 100ms ease-out;
+}
+
+.custom-cursor-ring.hovering {
+  width: 56px;
+  height: 56px;
+  border-color: rgb(var(--color-accent) / 0.3);
+  opacity: 0.6;
+}
+
+.custom-cursor-dot.clicking {
+  transform: translate(-50%, -50%) scale(0.5);
+}
+
+.custom-cursor-ring.clicking {
+  width: 28px;
+  height: 28px;
+}
+
+@media (pointer: fine) {
+  * { cursor: none !important; }
+}
+
+@media (pointer: coarse) {
+  .custom-cursor-dot,
+  .custom-cursor-ring,
+  .cursor-glow {
+    display: none !important;
+  }
+}
+
+/* ── Cursor glow ── */
+
+.cursor-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(var(--color-accent) / 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  transition: opacity 400ms ease;
+}
+
+/* ── Scroll reveal ── */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 600ms cubic-bezier(0.22, 1, 0.36, 1),
+              transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-stagger-1 { transition-delay: 80ms; }
+.reveal-stagger-2 { transition-delay: 160ms; }
+.reveal-stagger-3 { transition-delay: 240ms; }
+.reveal-stagger-4 { transition-delay: 320ms; }
+.reveal-stagger-5 { transition-delay: 400ms; }
+.reveal-stagger-6 { transition-delay: 480ms; }
+
+/* ── Hero staggered load ── */
+
+.hero-load {
+  opacity: 0;
+  animation: rise 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-load-1 { animation-delay: 0ms; }
+.hero-load-2 { animation-delay: 100ms; }
+.hero-load-3 { animation-delay: 180ms; }
+.hero-load-4 { animation-delay: 260ms; }
+.hero-load-5 { animation-delay: 340ms; }
+
+/* ── Enhanced hover effects ── */
+
+.magnetic-link {
+  display: inline-block;
+  transition: transform 200ms ease-out;
+}
+
+.story-link {
+  text-decoration: none;
+  position: relative;
+}
+
+.story-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 1px;
+  background: rgb(var(--color-accent));
+  transition: width 300ms ease;
+}
+
+.story-link:hover::after {
+  width: 100%;
+}
+
+.experience-entry {
+  transition: transform 120ms ease-out;
+}
+
+.experience-entry:hover {
+  transform: translateX(4px);
+}
+
+/* ── 3D hero photo ── */
+
+.hero-photo-shell {
+  perspective: 800px;
+}
+
+.hero-photo-frame {
+  transform-style: preserve-3d;
+  will-change: transform;
+  transition: transform 100ms ease-out;
 }
