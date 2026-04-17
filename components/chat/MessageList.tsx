@@ -41,26 +41,33 @@ export function MessageList({
           (isHome ? "max-w-2xl gap-3" : "gap-3")
         }
       >
-        <AnimatePresence initial={false}>
-          {messages.map((m, i) => (
-            <motion.div
-              key={m.id}
-              layout
-              initial={{ opacity: 0, y: 12, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{
-                duration: 0.35,
-                ease: [0.22, 1, 0.36, 1],
-                delay: i === 0 ? 0.55 : 0,
-              }}
-              className={
-                m.role === "user" ? "flex justify-end" : "flex justify-start"
-              }
-            >
-              <MessageBubble role={m.role} content={m.content} />
-            </motion.div>
-          ))}
+        <AnimatePresence initial={true}>
+          {messages.map((m, i) => {
+            // Stagger the initial seed bubbles (greeting + intro) so they feel
+            // like the bot is typing. Subsequent messages appear immediately.
+            const isSeed = m.id.startsWith("greeting-");
+            const seedIndex = isSeed ? (m.id === "greeting-welcome" ? 0 : 1) : 0;
+            const delay = isSeed ? 0.45 + seedIndex * 0.75 : 0;
+            return (
+              <motion.div
+                key={m.id}
+                layout
+                initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{
+                  duration: 0.4,
+                  ease: [0.22, 1, 0.36, 1],
+                  delay,
+                }}
+                className={
+                  m.role === "user" ? "flex justify-end" : "flex justify-start"
+                }
+              >
+                <MessageBubble role={m.role} content={m.content} />
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
 
         {isLoading && (

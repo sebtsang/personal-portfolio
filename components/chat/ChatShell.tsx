@@ -12,9 +12,15 @@ import { ThemeToggle } from "./ThemeToggle";
 import { StageFrame } from "@/components/stage/StageFrame";
 import { profile } from "@/content/site";
 
-const GREETING = `Hey — welcome to ${profile.shortName.toLowerCase()}.dev. Yeah, the whole site is a chatbot. Meta, I know.
+const WELCOME_BUBBLE = `Welcome to Seb's site.`;
 
-Ask me anything, or hit one of the shortcuts below.`;
+const INTRO_BUBBLE = `A few quick things about him:
+— CS student at the University of Guelph, based in Toronto
+— Previously at Interac and BMO, incoming at EY on the AI & Data team
+— Most of his time: AI workflows, MCP servers, and automation that actually reduces work
+— And yeah — this whole site is him as a chatbot. Meta, I know.
+
+Ask anything, or hit a shortcut below.`;
 
 type LocalMessage = {
   id: string;
@@ -32,7 +38,8 @@ export function ChatShell() {
 
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [seedMessages] = useState<LocalMessage[]>([
-    { id: "greeting", role: "assistant", content: GREETING },
+    { id: "greeting-welcome", role: "assistant", content: WELCOME_BUBBLE },
+    { id: "greeting-intro", role: "assistant", content: INTRO_BUBBLE },
   ]);
   const [localMessages, setLocalMessages] = useState<LocalMessage[]>([]);
 

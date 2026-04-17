@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.0.5",
+    "@ai-sdk/openai-compatible": "^0.2.16",
     "@ai-sdk/react": "^1.0.6",
     "@fontsource-variable/newsreader": "^5.2.10",
     "@fontsource-variable/work-sans": "^5.2.8",

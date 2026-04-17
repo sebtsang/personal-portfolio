@@ -1,39 +1,61 @@
 # Sebastian Tsang — Conversational Portfolio
 
 A chatbot-first personal site. Instead of a conventional homepage, the entire
-site *is* a chatbot: ask anything and the stage on the right animates in project
-cards, timelines, the resume, or contact info. Built with Next.js 15, the Vercel
-AI SDK, and Claude Haiku 4.5.
+site *is* a chatbot: the home is a full-screen chat, and when you trigger a
+command the chat smoothly docks to a side rail while a content "page"
+unfolds in the main area. Built with Next.js 15, the Vercel AI SDK, and
+Ollama Cloud (MiniMax M2.7).
 
 ## Architecture
 
-- **Hybrid engine.** Quick commands and exact matches (`/projects`, `/resume`)
-  dispatch tools locally — no network call, instant. Free-form questions stream
-  through `/api/chat` to Claude Haiku, which can invoke the same tools.
-- **Stage + chat split.** A Zustand store (`lib/store.ts`) drives the stage
-  view. Tool calls from either path update the store the same way.
-- **Content lives in `/content`.** Bio in `site.ts`, richer project entries in
-  `projects.ts`. Edit these to change what the site knows about you.
+- **Two-mode layout.** Home = centered full-screen chat. Page = chat docks
+  right, content takes the main area. Smooth Framer Motion `layout`
+  transition between the two.
+- **Hybrid engine.** Quick commands and exact matches (`/projects`,
+  `/resume`) dispatch tools locally — no network call, instant. Free-form
+  questions stream through `/api/chat` to the LLM, which can invoke the
+  same tools. This means the common recruiter paths work even if the LLM
+  is down.
+- **Stage + chat split.** A Zustand store (`lib/store.ts`) drives which
+  page is showing. Tool calls from either path update the store the
+  same way.
+- **Content lives in `/content`.** Bio in `site.ts`, richer project
+  entries in `projects.ts`. Edit these to change what the site knows
+  about you.
 
 ## Run locally
 
 ```bash
 npm install
-cp .env.example .env.local    # then paste your Anthropic key
+cp .env.example .env.local    # then paste your Ollama Cloud key
 npm run dev
 ```
 
-Visit http://localhost:3000. You can use the site without an API key — the
-quick command buttons and slash-commands work offline. Free-form questions
-need the key.
+Visit http://localhost:3000. You can use the site without an API key —
+the quick command buttons, slash-commands, and project-detail intents
+all work offline. Only free-form questions ("why'd you leave Interac?")
+need the LLM.
 
 ## Environment
 
 ```
-ANTHROPIC_API_KEY=sk-ant-...
+OLLAMA_API_KEY=...
 ```
 
-Get one at [console.anthropic.com](https://console.anthropic.com/).
+Get one at [ollama.com/settings/keys](https://ollama.com/settings/keys).
+Requires an Ollama Cloud (paid) subscription to access cloud models.
+
+## Switching models
+
+The model is configured in [app/api/chat/route.ts](app/api/chat/route.ts)
+as `MODEL_ID`. Any Ollama Cloud model identifier works, e.g.:
+
+- `minimax-m2.7:cloud` (current — agentic-tuned, best tool calling)
+- `glm-4.6:cloud`
+- `kimi-k2:cloud`
+- `gpt-oss:120b-cloud`
+
+Swap the string, redeploy. No other code changes needed.
 
 ## Build / deploy
 
