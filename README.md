@@ -4,7 +4,7 @@ A chatbot-first personal site. Instead of a conventional homepage, the entire
 site *is* a chatbot: the home is a full-screen chat, and when you trigger a
 command the chat smoothly docks to a side rail while a content "page"
 unfolds in the main area. Built with Next.js 15, the Vercel AI SDK, and
-Ollama Cloud (MiniMax M2.7).
+Ollama (MiniMax M2.7 via `:cloud` models).
 
 ## Architecture
 
@@ -13,9 +13,9 @@ Ollama Cloud (MiniMax M2.7).
   transition between the two.
 - **Hybrid engine.** Quick commands and exact matches (`/projects`,
   `/resume`) dispatch tools locally — no network call, instant. Free-form
-  questions stream through `/api/chat` to the LLM, which can invoke the
-  same tools. This means the common recruiter paths work even if the LLM
-  is down.
+  questions stream through `/api/chat` to Ollama, which can invoke the
+  same tools. This means the common recruiter paths work even if Ollama
+  isn't running.
 - **Stage + chat split.** A Zustand store (`lib/store.ts`) drives which
   page is showing. Tool calls from either path update the store the
   same way.
@@ -25,37 +25,49 @@ Ollama Cloud (MiniMax M2.7).
 
 ## Run locally
 
+You need [Ollama](https://ollama.com/) installed and running on the same
+machine as \`npm run dev\`. Then:
+
 ```bash
+# 1. Make sure Ollama is running
+ollama serve    # runs on localhost:11434 by default
+
+# 2. Pull the model (one-time; :cloud models stream from Ollama Cloud,
+# so you don't pay disk for 200B parameters)
+ollama pull minimax-m2.7:cloud
+
+# 3. Start the site
 npm install
-cp .env.example .env.local    # then paste your Ollama Cloud key
 npm run dev
 ```
 
-Visit http://localhost:3000. You can use the site without an API key —
-the quick command buttons, slash-commands, and project-detail intents
-all work offline. Only free-form questions ("why'd you leave Interac?")
-need the LLM.
-
-## Environment
-
-```
-OLLAMA_API_KEY=...
-```
-
-Get one at [ollama.com/settings/keys](https://ollama.com/settings/keys).
-Requires an Ollama Cloud (paid) subscription to access cloud models.
+Visit http://localhost:3000. Quick commands, slash-commands, and
+project-detail intents all work without Ollama. Only free-form questions
+("why'd you leave Interac?") hit the model.
 
 ## Switching models
 
-The model is configured in [app/api/chat/route.ts](app/api/chat/route.ts)
-as `MODEL_ID`. Any Ollama Cloud model identifier works, e.g.:
+The primary model is set in [app/api/chat/route.ts](app/api/chat/route.ts)
+as \`MODEL_ID\`. Alternates worth trying:
 
-- `minimax-m2.7:cloud` (current — agentic-tuned, best tool calling)
-- `glm-4.6:cloud`
-- `kimi-k2:cloud`
-- `gpt-oss:120b-cloud`
+- \`minimax-m2.7:cloud\` (current — agentic-tuned, great tool calling)
+- \`qwen3.5:cloud\` — fast general-purpose backup
+- \`glm-5.1:cloud\` — excellent tool calling
+- \`gpt-oss:120b\` — OpenAI's open weights
 
-Swap the string, redeploy. No other code changes needed.
+Pull the new model (\`ollama pull <name>\`), swap the string, restart dev.
+
+## Deploying
+
+⚠️ The LLM integration assumes Ollama is reachable at \`localhost:11434\`.
+If you deploy to Vercel:
+
+- The quick commands and intent-matched flows still work perfectly.
+- Free-form chat will error because Vercel's serverless functions can't
+  reach your desktop.
+
+To fix that in production, run a Cloudflare Tunnel (or similar) from your
+desktop and set \`OLLAMA_BASE_URL\` in Vercel env vars to the tunnel URL.
 
 ## Build / deploy
 
