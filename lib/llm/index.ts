@@ -22,6 +22,7 @@ export type ChatMessage = {
 export type ChatRequest = {
   messages: ChatMessage[];
   system: string;
+  signal?: AbortSignal;
 };
 
 export type LLMProvider = "ollama" | "claude" | "openai";

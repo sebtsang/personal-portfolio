@@ -49,6 +49,7 @@ export function ChatShell() {
     setInput,
     error,
     reload,
+    stop,
   } = useChat({
     api: "/api/chat",
     onToolCall: ({ toolCall }) => {
@@ -63,24 +64,37 @@ export function ChatShell() {
     },
   });
 
-  // Warmup ping — fires once on mount. Ollama Cloud cold-starts can take
-  // 20-30s, which makes the first message feel broken. Hitting the API
-  // with a trivial payload wakes the model so the user's first real
-  // prompt is snappy. Fire-and-forget; errors are harmless.
+  // Warmup ping — fires once on mount. Ollama Cloud cold-starts can
+  // take 20-30s, which makes the first real prompt feel broken. This
+  // lets the model complete generation in the background while the
+  // user reads the greeting bubbles, so the first real prompt is snappy.
+  //
+  // IMPORTANT: we must fully drain the stream — canceling it mid-flight
+  // aborts the upstream Ollama generation and defeats the warmup. We
+  // consume and discard the bytes.
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: [{ role: "user", content: "warmup" }],
-      }),
-      signal: controller.signal,
-    })
-      .then((r) => r.body?.cancel())
-      .catch(() => {
-        /* harmless — cold-start may reject, real request will retry */
-      });
+    (async () => {
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: "hi" }],
+          }),
+          signal: controller.signal,
+        });
+        if (!res.body) return;
+        const reader = res.body.getReader();
+        // Drain without processing so the upstream generation completes.
+        while (true) {
+          const { done } = await reader.read();
+          if (done) break;
+        }
+      } catch {
+        /* cold-start may reject or abort — harmless */
+      }
+    })();
     return () => controller.abort();
   }, []);
 
@@ -192,6 +206,7 @@ export function ChatShell() {
             onOpenPalette={() => setPaletteOpen(true)}
             error={error}
             onRetry={reload}
+            onStop={stop}
           />
         </motion.div>
       </div>

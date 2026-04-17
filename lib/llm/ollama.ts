@@ -96,10 +96,12 @@ export async function streamOllama({
   messages,
   system,
   model,
+  signal,
 }: {
   messages: ChatMessage[];
   system: string;
   model: string;
+  signal?: AbortSignal;
 }): Promise<Response> {
   const baseURL = resolveBaseURL();
   const apiKey = process.env.OLLAMA_API_KEY;
@@ -127,12 +129,30 @@ export async function streamOllama({
   };
   if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
 
+  // Chain abort: if the client disconnects OR the upstream fetch is
+  // aborted, tear down the Ollama connection too. Wrap in try/catch
+  // so the listener never throws an unhandled rejection when the
+  // request signal aborts after we've already closed things.
+  const upstreamAbort = new AbortController();
+  const safeAbort = () => {
+    try {
+      if (!upstreamAbort.signal.aborted) upstreamAbort.abort();
+    } catch {
+      /* ignore */
+    }
+  };
+  if (signal) {
+    if (signal.aborted) safeAbort();
+    else signal.addEventListener("abort", safeAbort, { once: true });
+  }
+
   let ollamaRes: Response;
   try {
     ollamaRes = await fetch(`${baseURL}/api/chat`, {
       method: "POST",
       headers,
       body: JSON.stringify(ollamaBody),
+      signal: upstreamAbort.signal,
     });
   } catch (err) {
     console.error("[ollama] Fetch failed:", err);
@@ -168,6 +188,35 @@ export async function streamOllama({
       let latestThinking = "";
       // Keep the raw final chunk when diagnosing empty completions.
       let lastChunkRaw: unknown = null;
+
+      // Has the client disconnected? Guard against writing to a closed
+      // controller, which throws ERR_INVALID_STATE.
+      let clientGone = false;
+      const onClientAbort = () => {
+        clientGone = true;
+        // Propagate to upstream Ollama so we're not burning cloud tokens
+        // for a browser that's no longer listening.
+        safeAbort();
+        try {
+          reader.cancel();
+        } catch {
+          /* already canceled is fine */
+        }
+      };
+      if (signal) {
+        if (signal.aborted) onClientAbort();
+        else signal.addEventListener("abort", onClientAbort, { once: true });
+      }
+
+      const safeEnqueue = (bytes: Uint8Array) => {
+        if (clientGone) return;
+        try {
+          controller.enqueue(bytes);
+        } catch {
+          // Stream was closed by the consumer — stop trying to write.
+          clientGone = true;
+        }
+      };
 
       try {
         while (true) {
@@ -207,7 +256,7 @@ export async function streamOllama({
             const text = chunk.message?.content;
             if (text) {
               emittedContent = true;
-              controller.enqueue(encoder.encode(encode("0", text)));
+              safeEnqueue(encoder.encode(encode("0", text)));
             }
 
             // Keep the latest thinking snippet so we can surface it as a
@@ -224,7 +273,7 @@ export async function streamOllama({
                     ? safeJson(tc.function.arguments)
                     : tc.function.arguments;
                 const toolCallId = `call_${crypto.randomUUID()}`;
-                controller.enqueue(
+                safeEnqueue(
                   encoder.encode(
                     encode("9", {
                       toolCallId,
@@ -233,7 +282,7 @@ export async function streamOllama({
                     })
                   )
                 );
-                controller.enqueue(
+                safeEnqueue(
                   encoder.encode(
                     encode("a", { toolCallId, result: { ok: true } })
                   )
@@ -267,40 +316,50 @@ export async function streamOllama({
                   messages
                 );
                 if (retryText) {
-                  controller.enqueue(encoder.encode(encode("0", retryText)));
+                  safeEnqueue(encoder.encode(encode("0", retryText)));
                 } else {
                   console.warn(
                     `[ollama] Retry also empty. Raw final chunk:`,
                     JSON.stringify(lastChunkRaw)
                   );
-                  controller.enqueue(
-                    encoder.encode(encode("0", pickFallback()))
-                  );
+                  safeEnqueue(encoder.encode(encode("0", pickFallback())));
                 }
               }
               if (chunk.done_reason === "length") finishReason = "length";
               const usage = { promptTokens, completionTokens };
-              controller.enqueue(
+              safeEnqueue(
                 encoder.encode(
                   encode("e", { finishReason, usage, isContinued: false })
                 )
               );
-              controller.enqueue(
-                encoder.encode(encode("d", { finishReason, usage }))
-              );
+              safeEnqueue(encoder.encode(encode("d", { finishReason, usage })));
             }
           }
         }
       } catch (err) {
-        console.error("[ollama] Stream error:", err);
-        controller.enqueue(
-          encoder.encode(
-            encode("3", err instanceof Error ? err.message : "stream error")
-          )
-        );
+        // AbortError is expected when the client disconnects mid-stream.
+        // Everything else is worth surfacing.
+        if (err instanceof Error && err.name === "AbortError") {
+          console.log("[ollama] stream aborted (client disconnect)");
+        } else {
+          console.error("[ollama] Stream error:", err);
+          safeEnqueue(
+            encoder.encode(
+              encode("3", err instanceof Error ? err.message : "stream error")
+            )
+          );
+        }
       } finally {
-        controller.close();
+        try {
+          controller.close();
+        } catch {
+          /* already closed */
+        }
       }
+    },
+    cancel() {
+      // Consumer (our Response stream) was canceled — cascade to Ollama.
+      safeAbort();
     },
   });
 

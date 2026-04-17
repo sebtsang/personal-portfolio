@@ -11,5 +11,10 @@ export const maxDuration = 60;
  */
 export async function POST(req: Request) {
   const { messages } = await req.json();
-  return streamChat({ messages: messages ?? [], system: SYSTEM_PROMPT });
+  return streamChat({
+    messages: messages ?? [],
+    system: SYSTEM_PROMPT,
+    // Cascade client disconnects all the way down to the Ollama fetch.
+    signal: req.signal,
+  });
 }

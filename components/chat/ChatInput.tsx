@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUp, Command } from "lucide-react";
+import { ArrowUp, Command, Square } from "lucide-react";
 import { useRef, useEffect, type ChangeEvent, type KeyboardEvent } from "react";
 
 export function ChatInput({
@@ -9,6 +9,7 @@ export function ChatInput({
   onSubmit,
   isLoading,
   onOpenPalette,
+  onStop,
   compact = false,
 }: {
   value: string;
@@ -16,6 +17,7 @@ export function ChatInput({
   onSubmit: (value: string) => void;
   isLoading: boolean;
   onOpenPalette: () => void;
+  onStop?: () => void;
   compact?: boolean;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -80,18 +82,41 @@ export function ChatInput({
           <Command className="h-3 w-3" strokeWidth={2} />K
         </button>
       </div>
-      <button
-        type="submit"
-        disabled={isLoading || !value.trim()}
-        aria-label="Send message"
-        className={
-          "flex shrink-0 items-center justify-center rounded-full text-white transition-opacity disabled:opacity-40 " +
-          (compact ? "h-11 w-11" : "h-12 w-12")
-        }
-        style={{ background: "var(--color-accent)" }}
-      >
-        <ArrowUp className={compact ? "h-4 w-4" : "h-5 w-5"} strokeWidth={2.5} />
-      </button>
+      {isLoading && onStop ? (
+        <button
+          type="button"
+          onClick={onStop}
+          aria-label="Stop generating"
+          title="Stop generating"
+          className={
+            "flex shrink-0 items-center justify-center rounded-full text-white transition-colors " +
+            (compact ? "h-11 w-11" : "h-12 w-12")
+          }
+          style={{ background: "var(--color-ink)" }}
+        >
+          <Square
+            className={compact ? "h-3.5 w-3.5" : "h-4 w-4"}
+            strokeWidth={2.5}
+            fill="currentColor"
+          />
+        </button>
+      ) : (
+        <button
+          type="submit"
+          disabled={isLoading || !value.trim()}
+          aria-label="Send message"
+          className={
+            "flex shrink-0 items-center justify-center rounded-full text-white transition-opacity disabled:opacity-40 " +
+            (compact ? "h-11 w-11" : "h-12 w-12")
+          }
+          style={{ background: "var(--color-accent)" }}
+        >
+          <ArrowUp
+            className={compact ? "h-4 w-4" : "h-5 w-5"}
+            strokeWidth={2.5}
+          />
+        </button>
+      )}
     </form>
   );
 }

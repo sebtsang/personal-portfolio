@@ -23,6 +23,7 @@ export function ChatPanel({
   onOpenPalette,
   error,
   onRetry,
+  onStop,
 }: {
   isHome: boolean;
   messages: Message[];
@@ -33,6 +34,7 @@ export function ChatPanel({
   onOpenPalette: () => void;
   error?: Error;
   onRetry?: () => void;
+  onStop?: () => void;
 }) {
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
@@ -71,6 +73,7 @@ export function ChatPanel({
           onSubmit={onSubmit}
           isLoading={isLoading}
           onOpenPalette={onOpenPalette}
+          onStop={onStop}
           compact={!isHome}
         />
       </div>
