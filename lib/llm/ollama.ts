@@ -110,7 +110,10 @@ export async function streamOllama({
     think: false,
     options: {
       temperature: 0.85,
-      num_predict: 400,
+      // Cap at 180 — witty replies are under 50 tokens, 180 is plenty
+      // of headroom, and when the model goes off-track this caps dead
+      // time at ~6-7s instead of 15s.
+      num_predict: 180,
     },
     tools: OLLAMA_TOOLS,
     messages: [
@@ -159,11 +162,12 @@ export async function streamOllama({
       let finishReason: "stop" | "length" | "tool-calls" = "stop";
 
       // Track whether we emitted anything visible. Reasoning-ish models
-      // sometimes reply with 400 tokens of `thinking` and 0 of `content`,
-      // which would otherwise result in a silently-empty bubble.
+      // sometimes reply with many tokens that don't surface as content.
       let emittedContent = false;
       let emittedToolCall = false;
       let latestThinking = "";
+      // Keep the raw final chunk when diagnosing empty completions.
+      let lastChunkRaw: unknown = null;
 
       try {
         while (true) {
@@ -198,6 +202,7 @@ export async function streamOllama({
             } catch {
               continue;
             }
+            if (chunk.done) lastChunkRaw = chunk;
 
             const text = chunk.message?.content;
             if (text) {
@@ -244,20 +249,34 @@ export async function streamOllama({
               completionTokens = chunk.eval_count;
 
             if (chunk.done) {
-              // Fallback: if the model produced neither content nor tool
-              // calls, emit something visible so the UI doesn't hang.
-              // Happens when reasoning leaks past think:false or the
-              // model burns num_predict without outputting text.
+              // Recovery: if the model produced neither content nor tool
+              // calls, the tools themselves are often the distraction —
+              // try once more WITHOUT tools. If that still comes back
+              // empty, fall back to a witty "try again" message.
               if (!emittedContent && !emittedToolCall) {
-                const fallback = latestThinking
-                  ? "Drew a blank on that one — mind rephrasing? (The model spent its turn thinking without saying anything.)"
-                  : "Drew a blank on that one — mind rephrasing?";
                 console.warn(
-                  `[ollama] Empty completion (${completionTokens} tokens). ` +
-                    `Thinking length: ${latestThinking.length}. ` +
-                    `Emitting fallback.`
+                  `[ollama] Empty completion (${completionTokens} tokens, ` +
+                    `done_reason=${chunk.done_reason}, ` +
+                    `thinking=${latestThinking.length}). Retrying without tools...`
                 );
-                controller.enqueue(encoder.encode(encode("0", fallback)));
+                const retryText = await retryWithoutTools(
+                  baseURL,
+                  apiKey,
+                  model,
+                  system,
+                  messages
+                );
+                if (retryText) {
+                  controller.enqueue(encoder.encode(encode("0", retryText)));
+                } else {
+                  console.warn(
+                    `[ollama] Retry also empty. Raw final chunk:`,
+                    JSON.stringify(lastChunkRaw)
+                  );
+                  controller.enqueue(
+                    encoder.encode(encode("0", pickFallback()))
+                  );
+                }
               }
               if (chunk.done_reason === "length") finishReason = "length";
               const usage = { promptTokens, completionTokens };
@@ -300,6 +319,63 @@ function safeJson(s: string): Record<string, unknown> | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * One-shot retry without tools + no streaming. Short casual prompts
+ * (like "wassup", "hi", "wth") sometimes make Qwen hang on tool-call
+ * indecision and emit zero content. Removing tools from the payload
+ * usually unblocks a snappy reply.
+ */
+async function retryWithoutTools(
+  baseURL: string,
+  apiKey: string | undefined,
+  model: string,
+  system: string,
+  messages: ChatMessage[]
+): Promise<string | null> {
+  const body = {
+    model,
+    stream: false,
+    think: false,
+    options: { temperature: 0.85, num_predict: 180 },
+    messages: [
+      { role: "system", content: system },
+      ...messages.map((m) => ({ role: m.role, content: m.content })),
+    ],
+  };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
+  try {
+    const res = await fetch(`${baseURL}/api/chat`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { message?: { content?: string } };
+    const text = json.message?.content?.trim();
+    return text ? text : null;
+  } catch (err) {
+    console.error("[ollama] retry failed:", err);
+    return null;
+  }
+}
+
+// Rotating fallbacks — less jarring than the same string every time.
+// All on-voice for the persona so failures feel like a quirk, not a bug.
+const FALLBACKS = [
+  "Brain stalled. Try me again?",
+  "That one broke me. Try a different angle?",
+  "I went to answer that and forgot what I was saying. Try again?",
+  "Blanked. Maybe try a shortcut below instead.",
+  "Lost the plot on that one. Ask me something else?",
+];
+function pickFallback(): string {
+  return FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)];
 }
 
 function jsonError(status: number, error: string): Response {
