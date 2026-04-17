@@ -3,71 +3,75 @@
 A chatbot-first personal site. Instead of a conventional homepage, the entire
 site *is* a chatbot: the home is a full-screen chat, and when you trigger a
 command the chat smoothly docks to a side rail while a content "page"
-unfolds in the main area. Built with Next.js 15, the Vercel AI SDK, and
-Ollama (MiniMax M2.7 via `:cloud` models).
+unfolds in the main area. Built with Next.js 15 and the Vercel AI SDK,
+with pluggable LLM providers (Ollama / Claude / OpenAI).
 
 ## Architecture
 
 - **Two-mode layout.** Home = centered full-screen chat. Page = chat docks
-  right, content takes the main area. Smooth Framer Motion `layout`
+  right, content takes the main area. Smooth Framer Motion \`layout\`
   transition between the two.
-- **Hybrid engine.** Quick commands and exact matches (`/projects`,
-  `/resume`) dispatch tools locally — no network call, instant. Free-form
-  questions stream through `/api/chat` to Ollama, which can invoke the
-  same tools. This means the common recruiter paths work even if Ollama
-  isn't running.
-- **Stage + chat split.** A Zustand store (`lib/store.ts`) drives which
-  page is showing. Tool calls from either path update the store the
-  same way.
-- **Content lives in `/content`.** Bio in `site.ts`, richer project
-  entries in `projects.ts`. Edit these to change what the site knows
-  about you.
+- **Hybrid engine.** Quick commands and exact matches (\`/projects\`,
+  \`/resume\`) dispatch tools locally — no network call, instant. Free-form
+  questions stream through \`/api/chat\` to whichever LLM provider is
+  configured. The common recruiter paths work even without an LLM.
+- **Pluggable providers.** One env var (\`LLM_PROVIDER\`) switches between
+  Ollama (local or cloud), Claude, or OpenAI. All three live under
+  [lib/llm/](lib/llm/) and expose the same interface to the route.
+- **Stage + chat split.** A Zustand store (\`lib/store.ts\`) drives which
+  page is showing. Tool calls from either path update it the same way.
+- **Content lives in \`/content\`.** Bio in \`site.ts\`, richer project
+  entries in \`projects.ts\`.
 
 ## Run locally
 
-You need [Ollama](https://ollama.com/) installed and running on the same
-machine as \`npm run dev\`. Then:
-
-```bash
-# 1. Make sure Ollama is running
-ollama serve    # runs on localhost:11434 by default
-
-# 2. Pull the model (one-time; :cloud models stream from Ollama Cloud,
-# so you don't pay disk for 200B parameters)
-ollama pull minimax-m2.7:cloud
-
-# 3. Start the site
+\`\`\`bash
 npm install
+cp .env.example .env.local   # edit for your chosen provider
 npm run dev
-```
+\`\`\`
 
-Visit http://localhost:3000. Quick commands, slash-commands, and
-project-detail intents all work without Ollama. Only free-form questions
-("why'd you leave Interac?") hit the model.
+Visit http://localhost:3000. Quick commands + slash-commands + project-
+detail intents all work without any LLM configured at all. Only free-form
+questions hit the model.
 
-## Switching models
+## Switching LLM providers
 
-The primary model is set in [app/api/chat/route.ts](app/api/chat/route.ts)
-as \`MODEL_ID\`. Alternates worth trying:
+Edit \`.env.local\`:
 
-- \`minimax-m2.7:cloud\` (current — agentic-tuned, great tool calling)
-- \`qwen3.5:cloud\` — fast general-purpose backup
-- \`glm-5.1:cloud\` — excellent tool calling
-- \`gpt-oss:120b\` — OpenAI's open weights
+\`\`\`bash
+LLM_PROVIDER=ollama   # or: claude | openai
+LLM_MODEL=...         # optional override; each provider has a default
+\`\`\`
 
-Pull the new model (\`ollama pull <name>\`), swap the string, restart dev.
+Then set the matching credential:
+
+| Provider | Env vars | Default model |
+|---|---|---|
+| \`ollama\` (local) | none (daemon must be running) | \`qwen3.5:cloud\` |
+| \`ollama\` (cloud) | \`OLLAMA_API_KEY=...\` | \`qwen3.5:cloud\` |
+| \`claude\` | \`ANTHROPIC_API_KEY=sk-ant-...\` | \`claude-haiku-4-5-20251001\` |
+| \`openai\` | \`OPENAI_API_KEY=sk-...\` | \`gpt-4.1-mini\` |
+
+Restart the dev server after changing env vars. No code changes needed.
+
+### Ollama notes
+
+- **Local daemon:** run \`ollama serve\`, then \`ollama pull <model>\`. Free,
+  fast, but only reachable from the same machine.
+- **Ollama Cloud:** set \`OLLAMA_API_KEY\` — \`OLLAMA_BASE_URL\` auto-resolves
+  to \`https://ollama.com\`. Works from anywhere (including Vercel deploys).
+- **Why this is hand-rolled instead of using @ai-sdk/openai-compatible:** we
+  send \`think: false\` to skip chain-of-thought on reasoning models like
+  Qwen / GLM / MiniMax, which otherwise burn 500+ tokens before replying.
+  None of the v4-compatible Ollama providers expose that flag.
 
 ## Deploying
 
-⚠️ The LLM integration assumes Ollama is reachable at \`localhost:11434\`.
-If you deploy to Vercel:
-
-- The quick commands and intent-matched flows still work perfectly.
-- Free-form chat will error because Vercel's serverless functions can't
-  reach your desktop.
-
-To fix that in production, run a Cloudflare Tunnel (or similar) from your
-desktop and set \`OLLAMA_BASE_URL\` in Vercel env vars to the tunnel URL.
+On Vercel: set the relevant env vars in project settings, push. Free-form
+chat works out-of-the-box for Claude, OpenAI, or Ollama Cloud. For the
+**local** Ollama daemon you'd need a Cloudflare Tunnel and
+\`OLLAMA_BASE_URL=https://<tunnel>.trycloudflare.com\`.
 
 ## Build / deploy
 
