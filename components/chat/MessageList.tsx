@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { RefreshCw } from "lucide-react";
 import { MessageBubble } from "./MessageBubble";
 
 type Message = {
@@ -14,10 +15,14 @@ export function MessageList({
   messages,
   isLoading,
   isHome = false,
+  error,
+  onRetry,
 }: {
   messages: Message[];
   isLoading: boolean;
   isHome?: boolean;
+  error?: Error;
+  onRetry?: () => void;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -25,7 +30,7 @@ export function MessageList({
     const el = scrollRef.current;
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages.length, isLoading]);
+  }, [messages.length, isLoading, error]);
 
   return (
     <div
@@ -75,7 +80,7 @@ export function MessageList({
           })}
         </AnimatePresence>
 
-        {isLoading && (
+        {isLoading && !error && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -85,6 +90,38 @@ export function MessageList({
               <span className="typing-dot" />
               <span className="typing-dot" />
               <span className="typing-dot" />
+            </div>
+          </motion.div>
+        )}
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex justify-start"
+          >
+            <div
+              className="bubble bubble-assistant flex flex-col gap-2"
+              style={{
+                borderColor:
+                  "color-mix(in srgb, var(--color-accent) 40%, transparent)",
+              }}
+            >
+              <span className="text-[0.9rem]">
+                Brain took a nap — that request didn&apos;t make it back. Cold-start
+                on the model, probably. Try again?
+              </span>
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[color-mix(in_srgb,var(--color-line)_75%,transparent)] bg-[color-mix(in_srgb,var(--color-surface)_85%,transparent)] px-3 py-1 font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[color:var(--color-muted)] transition-colors hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent)]"
+                >
+                  <RefreshCw className="h-3 w-3" strokeWidth={2} />
+                  Retry
+                </button>
+              )}
             </div>
           </motion.div>
         )}

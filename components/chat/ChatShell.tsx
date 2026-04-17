@@ -47,6 +47,8 @@ export function ChatShell() {
     append,
     isLoading,
     setInput,
+    error,
+    reload,
   } = useChat({
     api: "/api/chat",
     onToolCall: ({ toolCall }) => {
@@ -55,14 +57,49 @@ export function ChatShell() {
         toolCall.args as Record<string, unknown>
       );
     },
+    onError: (err) => {
+      // Surfaces in the server log and the retry UI below.
+      console.error("[chat] request failed:", err);
+    },
   });
 
+  // Warmup ping — fires once on mount. Ollama Cloud cold-starts can take
+  // 20-30s, which makes the first message feel broken. Hitting the API
+  // with a trivial payload wakes the model so the user's first real
+  // prompt is snappy. Fire-and-forget; errors are harmless.
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "warmup" }],
+      }),
+      signal: controller.signal,
+    })
+      .then((r) => r.body?.cancel())
+      .catch(() => {
+        /* harmless — cold-start may reject, real request will retry */
+      });
+    return () => controller.abort();
+  }, []);
+
   const displayMessages = useMemo(() => {
-    const mapped = aiMessages.map((m) => ({
-      id: m.id,
-      role: m.role as "user" | "assistant",
-      content: m.content || (m.toolInvocations?.length ? "" : "…"),
-    }));
+    const mapped = aiMessages
+      // Drop assistant messages that have no text AND no tool calls —
+      // happens when the model returns empty content and no invocation,
+      // which would otherwise render a blank bubble.
+      .filter(
+        (m) =>
+          m.role !== "assistant" ||
+          (m.content && m.content.length > 0) ||
+          (m.toolInvocations && m.toolInvocations.length > 0)
+      )
+      .map((m) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        content: m.content || "",
+      }));
     return [...seedMessages, ...localMessages, ...mapped];
   }, [aiMessages, localMessages, seedMessages]);
 
@@ -153,6 +190,8 @@ export function ChatShell() {
             onInputChange={handleInputChange}
             onSubmit={handleSubmit}
             onOpenPalette={() => setPaletteOpen(true)}
+            error={error}
+            onRetry={reload}
           />
         </motion.div>
       </div>

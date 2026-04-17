@@ -21,6 +21,8 @@ export function ChatPanel({
   onInputChange,
   onSubmit,
   onOpenPalette,
+  error,
+  onRetry,
 }: {
   isHome: boolean;
   messages: Message[];
@@ -29,6 +31,8 @@ export function ChatPanel({
   onInputChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit: (value: string) => void;
   onOpenPalette: () => void;
+  error?: Error;
+  onRetry?: () => void;
 }) {
   return (
     <div className="flex h-full w-full flex-col overflow-hidden">
@@ -45,7 +49,13 @@ export function ChatPanel({
         <HomeHero compact={false} />
       </motion.div>
 
-      <MessageList messages={messages} isLoading={isLoading} isHome={isHome} />
+      <MessageList
+        messages={messages}
+        isLoading={isLoading}
+        isHome={isHome}
+        error={error}
+        onRetry={onRetry}
+      />
 
       <div
         className={
