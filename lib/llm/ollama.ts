@@ -158,6 +158,13 @@ export async function streamOllama({
       let completionTokens = 0;
       let finishReason: "stop" | "length" | "tool-calls" = "stop";
 
+      // Track whether we emitted anything visible. Reasoning-ish models
+      // sometimes reply with 400 tokens of `thinking` and 0 of `content`,
+      // which would otherwise result in a silently-empty bubble.
+      let emittedContent = false;
+      let emittedToolCall = false;
+      let latestThinking = "";
+
       try {
         while (true) {
           const { done, value } = await reader.read();
@@ -173,6 +180,7 @@ export async function streamOllama({
             let chunk: {
               message?: {
                 content?: string;
+                thinking?: string;
                 tool_calls?: Array<{
                   function: {
                     name: string;
@@ -193,7 +201,14 @@ export async function streamOllama({
 
             const text = chunk.message?.content;
             if (text) {
+              emittedContent = true;
               controller.enqueue(encoder.encode(encode("0", text)));
+            }
+
+            // Keep the latest thinking snippet so we can surface it as a
+            // fallback if content never arrives.
+            if (chunk.message?.thinking) {
+              latestThinking = chunk.message.thinking;
             }
 
             const toolCalls = chunk.message?.tool_calls;
@@ -218,6 +233,7 @@ export async function streamOllama({
                     encode("a", { toolCallId, result: { ok: true } })
                   )
                 );
+                emittedToolCall = true;
                 finishReason = "tool-calls";
               }
             }
@@ -228,6 +244,21 @@ export async function streamOllama({
               completionTokens = chunk.eval_count;
 
             if (chunk.done) {
+              // Fallback: if the model produced neither content nor tool
+              // calls, emit something visible so the UI doesn't hang.
+              // Happens when reasoning leaks past think:false or the
+              // model burns num_predict without outputting text.
+              if (!emittedContent && !emittedToolCall) {
+                const fallback = latestThinking
+                  ? "Drew a blank on that one — mind rephrasing? (The model spent its turn thinking without saying anything.)"
+                  : "Drew a blank on that one — mind rephrasing?";
+                console.warn(
+                  `[ollama] Empty completion (${completionTokens} tokens). ` +
+                    `Thinking length: ${latestThinking.length}. ` +
+                    `Emitting fallback.`
+                );
+                controller.enqueue(encoder.encode(encode("0", fallback)));
+              }
               if (chunk.done_reason === "length") finishReason = "length";
               const usage = { promptTokens, completionTokens };
               controller.enqueue(
