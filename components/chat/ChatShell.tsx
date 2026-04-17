@@ -14,13 +14,9 @@ import { profile } from "@/content/site";
 
 const WELCOME_BUBBLE = `Welcome to Seb's site.`;
 
-const INTRO_BUBBLE = `A few quick things about him:
-— CS student at the University of Guelph, based in Toronto
-— Previously at Interac and BMO, incoming at EY on the AI & Data team
-— Most of his time: AI workflows, MCP servers, and automation that actually reduces work
-— And yeah — this whole site is him as a chatbot. Meta, I know.
+const INTRO_BUBBLE = `Quick briefing: CS at Guelph, Toronto-based. Did time at Interac and BMO, incoming at EY on the AI & Data team. Builds AI workflows that usually work. There's a 90% chance he'll smoke you at basketball.`;
 
-Ask anything, or hit a shortcut below.`;
+const CTA_BUBBLE = `Ask anything. Fair warning: I will gently roast you if you open with "tell me about yourself."`;
 
 type LocalMessage = {
   id: string;
@@ -40,6 +36,7 @@ export function ChatShell() {
   const [seedMessages] = useState<LocalMessage[]>([
     { id: "greeting-welcome", role: "assistant", content: WELCOME_BUBBLE },
     { id: "greeting-intro", role: "assistant", content: INTRO_BUBBLE },
+    { id: "greeting-cta", role: "assistant", content: CTA_BUBBLE },
   ]);
   const [localMessages, setLocalMessages] = useState<LocalMessage[]>([]);
 

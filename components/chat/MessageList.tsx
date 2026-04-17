@@ -46,8 +46,13 @@ export function MessageList({
             // Stagger the initial seed bubbles (greeting + intro) so they feel
             // like the bot is typing. Subsequent messages appear immediately.
             const isSeed = m.id.startsWith("greeting-");
-            const seedIndex = isSeed ? (m.id === "greeting-welcome" ? 0 : 1) : 0;
-            const delay = isSeed ? 0.45 + seedIndex * 0.75 : 0;
+            const seedOrder: Record<string, number> = {
+              "greeting-welcome": 0,
+              "greeting-intro": 1,
+              "greeting-cta": 2,
+            };
+            const seedIndex = isSeed ? (seedOrder[m.id] ?? 0) : 0;
+            const delay = isSeed ? 0.45 + seedIndex * 0.7 : 0;
             return (
               <motion.div
                 key={m.id}
