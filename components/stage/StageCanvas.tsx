@@ -2,7 +2,6 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useStageStore } from "@/lib/store";
-import { StageEmpty } from "./StageEmpty";
 import { ProjectGrid } from "./ProjectGrid";
 import { ProjectDetail } from "./ProjectDetail";
 import { ExperienceTimeline } from "./ExperienceTimeline";
@@ -20,10 +19,10 @@ export function StageCanvas() {
           <AnimatePresence mode="wait">
             <motion.div
               key={stageKey(view)}
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="flex h-full w-full flex-col"
             >
               {renderStage(view)}
@@ -43,7 +42,7 @@ function stageKey(view: ReturnType<typeof useStageStore.getState>["view"]) {
 function renderStage(view: ReturnType<typeof useStageStore.getState>["view"]) {
   switch (view.kind) {
     case "empty":
-      return <StageEmpty />;
+      return null; // home handled by HomeHero in chat panel
     case "projects":
       return <ProjectGrid />;
     case "project":

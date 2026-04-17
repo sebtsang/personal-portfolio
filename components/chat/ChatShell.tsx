@@ -1,17 +1,15 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { matchIntent } from "@/lib/intents";
 import { useStageStore } from "@/lib/store";
 import type { ToolName } from "@/lib/tools";
-import { MessageList } from "./MessageList";
-import { ChatInput } from "./ChatInput";
-import { QuickCommands } from "./QuickCommands";
+import { ChatPanel } from "./ChatPanel";
 import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "./ThemeToggle";
-import { StageCanvas } from "@/components/stage/StageCanvas";
+import { StageFrame } from "@/components/stage/StageFrame";
 import { profile } from "@/content/site";
 
 const GREETING = `Hey — welcome to ${profile.shortName.toLowerCase()}.dev. Yeah, the whole site is a chatbot. Meta, I know.
@@ -22,16 +20,19 @@ type LocalMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
-  local?: boolean;
 };
 
-export function ChatShell() {
-  const dispatchTool = useStageStore((s) => s.dispatchTool);
-  const [paletteOpen, setPaletteOpen] = useState(false);
+const EASE = [0.22, 1, 0.36, 1] as const;
 
-  // Local-only seed message (not part of LLM history)
+export function ChatShell() {
+  const view = useStageStore((s) => s.view);
+  const setView = useStageStore((s) => s.setView);
+  const dispatchTool = useStageStore((s) => s.dispatchTool);
+  const isHome = view.kind === "empty";
+
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [seedMessages] = useState<LocalMessage[]>([
-    { id: "greeting", role: "assistant", content: GREETING, local: true },
+    { id: "greeting", role: "assistant", content: GREETING },
   ]);
   const [localMessages, setLocalMessages] = useState<LocalMessage[]>([]);
 
@@ -45,18 +46,18 @@ export function ChatShell() {
   } = useChat({
     api: "/api/chat",
     onToolCall: ({ toolCall }) => {
-      dispatchTool(toolCall.toolName as ToolName, toolCall.args as Record<string, unknown>);
+      dispatchTool(
+        toolCall.toolName as ToolName,
+        toolCall.args as Record<string, unknown>
+      );
     },
   });
 
-  // Merge local + AI messages for display
   const displayMessages = useMemo(() => {
     const mapped = aiMessages.map((m) => ({
       id: m.id,
       role: m.role as "user" | "assistant",
-      content:
-        m.content ||
-        (m.toolInvocations?.length ? "" : "…"),
+      content: m.content || (m.toolInvocations?.length ? "" : "…"),
     }));
     return [...seedMessages, ...localMessages, ...mapped];
   }, [aiMessages, localMessages, seedMessages]);
@@ -67,31 +68,25 @@ export function ChatShell() {
       if (!text) return;
       setInput("");
 
-      // Try local intent match first
       const intent = matchIntent(text);
       if (intent) {
         setLocalMessages((prev) => [
           ...prev,
-          { id: crypto.randomUUID(), role: "user", content: text, local: true },
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: intent.reply,
-            local: true,
-          },
+          { id: crypto.randomUUID(), role: "user", content: text },
+          { id: crypto.randomUUID(), role: "assistant", content: intent.reply },
         ]);
-        // Dispatch after a beat so the message bubble animates in first
-        setTimeout(() => {
-          dispatchTool(intent.tool, intent.args);
-        }, 120);
+        setTimeout(() => dispatchTool(intent.tool, intent.args), 120);
         return;
       }
 
-      // Fall back to LLM
       append({ role: "user", content: text });
     },
     [append, dispatchTool, setInput]
   );
+
+  const goHome = useCallback(() => {
+    setView({ kind: "empty" });
+  }, [setView]);
 
   // Command palette keybind
   useEffect(() => {
@@ -100,38 +95,62 @@ export function ChatShell() {
         e.preventDefault();
         setPaletteOpen((v) => !v);
       }
-      if (e.key === "Escape") setPaletteOpen(false);
+      if (e.key === "Escape") {
+        setPaletteOpen(false);
+        if (!isHome) goHome();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [isHome, goHome]);
 
   return (
     <div className="relative flex h-dvh w-full flex-col overflow-hidden">
-      {/* Top bar */}
       <TopBar />
 
-      {/* Main split */}
-      <div className="relative flex min-h-0 flex-1 flex-col lg:flex-row">
-        {/* Stage (top on mobile, right on desktop) */}
-        <div className="relative order-1 min-h-[38svh] flex-1 lg:order-2 lg:min-h-0">
-          <StageCanvas />
-        </div>
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
+        {/* PAGE AREA — only mounted when not home */}
+        <AnimatePresence mode="wait">
+          {!isHome && (
+            <motion.div
+              key="page"
+              initial={{ opacity: 0, x: -40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{
+                duration: 0.5,
+                ease: EASE,
+                delay: 0.12,
+              }}
+              className="relative min-h-0 flex-1 overflow-hidden"
+            >
+              <StageFrame onHome={goHome} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        {/* Chat (bottom on mobile, left on desktop) */}
-        <div className="relative order-2 flex min-h-0 w-full flex-col lg:order-1 lg:w-[min(480px,42%)] lg:border-r lg:border-[color-mix(in_srgb,var(--color-line)_70%,transparent)]">
-          <MessageList messages={displayMessages} isLoading={isLoading} />
-          <div className="shrink-0 border-t border-[color-mix(in_srgb,var(--color-line)_70%,transparent)] bg-[color-mix(in_srgb,var(--color-paper)_92%,transparent)] backdrop-blur-md">
-            <QuickCommands onSelect={handleSubmit} />
-            <ChatInput
-              value={input}
-              onChange={handleInputChange}
-              onSubmit={handleSubmit}
-              isLoading={isLoading}
-              onOpenPalette={() => setPaletteOpen(true)}
-            />
-          </div>
-        </div>
+        {/* CHAT — single mounted instance, morphs between layouts */}
+        <motion.div
+          layout
+          transition={{
+            layout: { duration: 0.6, ease: EASE },
+          }}
+          className={
+            isHome
+              ? "relative flex min-h-0 flex-1 flex-col"
+              : "relative flex min-h-0 w-full flex-col border-l border-[color-mix(in_srgb,var(--color-line)_70%,transparent)] bg-[color-mix(in_srgb,var(--color-paper)_75%,transparent)] backdrop-blur-md md:w-[400px] md:shrink-0 lg:w-[440px]"
+          }
+        >
+          <ChatPanel
+            isHome={isHome}
+            messages={displayMessages}
+            isLoading={isLoading}
+            input={input}
+            onInputChange={handleInputChange}
+            onSubmit={handleSubmit}
+            onOpenPalette={() => setPaletteOpen(true)}
+          />
+        </motion.div>
       </div>
 
       <AnimatePresence>
@@ -151,7 +170,7 @@ function TopBar() {
     <motion.header
       initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.4, ease: EASE }}
       className="relative z-10 flex shrink-0 items-center justify-between border-b border-[color-mix(in_srgb,var(--color-line)_70%,transparent)] bg-[color-mix(in_srgb,var(--color-paper)_85%,transparent)] px-4 py-3 backdrop-blur-md md:px-6"
     >
       <div className="flex items-center gap-3">

@@ -9,16 +9,17 @@ export function ChatInput({
   onSubmit,
   isLoading,
   onOpenPalette,
+  compact = false,
 }: {
   value: string;
   onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit: (value: string) => void;
   isLoading: boolean;
   onOpenPalette: () => void;
+  compact?: boolean;
 }) {
   const ref = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -26,7 +27,6 @@ export function ChatInput({
     el.style.height = Math.min(el.scrollHeight, 160) + "px";
   }, [value]);
 
-  // Autofocus on mount
   useEffect(() => {
     ref.current?.focus();
   }, []);
@@ -44,17 +44,31 @@ export function ChatInput({
         e.preventDefault();
         onSubmit(value);
       }}
-      className="flex items-end gap-2 px-4 pb-4 pt-2 md:px-6"
+      className={
+        compact
+          ? "flex items-end gap-2 px-4 pb-4 pt-2 md:px-5"
+          : "mx-auto flex w-full max-w-2xl items-end gap-2 px-6 pb-8 pt-2 md:px-8"
+      }
     >
-      <div className="relative flex flex-1 items-end rounded-2xl border border-[color-mix(in_srgb,var(--color-line)_75%,transparent)] bg-[color-mix(in_srgb,var(--color-surface)_92%,transparent)] px-4 py-2.5 focus-within:border-[color:var(--color-accent)]">
+      <div
+        className={
+          "relative flex flex-1 items-end rounded-2xl border border-[color-mix(in_srgb,var(--color-line)_75%,transparent)] bg-[color-mix(in_srgb,var(--color-surface)_92%,transparent)] focus-within:border-[color:var(--color-accent)] " +
+          (compact ? "px-4 py-2.5" : "px-5 py-3")
+        }
+      >
         <textarea
           ref={ref}
           value={value}
           onChange={onChange}
           onKeyDown={handleKeyDown}
-          placeholder="Ask anything — or try /projects"
+          placeholder={
+            compact ? "Keep chatting..." : "Ask anything — or try /projects"
+          }
           rows={1}
-          className="max-h-40 flex-1 resize-none bg-transparent font-mono text-[0.9rem] text-[color:var(--color-ink)] placeholder:text-[color:color-mix(in_srgb,var(--color-muted)_80%,transparent)] focus:outline-none"
+          className={
+            "max-h-40 flex-1 resize-none bg-transparent font-mono text-[color:var(--color-ink)] placeholder:text-[color:color-mix(in_srgb,var(--color-muted)_80%,transparent)] focus:outline-none " +
+            (compact ? "text-[0.9rem]" : "text-[0.95rem]")
+          }
         />
         <button
           type="button"
@@ -70,10 +84,13 @@ export function ChatInput({
         type="submit"
         disabled={isLoading || !value.trim()}
         aria-label="Send message"
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-white transition-opacity disabled:opacity-40"
+        className={
+          "flex shrink-0 items-center justify-center rounded-full text-white transition-opacity disabled:opacity-40 " +
+          (compact ? "h-11 w-11" : "h-12 w-12")
+        }
         style={{ background: "var(--color-accent)" }}
       >
-        <ArrowUp className="h-4 w-4" strokeWidth={2.5} />
+        <ArrowUp className={compact ? "h-4 w-4" : "h-5 w-5"} strokeWidth={2.5} />
       </button>
     </form>
   );

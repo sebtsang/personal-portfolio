@@ -13,11 +13,19 @@ const COMMANDS: { label: string; prompt: string; icon: LucideIcon }[] = [
 
 export function QuickCommands({
   onSelect,
+  compact = false,
 }: {
   onSelect: (prompt: string) => void;
+  compact?: boolean;
 }) {
   return (
-    <div className="scroll-thin flex shrink-0 items-center gap-2 overflow-x-auto px-4 pb-2 pt-3 md:px-6">
+    <div
+      className={
+        compact
+          ? "scroll-thin flex shrink-0 items-center gap-2 overflow-x-auto px-4 pb-2 pt-3 md:px-5"
+          : "scroll-thin mx-auto flex w-full max-w-2xl shrink-0 flex-wrap items-center justify-center gap-2 px-6 pb-3 pt-4 md:px-8"
+      }
+    >
       {COMMANDS.map((c, i) => {
         const Icon = c.icon;
         return (

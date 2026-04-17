@@ -1,12 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { projects } from "@/content/projects";
-import { useStageStore } from "@/lib/store";
 
 export function ProjectDetail({ id }: { id: string }) {
-  const setView = useStageStore((s) => s.setView);
   const project = projects.find((p) => p.id === id);
 
   if (!project) {
@@ -24,15 +22,6 @@ export function ProjectDetail({ id }: { id: string }) {
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       className="flex flex-col gap-6"
     >
-      <button
-        type="button"
-        onClick={() => setView({ kind: "projects" })}
-        className="inline-flex w-fit items-center gap-1.5 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-[color:var(--color-muted)] transition-colors hover:text-[color:var(--color-accent)]"
-      >
-        <ArrowLeft className="h-3 w-3" strokeWidth={2} />
-        All projects
-      </button>
-
       <div className="flex flex-col gap-3">
         <span className="chip chip--accent w-fit !text-[0.66rem]">
           {project.category}
