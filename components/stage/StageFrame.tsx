@@ -26,7 +26,8 @@ export function StageFrame({ onHome }: { onHome: () => void }) {
         <button
           type="button"
           onClick={canGoBack ? goBack : onHome}
-          className="group flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--color-line)_70%,transparent)] bg-[color-mix(in_srgb,var(--color-surface)_85%,transparent)] px-3 py-1.5 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-[color:var(--color-muted)] transition-colors hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent)]"
+          data-cursor="back"
+          className="chip-morph group flex items-center gap-2 border border-[color-mix(in_srgb,var(--color-line)_70%,transparent)] bg-[color-mix(in_srgb,var(--color-surface)_85%,transparent)] px-3 py-1.5 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-[color:var(--color-muted)] hover:border-[color:var(--color-accent)] hover:text-[color:var(--color-accent)]"
           title={canGoBack ? "Back" : "Home (Esc)"}
         >
           <ArrowLeft

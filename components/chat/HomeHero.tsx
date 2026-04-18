@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { profile } from "@/content/site";
+import { LetterReveal } from "@/components/ui/LetterReveal";
 
 export function HomeHero({ compact = false }: { compact?: boolean }) {
   return (
@@ -9,24 +10,28 @@ export function HomeHero({ compact = false }: { compact?: boolean }) {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.6, ease: [0.62, 0.61, 0.02, 1] }}
         className="mx-auto flex max-w-2xl flex-col items-center gap-5 text-center"
       >
         <SignatureMark />
 
         <div className="flex flex-col gap-2">
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          <LetterReveal
+            as="h1"
+            text={profile.name}
+            delay={220}
+            step={38}
             className="font-serif text-4xl leading-tight text-[color:var(--color-ink)] md:text-5xl"
-          >
-            {profile.name}
-          </motion.h1>
+          />
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            transition={{
+              duration: 0.5,
+              // Kick in after the name finishes revealing
+              // (profile.name.length * 38ms + 220ms delay + tail buffer).
+              delay: 0.22 + (profile.name.length * 0.038) + 0.15,
+            }}
             className="font-mono text-[0.72rem] uppercase tracking-[0.2em] text-[color:var(--color-muted)]"
           >
             {profile.headline}
@@ -36,7 +41,10 @@ export function HomeHero({ compact = false }: { compact?: boolean }) {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.42 }}
+          transition={{
+            duration: 0.5,
+            delay: 0.22 + (profile.name.length * 0.038) + 0.32,
+          }}
           className="max-w-md text-[0.95rem] leading-relaxed text-[color:color-mix(in_srgb,var(--color-ink)_72%,transparent)]"
         >
           {profile.intro}

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { CustomCursor } from "@/components/ui/CustomCursor";
 
 export const metadata: Metadata = {
   title: "Sebastian Tsang — Talk to me",
@@ -33,7 +34,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <CustomCursor />
+        {children}
+      </body>
     </html>
   );
 }
