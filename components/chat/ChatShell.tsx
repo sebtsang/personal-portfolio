@@ -10,7 +10,9 @@ import { ChatPanel } from "./ChatPanel";
 import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "./ThemeToggle";
 import { StageFrame } from "@/components/stage/StageFrame";
-import { profile } from "@/content/site";
+import { StickerCollection } from "@/components/ui/StickerCollection";
+import { useStickerStore } from "@/lib/stickerStore";
+import type { StickerId } from "@/lib/stickers";
 
 const WELCOME_BUBBLE = `Welcome to Seb's site.`;
 
@@ -143,6 +145,26 @@ export function ChatShell() {
     setView({ kind: "empty" });
   }, [setView]);
 
+  // Award a sticker whenever a new view is entered for the first time.
+  // Slight delay so the page transition feels complete before the drop
+  // toast appears (and so Lenis' initial scroll doesn't fight it).
+  const awardSticker = useStickerStore((s) => s.award);
+  useEffect(() => {
+    if (view.kind === "empty") return;
+    const stickerMap: Record<string, StickerId> = {
+      projects: "projects",
+      project: "project-detail",
+      experience: "experience",
+      resume: "resume",
+      contact: "contact",
+      linkedin: "linkedin",
+    };
+    const id = stickerMap[view.kind];
+    if (!id) return;
+    const t = setTimeout(() => awardSticker(id), 650);
+    return () => clearTimeout(t);
+  }, [view.kind, awardSticker]);
+
   // Command palette keybind
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -246,7 +268,10 @@ function TopBar() {
           sebastian.dev · live
         </span>
       </div>
-      <ThemeToggle />
+      <div className="flex items-center gap-2">
+        <StickerCollection />
+        <ThemeToggle />
+      </div>
     </motion.header>
   );
 }
