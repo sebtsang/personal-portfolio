@@ -1,10 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Image from "next/image";
 import { experience } from "@/content/site";
 import { NumberedHeading } from "@/components/ui/NumberedHeading";
 import { Overline } from "@/components/ui/Overline";
+import { InView } from "@/components/ui/InView";
 
 export function ExperienceTimeline() {
   return (
@@ -27,15 +27,11 @@ export function ExperienceTimeline() {
         />
         <div className="flex flex-col gap-6">
           {experience.map((e, i) => (
-            <motion.div
+            <InView
               key={`${e.company}-${e.period}`}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{
-                duration: 0.5,
-                delay: i * 0.08,
-                ease: [0.62, 0.61, 0.02, 1],
-              }}
+              delay={i * 0.05}
+              y={16}
+              threshold={0.2}
               className="relative flex items-start gap-5"
             >
               <div
@@ -75,7 +71,7 @@ export function ExperienceTimeline() {
                   ))}
                 </ul>
               </div>
-            </motion.div>
+            </InView>
           ))}
         </div>
       </div>

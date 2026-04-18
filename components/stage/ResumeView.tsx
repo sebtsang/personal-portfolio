@@ -1,10 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Image from "next/image";
 import { experience, profile, currentFocus } from "@/content/site";
 import { NumberedHeading } from "@/components/ui/NumberedHeading";
 import { Overline } from "@/components/ui/Overline";
+import { InView } from "@/components/ui/InView";
 
 export function ResumeView() {
   return (
@@ -34,12 +34,7 @@ export function ResumeView() {
         </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.05, ease: [0.62, 0.61, 0.02, 1] }}
-        className="stage-card"
-      >
+      <InView threshold={0.15} className="stage-card">
         <Overline className="mb-3">Contact</Overline>
         <dl className="grid grid-cols-1 gap-2 text-[0.9rem] md:grid-cols-2">
           <ContactRow
@@ -55,14 +50,9 @@ export function ResumeView() {
           <ContactRow label="GitHub" value="@sebtsang" href={profile.github} />
           <ContactRow label="Location" value="Toronto, ON · Remote" />
         </dl>
-      </motion.div>
+      </InView>
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.15, ease: [0.62, 0.61, 0.02, 1] }}
-        className="stage-card"
-      >
+      <InView threshold={0.15} className="stage-card">
         <Overline className="mb-4">Experience</Overline>
         <div className="flex flex-col divide-y divide-[color-mix(in_srgb,var(--color-line)_55%,transparent)]">
           {experience.map((e) => (
@@ -91,14 +81,9 @@ export function ResumeView() {
             </div>
           ))}
         </div>
-      </motion.div>
+      </InView>
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.25, ease: [0.62, 0.61, 0.02, 1] }}
-        className="stage-card"
-      >
+      <InView threshold={0.15} className="stage-card">
         <Overline className="mb-4">Current focus</Overline>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {currentFocus.map((f) => (
@@ -112,7 +97,7 @@ export function ResumeView() {
             </div>
           ))}
         </div>
-      </motion.div>
+      </InView>
     </div>
   );
 }

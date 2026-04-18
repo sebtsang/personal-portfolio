@@ -6,6 +6,7 @@ import { projects } from "@/content/projects";
 import { useStageStore } from "@/lib/store";
 import { NumberedHeading } from "@/components/ui/NumberedHeading";
 import { Overline } from "@/components/ui/Overline";
+import { InView } from "@/components/ui/InView";
 
 export function ProjectGrid() {
   const setView = useStageStore((s) => s.setView);
@@ -21,20 +22,13 @@ export function ProjectGrid() {
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {projects.map((p, i) => (
+          <InView key={p.id} delay={i * 0.08} y={18} threshold={0.1}>
           <motion.button
-            key={p.id}
             type="button"
             onClick={() => setView({ kind: "project", id: p.id })}
             data-cursor="card"
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: 0.55,
-              delay: i * 0.08,
-              ease: [0.62, 0.61, 0.02, 1],
-            }}
             whileHover={{ y: -3 }}
-            className="stage-card group relative text-left transition-shadow hover:shadow-[var(--shadow-stage)]"
+            className="stage-card group relative text-left transition-shadow hover:shadow-[var(--shadow-stage)] w-full"
           >
             <div
               className={`pointer-events-none absolute inset-0 bg-gradient-to-br opacity-0 transition-opacity duration-500 group-hover:opacity-100 ${p.accent ?? ""}`}
@@ -73,6 +67,7 @@ export function ProjectGrid() {
               </div>
             </div>
           </motion.button>
+          </InView>
         ))}
       </div>
     </div>
