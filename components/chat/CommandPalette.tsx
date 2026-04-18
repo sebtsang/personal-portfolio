@@ -6,6 +6,7 @@ import {
   Briefcase,
   FileText,
   FolderKanban,
+  Linkedin,
   Mail,
   Sparkles,
 } from "lucide-react";
@@ -73,6 +74,12 @@ export function CommandPalette({
                 label="Show Resume"
                 hint="/resume"
                 onSelect={() => handle("/resume")}
+              />
+              <PaletteItem
+                icon={Linkedin}
+                label="LinkedIn · Greatest hits"
+                hint="/linkedin"
+                onSelect={() => handle("/linkedin")}
               />
               <PaletteItem
                 icon={Mail}

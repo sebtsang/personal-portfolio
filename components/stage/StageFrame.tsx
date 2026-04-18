@@ -80,6 +80,9 @@ function useBreadcrumb(
   if (view.kind === "contact") {
     return { label: "Contact", canGoBack: false, goBack: () => {} };
   }
+  if (view.kind === "linkedin") {
+    return { label: "LinkedIn · Greatest hits", canGoBack: false, goBack: () => {} };
+  }
   return { label: "", canGoBack: false, goBack: () => {} };
 }
 

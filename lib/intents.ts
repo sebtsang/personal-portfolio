@@ -34,6 +34,11 @@ const STATIC_INTENTS: Intent[] = [
     tool: "showContact",
     reply: "Easiest way: email. Here's everything.",
   },
+  {
+    match: /^\/(linkedin|posts|writing)$|^(show|see|view).*(linkedin|posts?|writing)$|^(linkedin|posts?|writing)$/i,
+    tool: "showLinkedIn",
+    reply: "Flipping through the greatest hits. Click a card to see the full post.",
+  },
 ];
 
 export function matchIntent(message: string): Intent | null {

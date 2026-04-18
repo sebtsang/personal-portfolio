@@ -86,6 +86,15 @@ const OLLAMA_TOOLS = [
       parameters: { type: "object", properties: {}, required: [] },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "showLinkedIn",
+      description:
+        "Display a stacked-deck carousel of Sebastian's favorite LinkedIn posts. Call when the user asks about LinkedIn, posts, or public writing.",
+      parameters: { type: "object", properties: {}, required: [] },
+    },
+  },
 ];
 
 function encode(code: string, payload: unknown): string {

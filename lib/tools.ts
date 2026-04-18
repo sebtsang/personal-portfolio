@@ -33,6 +33,11 @@ export const toolSchemas = {
       "Display contact information. Call this when the user wants to reach out.",
     parameters: z.object({}),
   },
+  showLinkedIn: {
+    description:
+      "Display a stacked-deck flashcard carousel of Sebastian's favorite LinkedIn posts. Call this when the user asks about LinkedIn, posts, writing, or wants to see his public writing.",
+    parameters: z.object({}),
+  },
 } as const;
 
 export type ToolName = keyof typeof toolSchemas;

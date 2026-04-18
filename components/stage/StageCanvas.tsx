@@ -7,6 +7,7 @@ import { ProjectDetail } from "./ProjectDetail";
 import { ExperienceTimeline } from "./ExperienceTimeline";
 import { ResumeView } from "./ResumeView";
 import { ContactCard } from "./ContactCard";
+import { LinkedInDeck } from "./LinkedInDeck";
 import { SmoothScroll } from "@/components/ui/SmoothScroll";
 
 export function StageCanvas() {
@@ -56,5 +57,7 @@ function renderStage(view: ReturnType<typeof useStageStore.getState>["view"]) {
       return <ResumeView />;
     case "contact":
       return <ContactCard />;
+    case "linkedin":
+      return <LinkedInDeck />;
   }
 }

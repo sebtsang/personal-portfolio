@@ -63,6 +63,11 @@ export async function streamClaude({
           parameters: toolSchemas.showContact.parameters,
           execute: async () => ({ ok: true }),
         }),
+        showLinkedIn: tool({
+          description: toolSchemas.showLinkedIn.description,
+          parameters: toolSchemas.showLinkedIn.parameters,
+          execute: async () => ({ ok: true }),
+        }),
       },
       onError: (err) => {
         console.error("[claude] stream error:", err);
