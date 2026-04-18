@@ -3,17 +3,17 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { experience, profile, currentFocus } from "@/content/site";
+import { NumberedHeading } from "@/components/ui/NumberedHeading";
+import { Overline } from "@/components/ui/Overline";
 
 export function ResumeView() {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <div className="flex items-start justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <span className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-            Resume — printable
-          </span>
-          <h2 className="font-serif text-4xl">{profile.name}</h2>
-          <p className="text-[0.92rem] text-[color:var(--color-muted)]">
+        <div className="flex flex-col gap-3">
+          <Overline>Resume · printable</Overline>
+          <NumberedHeading num="04">{profile.name}</NumberedHeading>
+          <p className="text-[0.95rem] text-[color:var(--color-muted)]">
             {profile.headline}
           </p>
         </div>
@@ -37,15 +37,21 @@ export function ResumeView() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.05 }}
+        transition={{ duration: 0.45, delay: 0.05, ease: [0.62, 0.61, 0.02, 1] }}
         className="stage-card"
       >
-        <h3 className="mb-3 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Contact
-        </h3>
+        <Overline className="mb-3">Contact</Overline>
         <dl className="grid grid-cols-1 gap-2 text-[0.9rem] md:grid-cols-2">
-          <ContactRow label="Email" value={profile.email} href={`mailto:${profile.email}`} />
-          <ContactRow label="LinkedIn" value="/in/sebtsang" href={profile.linkedin} />
+          <ContactRow
+            label="Email"
+            value={profile.email}
+            href={`mailto:${profile.email}`}
+          />
+          <ContactRow
+            label="LinkedIn"
+            value="/in/sebtsang"
+            href={profile.linkedin}
+          />
           <ContactRow label="GitHub" value="@sebtsang" href={profile.github} />
           <ContactRow label="Location" value="Toronto, ON · Remote" />
         </dl>
@@ -54,33 +60,31 @@ export function ResumeView() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.15 }}
+        transition={{ duration: 0.45, delay: 0.15, ease: [0.62, 0.61, 0.02, 1] }}
         className="stage-card"
       >
-        <h3 className="mb-4 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Experience
-        </h3>
+        <Overline className="mb-4">Experience</Overline>
         <div className="flex flex-col divide-y divide-[color-mix(in_srgb,var(--color-line)_55%,transparent)]">
           {experience.map((e) => (
-            <div key={`${e.company}-${e.period}`} className="py-3 first:pt-0 last:pb-0">
+            <div
+              key={`${e.company}-${e.period}`}
+              className="py-4 first:pt-0 last:pb-0"
+            >
               <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-                <div className="flex flex-wrap items-baseline gap-x-3">
-                  <span className="font-serif text-[1.05rem]">{e.role}</span>
-                  <span className="text-[0.85rem] text-[color:var(--color-muted)]">
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <span className="font-serif text-[var(--fz-lg)]">
+                    {e.role}
+                  </span>
+                  <span className="text-[0.88rem] text-[color:var(--color-accent)]">
                     @ {e.company}
                   </span>
                 </div>
-                <span className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
-                  {e.period}
-                </span>
+                <Overline>{e.period}</Overline>
               </div>
-              <ul className="mt-1.5 flex flex-col gap-1">
+              <ul className="mt-2 arrow-list">
                 {e.highlights.map((h, k) => (
-                  <li
-                    key={k}
-                    className="text-[0.85rem] leading-relaxed text-[color:color-mix(in_srgb,var(--color-ink)_78%,transparent)]"
-                  >
-                    — {h}
+                  <li key={k} className="text-[0.88rem]">
+                    {h}
                   </li>
                 ))}
               </ul>
@@ -92,19 +96,17 @@ export function ResumeView() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.25 }}
+        transition={{ duration: 0.45, delay: 0.25, ease: [0.62, 0.61, 0.02, 1] }}
         className="stage-card"
       >
-        <h3 className="mb-4 font-mono text-[0.72rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Current focus
-        </h3>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <Overline className="mb-4">Current focus</Overline>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {currentFocus.map((f) => (
             <div key={f.title}>
-              <p className="font-serif text-[1rem] text-[color:var(--color-ink)]">
+              <p className="font-serif text-[var(--fz-md)] text-[color:var(--color-ink)]">
                 {f.title}
               </p>
-              <p className="text-[0.85rem] leading-relaxed text-[color:color-mix(in_srgb,var(--color-ink)_75%,transparent)]">
+              <p className="mt-1 text-[0.88rem] leading-relaxed text-[color:color-mix(in_srgb,var(--color-ink)_75%,transparent)]">
                 {f.description}
               </p>
             </div>
@@ -134,12 +136,12 @@ function ContactRow({
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[0.88rem] text-[color:var(--color-ink)] hover:text-[color:var(--color-accent)]"
+          className="link-underline text-[0.9rem] text-[color:var(--color-ink)]"
         >
           {value}
         </a>
       ) : (
-        <span className="text-[0.88rem] text-[color:var(--color-ink)]">
+        <span className="text-[0.9rem] text-[color:var(--color-ink)]">
           {value}
         </span>
       )}

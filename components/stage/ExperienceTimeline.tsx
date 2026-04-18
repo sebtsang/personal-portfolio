@@ -3,15 +3,17 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { experience } from "@/content/site";
+import { NumberedHeading } from "@/components/ui/NumberedHeading";
+import { Overline } from "@/components/ui/Overline";
 
 export function ExperienceTimeline() {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <span className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Work history — {experience.length} roles
-        </span>
-        <h2 className="font-serif text-3xl md:text-4xl">Where I&apos;ve been.</h2>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-3">
+        <Overline>
+          Work history · {String(experience.length).padStart(2, "0")} roles
+        </Overline>
+        <NumberedHeading num="03">Where I&apos;ve been.</NumberedHeading>
       </div>
 
       <div className="relative">
@@ -23,16 +25,16 @@ export function ExperienceTimeline() {
           }}
           aria-hidden
         />
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-6">
           {experience.map((e, i) => (
             <motion.div
               key={`${e.company}-${e.period}`}
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{
-                duration: 0.45,
+                duration: 0.5,
                 delay: i * 0.08,
-                ease: [0.22, 1, 0.36, 1],
+                ease: [0.62, 0.61, 0.02, 1],
               }}
               className="relative flex items-start gap-5"
             >
@@ -54,23 +56,21 @@ export function ExperienceTimeline() {
               </div>
               <div className="flex-1 pt-1">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <h3 className="font-serif text-lg text-[color:var(--color-ink)]">
+                  <h3 className="font-serif text-[var(--fz-xl)] leading-tight text-[color:var(--color-ink)]">
                     {e.role}
                   </h3>
-                  <span className="text-sm text-[color:var(--color-muted)]">
+                  <a
+                    href="#"
+                    className="link-underline text-[color:var(--color-accent)] font-serif text-[var(--fz-xl)]"
+                  >
                     @ {e.company}
-                  </span>
+                  </a>
                 </div>
-                <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-                  {e.period}
-                </p>
-                <ul className="mt-2 flex flex-col gap-1.5">
+                <Overline className="mt-1">{e.period}</Overline>
+                <ul className="mt-3 arrow-list">
                   {e.highlights.map((h, k) => (
-                    <li
-                      key={k}
-                      className="text-[0.9rem] leading-relaxed text-[color:color-mix(in_srgb,var(--color-ink)_80%,transparent)]"
-                    >
-                      — {h}
+                    <li key={k} className="text-[0.92rem]">
+                      {h}
                     </li>
                   ))}
                 </ul>

@@ -4,17 +4,19 @@ import { motion } from "framer-motion";
 import { ArrowUpRight } from "lucide-react";
 import { projects } from "@/content/projects";
 import { useStageStore } from "@/lib/store";
+import { NumberedHeading } from "@/components/ui/NumberedHeading";
+import { Overline } from "@/components/ui/Overline";
 
 export function ProjectGrid() {
   const setView = useStageStore((s) => s.setView);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <span className="font-mono text-[0.7rem] uppercase tracking-[0.18em] text-[color:var(--color-muted)]">
-          Selected work — {projects.length} projects
-        </span>
-        <h2 className="font-serif text-3xl md:text-4xl">Things I&apos;ve built.</h2>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-3">
+        <Overline>
+          Selected work · {String(projects.length).padStart(2, "0")} projects
+        </Overline>
+        <NumberedHeading num="02">Things I&apos;ve built.</NumberedHeading>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -23,12 +25,13 @@ export function ProjectGrid() {
             key={p.id}
             type="button"
             onClick={() => setView({ kind: "project", id: p.id })}
-            initial={{ opacity: 0, y: 20, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            data-cursor="card"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{
-              duration: 0.5,
+              duration: 0.55,
               delay: i * 0.08,
-              ease: [0.22, 1, 0.36, 1],
+              ease: [0.62, 0.61, 0.02, 1],
             }}
             whileHover={{ y: -3 }}
             className="stage-card group relative text-left transition-shadow hover:shadow-[var(--shadow-stage)]"
@@ -39,21 +42,21 @@ export function ProjectGrid() {
             />
             <div className="relative flex flex-col gap-3">
               <div className="flex items-start justify-between gap-3">
-                <span className="chip chip--accent !text-[0.66rem]">
+                <span className="chip chip--accent chip-morph !text-[0.66rem]">
                   {p.category}
                 </span>
                 <ArrowUpRight
-                  className="h-4 w-4 text-[color:var(--color-muted)] transition-colors group-hover:text-[color:var(--color-accent)]"
+                  className="h-4 w-4 text-[color:var(--color-muted)] transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[color:var(--color-accent)]"
                   strokeWidth={1.75}
                 />
               </div>
               <div>
-                <h3 className="font-serif text-xl leading-snug text-[color:var(--color-ink)]">
+                <h3 className="font-serif text-[var(--fz-xxl)] leading-snug text-[color:var(--color-ink)]">
                   {p.title}
                 </h3>
-                <p className="mt-1 font-mono text-[0.72rem] uppercase tracking-[0.14em] text-[color:var(--color-muted)]">
+                <Overline className="mt-1 !text-[0.68rem]">
                   {p.subtitle}
-                </p>
+                </Overline>
               </div>
               <p className="text-[0.92rem] leading-relaxed text-[color:color-mix(in_srgb,var(--color-ink)_78%,transparent)]">
                 {p.description}
