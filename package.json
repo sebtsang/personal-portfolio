@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "logs:recent": "tsx --env-file=.env.local scripts/logs-recent.ts",
-    "logs:errors": "tsx --env-file=.env.local scripts/logs-recent.ts --errors"
+    "logs:errors": "tsx --env-file=.env.local scripts/logs-recent.ts --errors",
+    "smoke": "tsx scripts/smoke-test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
