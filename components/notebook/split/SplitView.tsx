@@ -5,6 +5,7 @@ import { useStageStore } from "@/lib/store";
 import { Paper } from "../chrome/Paper";
 import { ChatPage, type ChatMessage } from "../chat/ChatPage";
 import { AboutPage } from "./AboutPage";
+import { ContactPage } from "./ContactPage";
 import { ContentPagePlaceholder } from "./ContentPagePlaceholder";
 import { ExperiencePage } from "./ExperiencePage";
 import { LinkedInPage } from "./LinkedInPage";
@@ -115,5 +116,6 @@ function SplitContent({ onClose }: { onClose: () => void }) {
   if (kind === "about") return <AboutPage onClose={onClose} />;
   if (kind === "experience") return <ExperiencePage onClose={onClose} />;
   if (kind === "linkedin") return <LinkedInPage onClose={onClose} />;
+  if (kind === "contact") return <ContactPage onClose={onClose} />;
   return <ContentPagePlaceholder onClose={onClose} />;
 }
