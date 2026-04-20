@@ -6,6 +6,7 @@
 import { anthropic } from "@ai-sdk/anthropic";
 import { streamText, tool } from "ai";
 import type { ChatMessage } from "./index";
+import { MODEL_CONFIG } from "./config";
 import { toolSchemas } from "@/lib/tools";
 
 export async function streamClaude({
@@ -27,6 +28,8 @@ export async function streamClaude({
     );
   }
 
+  const params = MODEL_CONFIG.claude;
+
   try {
     const result = streamText({
       model: anthropic(model),
@@ -35,8 +38,10 @@ export async function streamClaude({
         (m): m is ChatMessage & { role: "user" | "assistant" } =>
           m.role !== "system"
       ),
-      maxTokens: 400,
-      temperature: 0.85,
+      maxTokens: params.maxTokens,
+      temperature: params.temperature,
+      topP: params.topP,
+      maxSteps: 1, // cap tool-call depth per request
       tools: {
         showProjects: tool({
           description: toolSchemas.showProjects.description,

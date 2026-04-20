@@ -11,6 +11,7 @@
  */
 
 import type { ChatMessage } from "./index";
+import { MODEL_CONFIG } from "./config";
 import { projects } from "@/content/projects";
 
 /**
@@ -22,6 +23,17 @@ function resolveBaseURL(): string {
   if (process.env.OLLAMA_BASE_URL) return process.env.OLLAMA_BASE_URL;
   // If the user set an API key without a base URL, assume they want the cloud.
   if (process.env.OLLAMA_API_KEY) return "https://ollama.com";
+
+  // On Vercel, localhost would try to hit the serverless function itself.
+  // Fail loudly at the first request rather than 500ing on every one.
+  if (process.env.VERCEL === "1") {
+    throw new Error(
+      "[ollama] Running on Vercel with no OLLAMA_API_KEY or OLLAMA_BASE_URL. " +
+        "Set OLLAMA_API_KEY (for Ollama Cloud) or OLLAMA_BASE_URL " +
+        "(for a tunneled home server) in the Vercel project env vars."
+    );
+  }
+
   return "http://localhost:11434";
 }
 
@@ -112,19 +124,33 @@ export async function streamOllama({
   model: string;
   signal?: AbortSignal;
 }): Promise<Response> {
-  const baseURL = resolveBaseURL();
+  let baseURL: string;
+  try {
+    baseURL = resolveBaseURL();
+  } catch (err) {
+    console.error("[ollama]", err);
+    return new Response(
+      JSON.stringify({
+        error:
+          err instanceof Error ? err.message : "Ollama config error",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
   const apiKey = process.env.OLLAMA_API_KEY;
+  const params = MODEL_CONFIG.ollama;
 
   const ollamaBody = {
     model,
     stream: true,
     think: false,
     options: {
-      temperature: 0.85,
-      // Cap at 180 — witty replies are under 50 tokens, 180 is plenty
-      // of headroom, and when the model goes off-track this caps dead
-      // time at ~6-7s instead of 15s.
-      num_predict: 180,
+      temperature: params.temperature,
+      top_p: params.topP,
+      // Witty replies are under 50 tokens. The configured cap is 180
+      // (see lib/llm/config.ts) — when the model stalls on tool
+      // indecision, this limits dead time to ~6-7s instead of 15s.
+      num_predict: params.maxTokens,
     },
     tools: OLLAMA_TOOLS,
     messages: [
@@ -402,11 +428,16 @@ async function retryWithoutTools(
   system: string,
   messages: ChatMessage[]
 ): Promise<string | null> {
+  const params = MODEL_CONFIG.ollama;
   const body = {
     model,
     stream: false,
     think: false,
-    options: { temperature: 0.85, num_predict: 180 },
+    options: {
+      temperature: params.temperature,
+      top_p: params.topP,
+      num_predict: params.maxTokens,
+    },
     messages: [
       { role: "system", content: system },
       ...messages.map((m) => ({ role: m.role, content: m.content })),

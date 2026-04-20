@@ -5,6 +5,7 @@
 import { openai } from "@ai-sdk/openai";
 import { streamText, tool } from "ai";
 import type { ChatMessage } from "./index";
+import { MODEL_CONFIG } from "./config";
 import { toolSchemas } from "@/lib/tools";
 
 export async function streamOpenAI({
@@ -26,6 +27,8 @@ export async function streamOpenAI({
     );
   }
 
+  const params = MODEL_CONFIG.openai;
+
   try {
     const result = streamText({
       model: openai(model),
@@ -34,8 +37,10 @@ export async function streamOpenAI({
         (m): m is ChatMessage & { role: "user" | "assistant" } =>
           m.role !== "system"
       ),
-      maxTokens: 400,
-      temperature: 0.85,
+      maxTokens: params.maxTokens,
+      temperature: params.temperature,
+      topP: params.topP,
+      maxSteps: 1, // cap tool-call depth per request
       tools: {
         showProjects: tool({
           description: toolSchemas.showProjects.description,
