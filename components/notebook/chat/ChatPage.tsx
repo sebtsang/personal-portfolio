@@ -1,0 +1,147 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { NotebookInput } from "./NotebookInput";
+import { NotebookMessage, type ChatRole } from "./NotebookMessage";
+import { WritingIndicator } from "./WritingIndicator";
+
+export type ChatMessage = {
+  id: string;
+  role: ChatRole;
+  text: string;
+};
+
+export function ChatPage({
+  messages,
+  onSubmit,
+  isWriting = false,
+  compact = false,
+  autoFocus = true,
+}: {
+  messages: ChatMessage[];
+  onSubmit: (text: string) => void;
+  isWriting?: boolean;
+  compact?: boolean;
+  autoFocus?: boolean;
+}) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // Auto-scroll to bottom when a new message arrives.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [messages.length]);
+
+  const metaIndent = compact ? "calc(12% + 8px)" : "calc(12% + 20px)";
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        overflow: "hidden",
+      }}
+    >
+      {/* Scrolling paper interior. The ruled lines live on the inner
+          content div (not the Paper chrome), so when the user scrolls,
+          paper + lines + text all move together — text stays on a rule
+          instead of drifting between rules. */}
+      <div
+        ref={scrollRef}
+        style={{
+          position: "absolute",
+          inset: 0,
+          overflowY: "auto",
+          overflowX: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            minHeight: "100%",
+            paddingTop: "calc(var(--line) * 3)",
+            paddingBottom: compact ? 240 : 280,
+            // Ruled lines tile across the full scroll height so they
+            // travel with the content. Line at y=26px of each 32px row.
+            backgroundImage:
+              "linear-gradient(to bottom, transparent 25px, rgba(61, 52, 139, 0.12) 26px, transparent 27px)",
+            backgroundSize: "100% var(--line, 32px)",
+            backgroundRepeat: "repeat-y",
+          }}
+        >
+          {/* Top meta — "journal · home" (full) or just a dot (compact) */}
+          {!compact && (
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(var(--line) * 0.75)",
+                left: metaIndent,
+                fontFamily: "var(--font-mono)",
+                fontSize: 10,
+                letterSpacing: "0.25em",
+                textTransform: "uppercase",
+                color: "color-mix(in srgb, var(--color-ink-soft) 55%, transparent)",
+                lineHeight: "var(--line)",
+              }}
+            >
+              journal · home
+            </div>
+          )}
+
+          {/* Corner doodle — a small curve in the top right */}
+          {!compact && (
+            <svg
+              aria-hidden
+              style={{
+                position: "absolute",
+                top: "calc(var(--line) * 0.6)",
+                right: 40,
+                width: 80,
+                height: 60,
+                opacity: 0.3,
+              }}
+              viewBox="0 0 80 60"
+            >
+              <path
+                d="M 10 30 Q 25 10, 40 30 T 70 30"
+                stroke="var(--color-ink-soft)"
+                strokeWidth="1.2"
+                fill="none"
+                strokeLinecap="round"
+              />
+              <circle cx="70" cy="30" r="2" fill="var(--color-ink-soft)" />
+            </svg>
+          )}
+
+          {messages.map((m, i) => (
+            <div key={m.id}>
+              {i > 0 && <div style={{ height: "var(--line)" }} />}
+              <NotebookMessage
+                text={m.text}
+                role={m.role}
+                idx={i}
+                compact={compact}
+              />
+            </div>
+          ))}
+
+          {isWriting && (
+            <>
+              {messages.length > 0 && (
+                <div style={{ height: "var(--line)" }} />
+              )}
+              <WritingIndicator compact={compact} />
+            </>
+          )}
+        </div>
+      </div>
+
+      <NotebookInput
+        onSubmit={onSubmit}
+        compact={compact}
+        autoFocus={autoFocus}
+      />
+    </div>
+  );
+}

@@ -28,3 +28,6 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# local dev tooling (Claude Code session state, plans, preview config)
+.claude/

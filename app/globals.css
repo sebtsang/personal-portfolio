@@ -1,63 +1,49 @@
 @import "tailwindcss";
 
-@import "@fontsource-variable/newsreader";
-@import "@fontsource-variable/work-sans";
-@import "@fontsource/ibm-plex-mono/400.css";
-@import "@fontsource/ibm-plex-mono/500.css";
-@import "@fontsource/ibm-plex-mono/600.css";
+@import "@fontsource/caveat/400.css";
+@import "@fontsource/caveat/500.css";
+@import "@fontsource/caveat/600.css";
+@import "@fontsource/caveat/700.css";
+@import "@fontsource/jetbrains-mono/300.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource-variable/fraunces";
+@import "@fontsource/instrument-serif/400.css";
 
 @theme {
-  --font-sans:
-    "Work Sans Variable", ui-sans-serif, system-ui, -apple-system,
-    "Segoe UI", Roboto, sans-serif;
-  --font-serif:
-    "Newsreader Variable", ui-serif, Georgia, Cambria, "Times New Roman", serif;
+  --font-script:
+    "Caveat", "Segoe Script", "Lucida Handwriting", cursive;
   --font-mono:
-    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-serif:
+    "Fraunces Variable", "Instrument Serif", ui-serif, Georgia, serif;
+  --font-sans:
+    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --color-paper: rgb(247 244 238);
-  --color-surface: rgb(252 250 246);
-  --color-ink: rgb(23 23 23);
-  --color-muted: rgb(95 90 83);
-  --color-line: rgb(214 205 193);
-  --color-accent: rgb(35 90 122);
-  --color-accent-soft: rgb(220 233 241);
+  /* Notebook palette */
+  --color-paper: rgb(250 247 240);
+  --color-paper-warm: rgb(251 247 233);
+  --color-paper-edge: rgb(217 210 191);
+  --color-ink: rgb(26 26 46);
+  --color-ink-soft: rgb(54 48 107);
+  --color-ink-faint: rgb(90 84 70);
+  --color-rule-navy: rgb(61 52 139);
+  --color-rule-red: rgb(220 38 38);
+  --color-accent: rgb(240 240 240);
+  --color-sticky-yellow: rgb(253 230 138);
 
-  --shadow-card: 0 10px 35px rgb(23 23 23 / 0.04);
-  --shadow-stage: 0 30px 80px -40px rgb(23 23 23 / 0.25);
+  /* Baseline grid — every ruled line is --line apart, every handwritten
+     line-height matches this so text always sits on a rule. */
+  --line: 32px;
 
-  /* ── Typography scale (v4-sandy-inspired) ──────────────────── */
-  --fz-xxs: 0.75rem;    /* 12 · micro-labels, tooltips */
-  --fz-xs: 0.8125rem;   /* 13 · overlines, mono metadata */
-  --fz-sm: 0.875rem;    /* 14 · chips, secondary UI */
-  --fz-md: 1rem;        /* 16 · body */
-  --fz-lg: 1.125rem;    /* 18 · emphasized body */
-  --fz-xl: 1.25rem;     /* 20 · subheadings */
-  --fz-xxl: 1.375rem;   /* 22 · small headings */
-  --fz-heading: 2rem;   /* 32 · section headings (responsive clamp in utility) */
-
-  /* ── Easing curves (Caleb Wu-inspired) ─────────────────────── */
-  --ease-fast: cubic-bezier(0.62, 0.61, 0.02, 1);
-  --ease-slow: cubic-bezier(0.7, 0, 0.2, 1);
-  --ease-fastfast: cubic-bezier(0.5, 0, 0, 1);
-  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-sandy: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-flip: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-draw: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @layer base {
   :root {
     color-scheme: light;
-  }
-
-  :root[data-theme="dark"] {
-    color-scheme: dark;
-    --color-paper: rgb(17 17 16);
-    --color-surface: rgb(24 24 22);
-    --color-ink: rgb(236 232 225);
-    --color-muted: rgb(177 169 158);
-    --color-line: rgb(67 63 58);
-    --color-accent: rgb(161 197 221);
-    --color-accent-soft: rgb(34 46 56);
   }
 
   html,
@@ -68,57 +54,42 @@
   body {
     background-color: var(--color-paper);
     color: var(--color-ink);
-    font-family: var(--font-sans);
+    font-family: var(--font-mono);
+    overflow: hidden;
     -webkit-font-smoothing: antialiased;
-    background-image:
-      radial-gradient(
-        circle at 15% 10%,
-        color-mix(in srgb, var(--color-accent) 10%, transparent),
-        transparent 40%
-      ),
-      radial-gradient(
-        circle at 85% 90%,
-        color-mix(in srgb, var(--color-accent) 6%, transparent),
-        transparent 45%
-      ),
-      repeating-linear-gradient(
-        to right,
-        color-mix(in srgb, var(--color-line) 32%, transparent) 0,
-        color-mix(in srgb, var(--color-line) 32%, transparent) 1px,
-        transparent 1px,
-        transparent 44px
-      ),
-      repeating-linear-gradient(
-        to bottom,
-        color-mix(in srgb, var(--color-line) 26%, transparent) 0,
-        color-mix(in srgb, var(--color-line) 26%, transparent) 1px,
-        transparent 1px,
-        transparent 44px
-      );
-    background-attachment: fixed;
-    transition:
-      background-color 180ms ease,
-      color 180ms ease;
+    -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Selection pulls ink — subtle, paper-native */
   ::selection {
-    background-color: color-mix(in srgb, var(--color-accent) 90%, transparent);
-    color: white;
+    background-color: color-mix(in srgb, var(--color-rule-navy) 18%, transparent);
+    color: var(--color-ink);
   }
 
+  /* Paper regions default to text cursor; the shell overrides to default
+     where it's just paper, and to pointer where it's interactive. */
   button,
   a {
     cursor: pointer;
   }
 
-  /* v4-sandy focus style: visible keyboard focus, zero clutter on pointer */
   :focus-visible {
-    outline: 2px dashed var(--color-accent);
+    outline: 2px dashed color-mix(in srgb, var(--color-rule-navy) 55%, transparent);
     outline-offset: 3px;
     border-radius: 2px;
   }
 
-  /* Honor user preference — hard-disable all motion if requested */
+  input,
+  textarea {
+    font-family: inherit;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: color-mix(in srgb, var(--color-rule-navy) 35%, transparent);
+    font-style: italic;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -131,182 +102,41 @@
   }
 }
 
-@layer components {
-  .bubble {
-    @apply inline-block max-w-full rounded-2xl px-4 py-3 text-[0.95rem] leading-relaxed;
-    border: 1px solid color-mix(in srgb, var(--color-line) 75%, transparent);
+/* ── Animations ──────────────────────────────────────────────── */
+/* Opacity-only fades — keep `transform` untouched so elements with their
+   own rotate/translate stay put. */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
+  to {
+    opacity: 1;
+  }
+}
 
-  .bubble-assistant {
-    background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-    color: var(--color-ink);
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
   }
+  to {
+    opacity: 1;
+  }
+}
 
-  .bubble-user {
-    background: color-mix(in srgb, var(--color-accent) 92%, transparent);
-    color: white;
-    border-color: transparent;
+@keyframes lineFlow {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
   }
-
-  .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 font-mono text-[0.72rem] uppercase tracking-[0.14em] transition-colors;
-    color: var(--color-muted);
-    background: color-mix(in srgb, var(--color-surface) 85%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-line) 75%, transparent);
+  30% {
+    opacity: 1;
   }
-
-  .chip:hover {
-    color: var(--color-ink);
-    border-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
+  70% {
+    opacity: 1;
   }
-
-  .chip--accent {
-    color: var(--color-accent);
-    background: var(--color-accent-soft);
-    border-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
-  }
-
-  .stage-card {
-    @apply relative overflow-hidden rounded-2xl p-6;
-    background: color-mix(in srgb, var(--color-surface) 92%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-line) 75%, transparent);
-    box-shadow: var(--shadow-card);
-    backdrop-filter: blur(8px);
-  }
-
-  .grid-noise {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.3;
-    background-image:
-      repeating-linear-gradient(
-        0deg,
-        color-mix(in srgb, var(--color-line) 25%, transparent),
-        color-mix(in srgb, var(--color-line) 25%, transparent) 1px,
-        transparent 1px,
-        transparent 28px
-      ),
-      repeating-linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--color-line) 25%, transparent),
-        color-mix(in srgb, var(--color-line) 25%, transparent) 1px,
-        transparent 1px,
-        transparent 28px
-      );
-  }
-
-  .prompt-cursor::after {
-    content: "▍";
-    color: var(--color-accent);
-    animation: blink 1s steps(2) infinite;
-    margin-left: 2px;
-  }
-
-  /* ── v4-sandy numbered section heading ─────────────────────────
-     <h2 class="numbered-heading">
-       <span class="numbered-heading__num">01.</span>
-       Selected work
-     </h2>                                                          */
-  .numbered-heading {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-family: var(--font-serif);
-    font-size: clamp(1.5rem, 4vw, var(--fz-heading));
-    font-weight: 500;
-    line-height: 1.1;
-    color: var(--color-ink);
-    white-space: nowrap;
-  }
-  .numbered-heading__num {
-    font-family: var(--font-mono);
-    font-size: var(--fz-md);
-    font-weight: 400;
-    color: var(--color-accent);
-    letter-spacing: 0.02em;
-    position: relative;
-    top: 1px;
-  }
-  .numbered-heading::after {
-    content: "";
-    display: block;
-    flex: 1;
-    height: 1px;
-    background: color-mix(in srgb, var(--color-line) 80%, transparent);
-    max-width: 280px;
-  }
-
-  /* ── Animated link underline (v4-sandy) ──────────────────────── */
-  .link-underline {
-    position: relative;
-    text-decoration: none;
-    color: inherit;
-    transition: color 200ms var(--ease-sandy);
-  }
-  .link-underline::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -0.15em;
-    width: 0;
-    height: 1px;
-    background: var(--color-accent);
-    opacity: 0.6;
-    transition: width 300ms var(--ease-sandy);
-  }
-  .link-underline:hover,
-  .link-underline:focus-visible {
-    color: var(--color-accent);
-  }
-  .link-underline:hover::after,
-  .link-underline:focus-visible::after {
-    width: 100%;
-  }
-
-  /* ── v4-sandy arrow bullets (▹) ──────────────────────────────── */
-  .arrow-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-  .arrow-list li {
-    position: relative;
-    padding-left: 1.5rem;
-    margin-bottom: 0.625rem;
-    color: color-mix(in srgb, var(--color-ink) 80%, transparent);
-    line-height: 1.5;
-  }
-  .arrow-list li::before {
-    content: "▹";
-    position: absolute;
-    left: 0;
-    top: 0;
-    color: var(--color-accent);
-    font-family: var(--font-mono);
-    font-size: var(--fz-md);
-    line-height: 1.4;
-  }
-
-  /* ── Caleb-style chip morph: pill → square on hover ──────────── */
-  .chip-morph {
-    border-radius: 9999px;
-    transition:
-      border-radius 450ms var(--ease-fast),
-      color 200ms var(--ease-fast),
-      border-color 200ms var(--ease-fast),
-      background 200ms var(--ease-fast),
-      transform 200ms var(--ease-fast);
-  }
-  .chip-morph:hover {
-    border-radius: 0.5rem;
-  }
-
-  /* Data-attribute hook for cursor system + morph detection */
-  [data-cursor="link"],
-  [data-cursor="card"],
-  [data-cursor="tooltip"] {
-    cursor: pointer;
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
   }
 }
 
@@ -316,43 +146,94 @@
   }
 }
 
-@keyframes pulse-soft {
+@keyframes ambient {
   0%,
   100% {
-    opacity: 0.4;
+    stroke-dashoffset: var(--len, 200);
+    opacity: 0;
+  }
+  30%,
+  70% {
+    stroke-dashoffset: 0;
+    opacity: 0.5;
+  }
+}
+
+@keyframes bobX {
+  0%,
+  100% {
+    transform: translateX(0);
   }
   50% {
+    transform: translateX(4px);
+  }
+}
+
+/* Ink-style draw-in: sweeps a clip-path from left to right so handwritten
+   text / drawings appear to be drawn by a pen. Use with `animation: drawText ...`. */
+@keyframes drawText {
+  from {
+    clip-path: inset(-15% 100% -15% -15%);
+  }
+  to {
+    clip-path: inset(-15% -15% -15% -15%);
+  }
+}
+
+/* Stroke a dashed SVG path on by reducing dashoffset to 0. Paths using this
+   should declare `pathLength="100"` so the dashoffset math is normalized. */
+@keyframes drawLine {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Per-character opacity fade used by HandwrittenText. Uses opacity (not
+   clip-path) so chars can stay `display: inline` — preserving Caveat's
+   kerning / connecting strokes and preventing mid-word line breaks. */
+@keyframes fadeInChar {
+  from {
+    opacity: 0;
+  }
+  to {
     opacity: 1;
   }
 }
 
-.typing-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 9999px;
-  background: color-mix(in srgb, var(--color-ink) 60%, transparent);
-  animation: pulse-soft 1.2s ease-in-out infinite;
+/* "Writing" dots — cycles ". -> .. -> ... -> (nothing) -> ..." via steps. */
+@keyframes writingDots {
+  0% {
+    content: "";
+  }
+  25% {
+    content: ".";
+  }
+  50% {
+    content: "..";
+  }
+  75% {
+    content: "...";
+  }
+  100% {
+    content: "";
+  }
 }
 
-.typing-dot:nth-child(2) {
-  animation-delay: 0.15s;
-}
-.typing-dot:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-/* Scrollbar styling */
-.scroll-thin::-webkit-scrollbar {
+/* ── Custom scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-.scroll-thin::-webkit-scrollbar-track {
+::-webkit-scrollbar-track {
   background: transparent;
 }
-.scroll-thin::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--color-line) 80%, transparent);
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-rule-navy) 18%, transparent);
   border-radius: 9999px;
 }
-.scroll-thin::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--color-muted) 60%, transparent);
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-rule-navy) 30%, transparent);
 }

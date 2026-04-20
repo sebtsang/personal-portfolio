@@ -1,5 +1,5 @@
-import { ChatShell } from "@/components/chat/ChatShell";
+import { NotebookShell } from "@/components/notebook/NotebookShell";
 
 export default function Home() {
-  return <ChatShell />;
+  return <NotebookShell />;
 }

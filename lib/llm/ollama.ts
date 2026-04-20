@@ -12,7 +12,6 @@
 
 import type { ChatMessage, LogContext } from "./index";
 import { MODEL_CONFIG } from "./config";
-import { projects } from "@/content/projects";
 import { toolSchemas, type ToolName } from "@/lib/tools";
 import { logChat, type LogStatus } from "@/lib/logger";
 
@@ -48,29 +47,10 @@ const OLLAMA_TOOLS = [
   {
     type: "function",
     function: {
-      name: "showProjects",
+      name: "showAbout",
       description:
-        "Display a grid of all Sebastian's projects on the stage. Call when the user asks to see projects, work, or portfolio.",
+        "Display Seb's personal About page. Call for open-ended 'tell me about yourself' / 'who are you' / 'what's your story' style questions, or when the user explicitly asks for /about.",
       parameters: { type: "object", properties: {}, required: [] },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "showProject",
-      description:
-        "Display the detail view for a single project. Call when the user asks about a specific project by name.",
-      parameters: {
-        type: "object",
-        properties: {
-          id: {
-            type: "string",
-            enum: projects.map((p) => p.id),
-            description: "Project id.",
-          },
-        },
-        required: ["id"],
-      },
     },
   },
   {
@@ -79,15 +59,6 @@ const OLLAMA_TOOLS = [
       name: "showExperience",
       description:
         "Display an animated timeline of work experience. Call when the user asks about jobs, companies, or work history.",
-      parameters: { type: "object", properties: {}, required: [] },
-    },
-  },
-  {
-    type: "function",
-    function: {
-      name: "showResume",
-      description:
-        "Display a full formatted resume view. Call when the user asks for a resume or CV.",
       parameters: { type: "object", properties: {}, required: [] },
     },
   },

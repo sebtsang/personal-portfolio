@@ -68,24 +68,14 @@ export async function streamClaude({
       topP: params.topP,
       maxSteps: 1,
       tools: {
-        showProjects: tool({
-          description: toolSchemas.showProjects.description,
-          parameters: toolSchemas.showProjects.parameters,
+        showAbout: tool({
+          description: toolSchemas.showAbout.description,
+          parameters: toolSchemas.showAbout.parameters,
           execute: async () => ({ ok: true }),
-        }),
-        showProject: tool({
-          description: toolSchemas.showProject.description,
-          parameters: toolSchemas.showProject.parameters,
-          execute: async ({ id }) => ({ ok: true, id }),
         }),
         showExperience: tool({
           description: toolSchemas.showExperience.description,
           parameters: toolSchemas.showExperience.parameters,
-          execute: async () => ({ ok: true }),
-        }),
-        showResume: tool({
-          description: toolSchemas.showResume.description,
-          parameters: toolSchemas.showResume.parameters,
           execute: async () => ({ ok: true }),
         }),
         showContact: tool({
