@@ -6,6 +6,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
 
@@ -105,32 +106,7 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
           flexDirection: "column",
         }}
       >
-        {/* Back button */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Flip back to chat"
-          style={{
-            position: "absolute",
-            top: "calc(var(--line) * 1.25)",
-            left: "calc(3% + 28px)",
-            background: "transparent",
-            border: "none",
-            fontFamily: "var(--font-script)",
-            fontSize: 20,
-            color: "var(--color-ink-soft)",
-            opacity: 0.7,
-            cursor: "pointer",
-            padding: 0,
-            lineHeight: 1,
-            zIndex: 20,
-            transition: "opacity 180ms ease",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
-        >
-          ← back
-        </button>
+        <PageBackButton onClose={onClose} />
 
         {/* Page label */}
         <div

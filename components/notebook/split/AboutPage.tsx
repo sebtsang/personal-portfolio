@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
 import { DrawnText } from "../primitives/DrawnText";
@@ -101,31 +102,7 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
       >
         {/* Page meta stacked in the top-left gutter: back button + page
             label. Keeps all page chrome on one side, out of the chat's way. */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Flip back to chat"
-          style={{
-            position: "absolute",
-            top: "calc(var(--line) * 1.25)",
-            left: "calc(3% + 28px)",
-            background: "transparent",
-            border: "none",
-            fontFamily: "var(--font-script)",
-            fontSize: 20,
-            color: "var(--color-ink-soft)",
-            opacity: 0.7,
-            cursor: "pointer",
-            padding: 0,
-            lineHeight: 1,
-            zIndex: 20,
-            transition: "opacity 180ms ease",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
-        >
-          ← back
-        </button>
+        <PageBackButton onClose={onClose} />
 
         <div
           style={{

@@ -1,6 +1,7 @@
 "use client";
 
 import { useStageStore, type StageView } from "@/lib/store";
+import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
 
@@ -41,32 +42,7 @@ export function ContentPagePlaceholder({ onClose }: { onClose: () => void }) {
           overflowY: "auto",
         }}
       >
-        {/* Back button — top-left gutter, stacked above the page label */}
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Flip back to chat"
-          style={{
-            position: "absolute",
-            top: "calc(var(--line) * 1.25)",
-            left: "calc(3% + 28px)",
-            background: "transparent",
-            border: "none",
-            fontFamily: "var(--font-script)",
-            fontSize: 20,
-            color: "var(--color-ink-soft)",
-            opacity: 0.7,
-            cursor: "pointer",
-            padding: 0,
-            lineHeight: 1,
-            zIndex: 20,
-            transition: "opacity 180ms ease",
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.7")}
-        >
-          ← back
-        </button>
+        <PageBackButton onClose={onClose} />
 
         {/* Page label in the left gutter */}
         <div
