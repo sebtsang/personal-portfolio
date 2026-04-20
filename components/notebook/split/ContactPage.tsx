@@ -62,7 +62,7 @@ export function ContactPage({ onClose }: { onClose: () => void }) {
 
   return (
     <div style={{ position: "absolute", inset: 0 }}>
-      <Paper ruled marginRule />
+      <Paper ruled marginRule={false} />
 
       <div
         style={{

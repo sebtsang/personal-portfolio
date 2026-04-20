@@ -5,8 +5,9 @@ import { useEffect, useState } from "react";
 const CYCLE_MS = 450;
 
 /**
- * Pseudo-message rendered while SebBot is streaming. Shows "writing" +
- * cycling dots in the same Caveat + gutter-label style as a real message.
+ * Pseudo-message rendered while SebBot is streaming. Matches the
+ * NotebookMessage layout: inline label + text in home mode, stacked in
+ * compact mode, with the label sitting just inside the red margin.
  */
 export function WritingIndicator({ compact = false }: { compact?: boolean }) {
   const [tick, setTick] = useState(0);
@@ -17,57 +18,65 @@ export function WritingIndicator({ compact = false }: { compact?: boolean }) {
   const dots = ".".repeat(tick % 4);
 
   const fontSize = compact ? 20 : 26;
-  // Match NotebookMessage — always on the 32px ruler grid.
   const lineHeight = "var(--line)";
+  const paddingLeft = compact ? "calc(12% + 8px)" : "calc(12% + 16px)";
+  const paddingRight = compact ? "6%" : "8%";
+
+  const labelStyle: React.CSSProperties = {
+    fontFamily: "var(--font-mono)",
+    fontSize: 10,
+    letterSpacing: "0.2em",
+    textTransform: "uppercase",
+    color: "color-mix(in srgb, var(--color-ink-soft) 65%, transparent)",
+    lineHeight: "var(--line)",
+    pointerEvents: "none",
+  };
+
+  const textStyle: React.CSSProperties = {
+    fontFamily: "var(--font-script)",
+    fontSize,
+    fontWeight: 500,
+    color: "var(--color-ink)",
+    opacity: 0.55,
+    lineHeight,
+  };
+
+  const body = (
+    <>
+      writing
+      <span
+        style={{
+          display: "inline-block",
+          minWidth: "1.5ch",
+          textAlign: "left",
+        }}
+      >
+        {dots}
+      </span>
+    </>
+  );
+
+  if (compact) {
+    return (
+      <div style={{ paddingLeft, paddingRight }}>
+        <div style={labelStyle}>sebbot</div>
+        <div style={textStyle}>{body}</div>
+      </div>
+    );
+  }
 
   return (
     <div
       style={{
-        position: "relative",
-        paddingLeft: compact ? "calc(12% + 8px)" : "calc(12% + 16px)",
-        paddingRight: compact ? "6%" : "8%",
+        paddingLeft,
+        paddingRight,
+        display: "flex",
+        alignItems: "baseline",
+        gap: 12,
       }}
     >
-      {!compact && (
-        <span
-          style={{
-            position: "absolute",
-            left: "calc(3% + 28px)",
-            top: 0,
-            fontFamily: "var(--font-mono)",
-            fontSize: 10,
-            letterSpacing: "0.2em",
-            textTransform: "uppercase",
-            color:
-              "color-mix(in srgb, var(--color-ink-soft) 65%, transparent)",
-            lineHeight: "var(--line)",
-            pointerEvents: "none",
-          }}
-        >
-          sebbot
-        </span>
-      )}
-      <div
-        style={{
-          fontFamily: "var(--font-script)",
-          fontSize,
-          fontWeight: 500,
-          color: "var(--color-ink)",
-          opacity: 0.55,
-          lineHeight,
-        }}
-      >
-        writing
-        <span
-          style={{
-            display: "inline-block",
-            minWidth: "1.5ch",
-            textAlign: "left",
-          }}
-        >
-          {dots}
-        </span>
-      </div>
+      <div style={{ ...labelStyle, flexShrink: 0, width: 64 }}>sebbot</div>
+      <div style={{ ...textStyle, flex: 1, minWidth: 0 }}>{body}</div>
     </div>
   );
 }

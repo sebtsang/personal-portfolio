@@ -81,7 +81,7 @@ const MARGIN_NOTES: Array<{
 export function AboutPage({ onClose }: { onClose: () => void }) {
   return (
     <div style={{ position: "absolute", inset: 0 }}>
-      <Paper ruled marginRule />
+      <Paper ruled marginRule={false} />
 
       {/* Scrolling content area */}
       <div
