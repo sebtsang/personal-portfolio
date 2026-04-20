@@ -77,6 +77,14 @@ export function buildSystemPrompt(provider: LLMProvider): string {
   return built;
 }
 
+/**
+ * Token count estimate for the assembled system prompt of a given
+ * provider. Used for the budget check in lib/validation.ts.
+ */
+export function getSystemPromptTokens(provider: LLMProvider): number {
+  return estimateTokens(buildSystemPrompt(provider));
+}
+
 /** Estimated token count (for logging). Cheap, rough, good enough. */
 export function estimateTokens(text: string): number {
   return Math.round(text.length / 4);

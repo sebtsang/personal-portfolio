@@ -13,6 +13,7 @@
 import type { ChatMessage } from "./index";
 import { MODEL_CONFIG } from "./config";
 import { projects } from "@/content/projects";
+import { toolSchemas, type ToolName } from "@/lib/tools";
 
 /**
  * Base URL for the Ollama server.
@@ -303,17 +304,34 @@ export async function streamOllama({
             const toolCalls = chunk.message?.tool_calls;
             if (toolCalls?.length) {
               for (const tc of toolCalls) {
-                const args =
+                const rawArgs =
                   typeof tc.function.arguments === "string"
                     ? safeJson(tc.function.arguments)
                     : tc.function.arguments;
+
+                // Validate the tool call shape + args against the shared
+                // Zod schemas. Silently drop invalid calls — the model
+                // gets to try again on the next turn, and we never
+                // dispatch a malformed view change.
+                const validated = validateToolCall(
+                  tc.function.name,
+                  rawArgs
+                );
+                if (!validated.ok) {
+                  console.warn(
+                    `[ollama] Invalid tool call "${tc.function.name}":`,
+                    validated.error
+                  );
+                  continue;
+                }
+
                 const toolCallId = `call_${crypto.randomUUID()}`;
                 safeEnqueue(
                   encoder.encode(
                     encode("9", {
                       toolCallId,
-                      toolName: tc.function.name,
-                      args: args ?? {},
+                      toolName: validated.name,
+                      args: validated.args,
                     })
                   )
                 );
@@ -413,6 +431,38 @@ function safeJson(s: string): Record<string, unknown> | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * Validate a tool call emitted by Ollama against the shared Zod
+ * schemas in lib/tools.ts. Unknown tool names are rejected; args that
+ * don't match the schema are rejected.
+ *
+ * Prevents pathological inputs like showProject({id: "../../etc/passwd"})
+ * from reaching the client store.
+ */
+type ValidatedToolCall =
+  | { ok: true; name: ToolName; args: Record<string, unknown> }
+  | { ok: false; error: string };
+
+function validateToolCall(
+  rawName: string,
+  rawArgs: Record<string, unknown> | null
+): ValidatedToolCall {
+  // Is the name one of the known tools?
+  if (!(rawName in toolSchemas)) {
+    return { ok: false, error: `unknown tool "${rawName}"` };
+  }
+  const name = rawName as ToolName;
+  const schema = toolSchemas[name];
+  const parsed = schema.parameters.safeParse(rawArgs ?? {});
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error: parsed.error.errors.map((e) => e.message).join("; "),
+    };
+  }
+  return { ok: true, name, args: (parsed.data ?? {}) as Record<string, unknown> };
 }
 
 /**
