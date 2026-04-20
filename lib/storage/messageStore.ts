@@ -5,12 +5,13 @@
  * doesn't wipe the conversation.
  *
  * Full implementation below — safe to import and use. Wiring into
- * ChatShell.tsx (initialMessages + onFinish) is deferred until the
- * chat UI redesign stabilizes.
+ * NotebookShell.tsx (initialMessages + onFinish) is deferred because
+ * the seed-message staggering + setMessages-based intent replies
+ * would need extra plumbing to coexist with persisted history.
  *
  * Integration sketch (for when we're ready):
  *
- *   // components/chat/ChatShell.tsx
+ *   // components/notebook/NotebookShell.tsx
  *   import { loadMessages, saveMessages } from "@/lib/storage/messageStore";
  *
  *   const [initial, setInitial] = useState<Message[] | null>(null);

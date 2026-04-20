@@ -19,15 +19,15 @@
  *     - dispatchByName(name, args)    — validates via Zod + returns view
  *
  * Callers consume from here:
- *     - lib/llm/claude.ts / openai.ts     → getLLMSchemas()
- *     - lib/llm/ollama.ts                  → getOllamaSchemas()
- *     - lib/store.ts dispatchTool          → dispatchByName()
- *     - components/chat/ChatShell.tsx      → matchIntent()
+ *     - lib/llm/claude.ts / openai.ts              → getLLMSchemas()
+ *     - lib/llm/ollama.ts                           → getOllamaSchemas()
+ *     - lib/store.ts dispatchTool                   → dispatchByName()
+ *     - components/notebook/NotebookShell.tsx       → matchIntent()
  *
- * DEFERRED because the new chat UI may change intent-matching
- * requirements (looser matching, richer reply surfaces). Migrate
- * once the UI stabilizes. Until then, the three existing sources of
- * truth continue working.
+ * DEFERRED because the tool set has been churning (projects/resume
+ * removed, about added, experience/linkedin/contact restructured).
+ * Migrate once the tool surface stabilizes. Until then, the three
+ * existing sources of truth continue working.
  */
 
 import type { z } from "zod";

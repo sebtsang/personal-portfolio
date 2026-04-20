@@ -1,30 +1,63 @@
-# Sebastian Tsang — Conversational Portfolio
+# Sebastian Tsang — Journal
 
-A chatbot-first personal site. The home is a full-screen chat; when you
-trigger a command the chat smoothly docks to a side rail while a content
-"page" unfolds in the main area. Built with Next.js 15, the Vercel AI
-SDK, and a pluggable LLM backend (Ollama / Claude / OpenAI).
+A portfolio rendered as a spiral-bound journal. The chat is the home
+page; when you run a slash command (or ask a question that matches
+one), a new page flips in from the right side of the spread. Four
+content pages live inside the journal — `/about`, `/experience`,
+`/linkedin`, `/contact`. Everything else is the chat.
+
+Built with Next.js 15, the Vercel AI SDK, Framer Motion, and a
+pluggable LLM backend (Ollama / Claude / OpenAI).
 
 ## Architecture
 
-- **Two-mode layout.** Home = centered full-screen chat. Page = chat docks
-  right, content takes the main area. Framer Motion `layout` animates
-  between modes.
-- **Hybrid engine.** Quick commands and exact matches (`/projects`,
-  `/resume`) dispatch tools locally — no network call. Free-form
-  questions stream through `/api/chat` to the configured LLM.
-- **Pluggable providers.** One env var (`LLM_PROVIDER`) switches between
-  Ollama (local or cloud), Claude, or OpenAI. All live under
-  [lib/llm/](lib/llm/).
-- **Structured prompt assembly.** Voice rules in [lib/persona/voice.ts](lib/persona/voice.ts),
-  per-model nudges in [lib/persona/overrides/](lib/persona/overrides/),
-  prose corpus in [content/corpus/](content/corpus/) (bio, experience,
-  projects, opinions, faq). [lib/llm/prompt.ts](lib/llm/prompt.ts)
-  assembles them per request.
-- **Production hardening.** Zod validation + garbage heuristics, Upstash
-  rate limiting (fails open), structured Redis logging (waitUntil,
-  hashed IPs), per-provider parameter config. See
-  [plan file](../../.claude/plans/magical-swimming-tower.md) for details.
+### Spread layout
+- **Home** = the chat fills the viewport (the "cover" open to its first
+  page). Spiral binding pinned at `left: 0` across every view.
+- **Open** = the chat compresses to a 28%-width "left page" tucked
+  against the spine; a content page flips in from the right on a
+  `rotateY(95deg) → rotateY(0deg)` pivot around its left seam (~700ms,
+  `cubic-bezier(0.16, 1, 0.3, 1)`). The seam itself doubles as a red
+  margin rule for the spread.
+- **Switch** = going between two open pages (e.g. `/about` → `/experience`)
+  horizontally slides the old page out and the new one in (~300ms) —
+  different vocabulary from the big open/close flip so it doesn't
+  compete.
+- **Close** = flip reverses back to edge-on, chat expands.
+
+### Transitions in one place
+- Landing → chat: right-bound page flip around the left spine (1.1s,
+  back-face with faint ghost rules).
+- Chat → split: chat width tween + content pane rotateY flip-in.
+- Split → split (page change): horizontal slide + opacity cross-fade.
+
+### Handwriting, not type
+Caveat body, JetBrains Mono for small meta labels, Fraunces + Instrument
+Serif loaded for future display text. Every chat message reveals
+per-character with a staggered opacity fade (`HandwrittenText`
+primitive). Sizes lock to a shared 32px ruler grid, and the ruled
+lines travel with the scroll content so text never drifts between
+rules.
+
+### Hybrid engine
+Intent-matched slash commands (`/about`, `/experience`, `/linkedin`,
+`/contact`) and "tell me about yourself"-style phrases dispatch a tool
+locally via [lib/intents.ts](lib/intents.ts) — no network call. Free-form
+questions stream through `/api/chat` to the configured LLM. LLM tool
+calls (`showAbout`, `showExperience`, `showContact`, `showLinkedIn`)
+route through the same Zustand `dispatchTool` path so either the
+regex matcher or the model can open a page.
+
+### Pluggable providers
+One env var (`LLM_PROVIDER`) switches between Ollama (local or cloud),
+Claude, or OpenAI. Shared voice + corpus + per-model nudges live in
+[lib/persona/](lib/persona/); each provider implementation lives in
+[lib/llm/](lib/llm/).
+
+### Production hardening
+Zod request validation, garbage heuristics, Upstash per-IP rate
+limiting (fails open), hashed structured Redis logging via
+`waitUntil`, per-provider generation config.
 
 ## Run locally
 
@@ -34,9 +67,14 @@ cp .env.example .env.local    # edit for your chosen provider
 npm run dev
 ```
 
-Visit http://localhost:3000. Quick commands, slash-commands, and
-project-detail intents all work without any LLM configured. Only
-free-form questions hit the model.
+Open http://localhost:3000. The landing and chat render with no LLM
+configured; intent-matched slash commands still work. Only free-form
+questions hit the model.
+
+Deep-link `/about` to skip the landing flip and open the spread
+directly with the About page in the content pane. Other content pages
+currently live under slash-commands only; add Next routes for them
+the same way if you want `/experience`, `/linkedin`, `/contact` URLs.
 
 ## Switching LLM providers
 
@@ -56,12 +94,13 @@ Then set the matching credential:
 | `claude` | `ANTHROPIC_API_KEY=sk-ant-...` | `claude-haiku-4-5-20251001` |
 | `openai` | `OPENAI_API_KEY=sk-...` | `gpt-4.1-mini` |
 
-Restart the dev server after changing env vars. No code changes needed.
+Restart the dev server after changing env vars. No code changes
+needed.
 
 ### Ollama notes
 
-- **Local daemon:** run `ollama serve`, then `ollama pull <model>`. Free,
-  fast, but only reachable from the same machine.
+- **Local daemon:** run `ollama serve`, then `ollama pull <model>`.
+  Free, fast, only reachable from the same machine.
 - **Ollama Cloud:** set `OLLAMA_API_KEY` — `OLLAMA_BASE_URL` auto-resolves
   to `https://ollama.com`. Works from Vercel deploys.
 - **Why hand-rolled instead of `@ai-sdk/openai-compatible`:** we send
@@ -71,19 +110,47 @@ Restart the dev server after changing env vars. No code changes needed.
 
 ## Editing the bot
 
-- **Voice** (rarely changes): [lib/persona/voice.ts](lib/persona/voice.ts)
-- **Per-model nudges**: [lib/persona/overrides/](lib/persona/overrides/)
+- **Voice** (rarely changes):
+  [lib/persona/voice.ts](lib/persona/voice.ts)
+- **Per-model nudges**:
+  [lib/persona/overrides/](lib/persona/overrides/)
 - **Generation params** (temperature, top_p, max tokens):
   [lib/llm/config.ts](lib/llm/config.ts)
 - **Prose corpus** — edit as markdown, ships in the system prompt:
   - [content/corpus/bio.md](content/corpus/bio.md)
   - [content/corpus/experience.md](content/corpus/experience.md)
-  - [content/corpus/projects.md](content/corpus/projects.md)
   - [content/corpus/opinions.md](content/corpus/opinions.md)
   - [content/corpus/faq.md](content/corpus/faq.md)
 
-The assembled prompt is memoized per-provider and logs a warning if it
-exceeds ~5000 tokens.
+## Editing the pages
+
+Each content page is a single file under
+[components/notebook/split/](components/notebook/split/):
+
+- **About** — [AboutPage.tsx](components/notebook/split/AboutPage.tsx)
+  owns the copy (`BODY_PARAGRAPHS`), polaroid data (`POLAROIDS`),
+  margin notes, and sticker placements. Images live in
+  `public/photos/` and `public/logos/`.
+- **Experience** —
+  [ExperiencePage.tsx](components/notebook/split/ExperiencePage.tsx).
+  Role data (`ROLES`) is hard-coded at the top of the file: company,
+  title, dates, logo path, company URL, and a 1–2-line `blurb`.
+  Metrics wrapped in `<Metric>` render slightly larger + heavier.
+- **LinkedIn** —
+  [LinkedInPage.tsx](components/notebook/split/LinkedInPage.tsx).
+  `POSTS` array holds URL + hero-image path + caption per card.
+- **Contact** —
+  [ContactPage.tsx](components/notebook/split/ContactPage.tsx).
+  `FIELDS` array defines the rows (email / LinkedIn / GitHub /
+  Twitter/X). Email row copies to clipboard on plain click; shift/
+  cmd-click follows the mailto: link.
+
+### Swapping media
+- Company logos → `public/logos/{name}.jpeg` (or .png/.svg); referenced
+  by `logoSrc` in `ExperiencePage`.
+- Portrait / polaroid photos → `public/photos/seb-{1,2,3}.jpg`;
+  referenced by `src` in `AboutPage.POLAROIDS`.
+- LinkedIn post previews → `public/linkedin/post{1..5}.png`.
 
 ## Deploying to Vercel
 
@@ -95,7 +162,7 @@ gh repo create   # if not already
 
 Import the repo into Vercel. Next.js auto-detects.
 
-### 2. Env vars (Vercel dashboard → Settings → Environment Variables)
+### 2. Env vars (Vercel → Settings → Environment Variables)
 
 Mandatory:
 - `LLM_PROVIDER` — `ollama` | `claude` | `openai`
@@ -110,11 +177,12 @@ Optional:
 - `LLM_MODEL` — override default for chosen provider
 - `OLLAMA_BASE_URL` — only if you're not using Ollama Cloud
 
-### 3. Upstash Redis (for §2 rate limiting + §4 logging)
+### 3. Upstash Redis (rate limiting + logging)
 
-Vercel dashboard → Integrations → [Upstash](https://vercel.com/integrations/upstash)
-→ Install. Create a Redis database (global, free tier). Link it to your
-portfolio project — this auto-populates `UPSTASH_REDIS_REST_URL` and
+Vercel dashboard → Integrations →
+[Upstash](https://vercel.com/integrations/upstash) → Install. Create a
+Redis database (global, free tier). Link it to your portfolio project —
+this auto-populates `UPSTASH_REDIS_REST_URL` and
 `UPSTASH_REDIS_REST_TOKEN`.
 
 Without Upstash, rate limiting and logging both fail-silent: requests
@@ -124,8 +192,7 @@ and add it later.
 ### 4. Function config (already set in code)
 
 - Runtime: `nodejs` (required — hand-rolled Ollama stream needs Node).
-- `maxDuration`: 60s. Vercel Hobby caps at 300s, Pro at 800s — plenty
-  of headroom per [vercel.com/docs/functions/limitations](https://vercel.com/docs/functions/limitations).
+- `maxDuration`: 60s. Vercel Hobby caps at 300s, Pro at 800s.
 - Request body cap: 4.5 MB (platform limit); our validation rejects
   well before this.
 
@@ -155,39 +222,80 @@ never logged outside the feedback bucket.
 
 ```
 app/
-  page.tsx                 → renders <ChatShell />
+  layout.tsx               → minimal root wrapper
+  page.tsx                 → renders <NotebookShell />
+  about/page.tsx           → renders shell with initialView={about}
   api/chat/route.ts        → validates, rate-limits, logs, delegates
-  globals.css              → Tailwind v4 theme + design tokens
-components/
-  chat/                    → chat UI (ChatShell, MessageList, ChatInput,
-                             QuickCommands, CommandPalette, ThemeToggle,
-                             HomeHero, ChatPanel)
-  stage/                   → stage views (ProjectGrid, ProjectDetail,
-                             ExperienceTimeline, ResumeView, ContactCard,
-                             LinkedInDeck, StageFrame, StageCanvas)
-  ui/                      → design primitives (CustomCursor, LetterReveal,
-                             NumberedHeading, Overline, ArrowList, InView,
-                             SmoothScroll, StickerCollection)
+  globals.css              → Tailwind v4 @theme tokens + keyframes
+components/notebook/
+  NotebookShell.tsx        → phase state (landing | chat | split),
+                             useChat wiring, advance triggers,
+                             PageFlipTransition
+  PageFlipTransition.tsx   → 3D rotateY landing → chat flip
+  chrome/
+    Paper.tsx              → cream bg + ruled lines + margin rule
+    SpiralBinding.tsx      → 22 coils pinned to viewport left
+    SpreadMarginRule.tsx   → red vertical rule at chat/content seam
+    PageChrome.tsx         → top-left handwritten date
+    PageCorner.tsx         → dog-eared bottom-right with page number
+    PageBackButton.tsx     → "← home [esc]" shared back button
+  landing/
+    LandingPage.tsx        → drawn name + role cycler + scraps +
+                             ambient lines + scroll cue + corner peel
+    AmbientLines.tsx       → SVG lines with pulse animation
+    CornerPeel.tsx         → bottom-right triangular page peel
+    Scraps.tsx             → taped card, yellow sticky, interactive
+                             todo list, margin annotations
+    ScrollCue.tsx          → chevron cue
+  chat/
+    ChatPage.tsx           → scrollable message list + pinned input
+    NotebookMessage.tsx    → single message; inline label (home) or
+                             stacked label (compact)
+    NotebookInput.tsx      → handwritten "you —" input with fade mask
+    SlashCommandRow.tsx    → /about /experience /linkedin /contact
+    WritingIndicator.tsx   → "writing…" with cycling dots
+  split/
+    SplitView.tsx          → two-pane layout, rotateY open/close,
+                             horizontal slide for page switches
+    AboutPage.tsx          → drawn greeting, body paragraphs,
+                             draggable polaroids + stickers
+    ExperiencePage.tsx     → vertical spine timeline, 9 roles, logo
+                             stickers, metric highlights
+    LinkedInPage.tsx       → stacked polaroid-card carousel (5 posts)
+    ContactPage.tsx        → handwritten note + taped index card
+    ContentPagePlaceholder.tsx → fallback for un-built page kinds
+  primitives/
+    DrawnText.tsx          → clip-path stroke→fill reveal (landing
+                             name + "hi — I'm Seb")
+    HandwrittenText.tsx    → per-character opacity fade (messages +
+                             about paragraphs)
+    RoleCycler.tsx         → draws / erases cycling role words
+    FitToWidth.tsx         → ResizeObserver-based auto-scale
+    Sticker.tsx            → round sticker base with drag + peel
 lib/
   llm/
     index.ts               → streamChat() + provider dispatch
-    prompt.ts              → buildSystemPrompt(provider) assembly
-    config.ts              → MODEL_CONFIG (temp/top_p/maxTokens)
+    prompt.ts              → buildSystemPrompt() assembly
+    config.ts              → MODEL_CONFIG (temp / top_p / maxTokens)
     ollama.ts, claude.ts, openai.ts → provider implementations
   persona/
     voice.ts               → stable voice + few-shot
     overrides/             → per-model nudges
-  tools.ts                 → shared Zod tool schemas (legacy; see §7 plan)
-  intents.ts               → frontend regex → tool matcher
-  store.ts                 → Zustand stage store
+  tools.ts                 → shared Zod tool schemas (4 tools)
+  intents.ts               → regex → tool matcher
+  store.ts                 → Zustand view store
   validation.ts            → Zod request schema + budget check
   sanitize.ts              → garbage heuristics
   ratelimit.ts             → Upstash ratelimit wrapper
   logger.ts                → structured log writer
-  stickers.ts, stickerStore.ts → sticker easter egg
 content/
-  site.ts, projects.ts, linkedin.ts  → structured data (UI-facing)
-  corpus/*.md                        → prose corpus (LLM-facing)
+  site.ts, linkedin.ts     → structured data
+  corpus/*.md              → prose corpus (LLM-facing)
+public/
+  photos/seb-{1,2,3}.jpg   → portrait polaroids
+  logos/{ey,polarity,bmo,stan,interac,toastmasters,spirit-of-math}.*
+                           → company logo stickers
+  linkedin/post{1..5}.png  → post hero images for LinkedIn carousel
 scripts/
   logs-recent.ts           → CLI for reading chat logs
   smoke-test.ts            → post-deploy smoke test
