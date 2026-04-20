@@ -6,6 +6,7 @@ import { Paper } from "../chrome/Paper";
 import { ChatPage, type ChatMessage } from "../chat/ChatPage";
 import { AboutPage } from "./AboutPage";
 import { ContentPagePlaceholder } from "./ContentPagePlaceholder";
+import { ExperiencePage } from "./ExperiencePage";
 
 const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 const DURATION = 420; // ms
@@ -111,5 +112,6 @@ export function SplitView({
 function SplitContent({ onClose }: { onClose: () => void }) {
   const kind = useStageStore((s) => s.view.kind);
   if (kind === "about") return <AboutPage onClose={onClose} />;
+  if (kind === "experience") return <ExperiencePage onClose={onClose} />;
   return <ContentPagePlaceholder onClose={onClose} />;
 }
