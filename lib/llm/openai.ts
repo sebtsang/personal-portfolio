@@ -4,18 +4,21 @@
 
 import { openai } from "@ai-sdk/openai";
 import { streamText, tool } from "ai";
-import type { ChatMessage } from "./index";
+import type { ChatMessage, LogContext } from "./index";
 import { MODEL_CONFIG } from "./config";
 import { toolSchemas } from "@/lib/tools";
+import { logChat, type LogStatus } from "@/lib/logger";
 
 export async function streamOpenAI({
   messages,
   system,
   model,
+  logContext,
 }: {
   messages: ChatMessage[];
   system: string;
   model: string;
+  logContext?: LogContext;
 }): Promise<Response> {
   if (!process.env.OPENAI_API_KEY) {
     return new Response(
@@ -28,6 +31,28 @@ export async function streamOpenAI({
   }
 
   const params = MODEL_CONFIG.openai;
+  const emitLog = (
+    status: LogStatus,
+    opts: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      tool_calls?: string[];
+    } = {}
+  ) => {
+    if (!logContext) return;
+    logChat({
+      ts: logContext.startedAt,
+      ip_hash: logContext.ipHash,
+      provider: "openai",
+      model,
+      prompt_tokens: opts.prompt_tokens,
+      completion_tokens: opts.completion_tokens,
+      tool_calls: opts.tool_calls ?? [],
+      latency_ms: Date.now() - logContext.startedAt,
+      status,
+      feedback_flag: logContext.feedbackFlag,
+    });
+  };
 
   try {
     const result = streamText({
@@ -40,7 +65,7 @@ export async function streamOpenAI({
       maxTokens: params.maxTokens,
       temperature: params.temperature,
       topP: params.topP,
-      maxSteps: 1, // cap tool-call depth per request
+      maxSteps: 1,
       tools: {
         showProjects: tool({
           description: toolSchemas.showProjects.description,
@@ -75,12 +100,21 @@ export async function streamOpenAI({
       },
       onError: (err) => {
         console.error("[openai] stream error:", err);
+        emitLog("upstream-error");
+      },
+      onFinish: (event) => {
+        emitLog("ok", {
+          prompt_tokens: event.usage?.promptTokens,
+          completion_tokens: event.usage?.completionTokens,
+          tool_calls: (event.toolCalls ?? []).map((t) => t.toolName),
+        });
       },
     });
 
     return result.toDataStreamResponse();
   } catch (err) {
     console.error("[openai] fatal:", err);
+    emitLog("upstream-error");
     return new Response(
       JSON.stringify({ error: "OpenAI request failed. See server logs." }),
       { status: 502, headers: { "Content-Type": "application/json" } }

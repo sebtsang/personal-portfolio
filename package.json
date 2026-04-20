@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "logs:recent": "tsx --env-file=.env.local scripts/logs-recent.ts",
+    "logs:errors": "tsx --env-file=.env.local scripts/logs-recent.ts --errors"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
@@ -17,6 +19,7 @@
     "@fontsource/ibm-plex-mono": "^5.2.7",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.37.0",
+    "@vercel/functions": "^3.4.3",
     "ai": "^4.0.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -39,6 +42,7 @@
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.0.0-beta.7",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2"
   }
 }

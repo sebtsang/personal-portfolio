@@ -10,10 +10,11 @@
  * the AI SDK v4 data-stream protocol that useChat consumes.
  */
 
-import type { ChatMessage } from "./index";
+import type { ChatMessage, LogContext } from "./index";
 import { MODEL_CONFIG } from "./config";
 import { projects } from "@/content/projects";
 import { toolSchemas, type ToolName } from "@/lib/tools";
+import { logChat, type LogStatus } from "@/lib/logger";
 
 /**
  * Base URL for the Ollama server.
@@ -119,12 +120,38 @@ export async function streamOllama({
   system,
   model,
   signal,
+  logContext,
 }: {
   messages: ChatMessage[];
   system: string;
   model: string;
   signal?: AbortSignal;
+  logContext?: LogContext;
 }): Promise<Response> {
+  const emitLog = (
+    status: LogStatus,
+    opts: {
+      prompt_tokens?: number;
+      completion_tokens?: number;
+      tool_calls?: string[];
+    } = {}
+  ) => {
+    if (!logContext) return;
+    logChat({
+      ts: logContext.startedAt,
+      ip_hash: logContext.ipHash,
+      provider: "ollama",
+      model,
+      prompt_tokens: opts.prompt_tokens,
+      completion_tokens: opts.completion_tokens,
+      tool_calls: opts.tool_calls ?? [],
+      latency_ms: Date.now() - logContext.startedAt,
+      status,
+      feedback_flag: logContext.feedbackFlag,
+    });
+  };
+
+
   let baseURL: string;
   try {
     baseURL = resolveBaseURL();
@@ -192,6 +219,7 @@ export async function streamOllama({
     });
   } catch (err) {
     console.error("[ollama] Fetch failed:", err);
+    emitLog("upstream-error");
     return jsonError(
       503,
       `Couldn't reach Ollama at ${baseURL}. Is it running? (ollama serve, or check OLLAMA_API_KEY for cloud).`
@@ -201,6 +229,7 @@ export async function streamOllama({
   if (!ollamaRes.ok || !ollamaRes.body) {
     const text = await ollamaRes.text().catch(() => "");
     console.error(`[ollama] ${ollamaRes.status}:`, text);
+    emitLog("upstream-error");
     return jsonError(
       502,
       `Ollama returned ${ollamaRes.status}. If using cloud, check OLLAMA_API_KEY. If local, try \`ollama pull ${model}\`.`
@@ -224,6 +253,11 @@ export async function streamOllama({
       let latestThinking = "";
       // Keep the raw final chunk when diagnosing empty completions.
       let lastChunkRaw: unknown = null;
+      // Accumulate tool names for the final log line.
+      const toolCallNames: string[] = [];
+      // Track whether the final status is "empty-retry-ok" / "empty-fallback"
+      // so emitLog in the `done` block reports accurately.
+      let finalStatus: LogStatus = "ok";
 
       // Has the client disconnected? Guard against writing to a closed
       // controller, which throws ERR_INVALID_STATE.
@@ -341,6 +375,7 @@ export async function streamOllama({
                   )
                 );
                 emittedToolCall = true;
+                toolCallNames.push(validated.name);
                 finishReason = "tool-calls";
               }
             }
@@ -370,12 +405,14 @@ export async function streamOllama({
                 );
                 if (retryText) {
                   safeEnqueue(encoder.encode(encode("0", retryText)));
+                  finalStatus = "empty-retry-ok";
                 } else {
                   console.warn(
                     `[ollama] Retry also empty. Raw final chunk:`,
                     JSON.stringify(lastChunkRaw)
                   );
                   safeEnqueue(encoder.encode(encode("0", pickFallback())));
+                  finalStatus = "empty-fallback";
                 }
               }
               if (chunk.done_reason === "length") finishReason = "length";
@@ -386,6 +423,12 @@ export async function streamOllama({
                 )
               );
               safeEnqueue(encoder.encode(encode("d", { finishReason, usage })));
+              // Fire the final log line (fire-and-forget via waitUntil)
+              emitLog(finalStatus, {
+                prompt_tokens: promptTokens,
+                completion_tokens: completionTokens,
+                tool_calls: toolCallNames,
+              });
             }
           }
         }
@@ -394,6 +437,11 @@ export async function streamOllama({
         // Everything else is worth surfacing.
         if (err instanceof Error && err.name === "AbortError") {
           console.log("[ollama] stream aborted (client disconnect)");
+          emitLog("aborted", {
+            prompt_tokens: promptTokens,
+            completion_tokens: completionTokens,
+            tool_calls: toolCallNames,
+          });
         } else {
           console.error("[ollama] Stream error:", err);
           safeEnqueue(
@@ -401,6 +449,11 @@ export async function streamOllama({
               encode("3", err instanceof Error ? err.message : "stream error")
             )
           );
+          emitLog("upstream-error", {
+            prompt_tokens: promptTokens,
+            completion_tokens: completionTokens,
+            tool_calls: toolCallNames,
+          });
         }
       } finally {
         try {

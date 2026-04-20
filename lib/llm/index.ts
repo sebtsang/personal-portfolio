@@ -23,9 +23,17 @@ export type ChatMessage = {
   content: string;
 };
 
+/** Metadata threaded from the route to the provider for log emission. */
+export type LogContext = {
+  startedAt: number;
+  ipHash: string;
+  feedbackFlag?: true;
+};
+
 export type ChatRequest = {
   messages: ChatMessage[];
   signal?: AbortSignal;
+  logContext?: LogContext;
 };
 
 export type LLMProvider = "ollama" | "claude" | "openai";
