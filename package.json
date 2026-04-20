@@ -15,6 +15,8 @@
     "@fontsource-variable/newsreader": "^5.2.10",
     "@fontsource-variable/work-sans": "^5.2.8",
     "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "ai": "^4.0.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
