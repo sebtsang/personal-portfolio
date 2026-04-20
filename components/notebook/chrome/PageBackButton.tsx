@@ -20,7 +20,7 @@ export function PageBackButton({ onClose }: { onClose: () => void }) {
         padding: 0,
         display: "inline-flex",
         alignItems: "baseline",
-        gap: 10,
+        gap: 16,
         cursor: "pointer",
         lineHeight: 1,
         zIndex: 20,

@@ -23,34 +23,33 @@ type Polaroid = {
   width: number;
 };
 
-// Right-side polaroids — positioned absolutely inside the content area so
-// body text wraps in its own column to their left.
-// Zig-zag scatter within the right gutter — varying top, right, and
-// rotation so photos don't feel like a stacked column.
+// Polaroids spread around the page — top-right next to the greeting,
+// middle-right between paragraphs, bottom-center below all text. Varies
+// enough to feel scattered while staying clear of the body text column.
 const POLAROIDS: Polaroid[] = [
   {
     src: "/photos/seb-1.jpg",
     caption: "garry point park",
     rotation: 4.5,
-    top: 160,
+    top: 180,
     right: 40,
-    width: 210,
+    width: 205,
   },
   {
     src: "/photos/seb-2.jpg",
     caption: "pool",
-    rotation: -6,
-    top: 560,
-    right: 130,
-    width: 200,
+    rotation: -7,
+    top: 640,
+    right: 180,
+    width: 190,
   },
   {
     src: "/photos/seb-3.jpg",
     caption: "cleveland dam",
-    rotation: 2.5,
-    top: 960,
-    right: 30,
-    width: 220,
+    rotation: 3,
+    top: 1200,
+    right: "30%",
+    width: 215,
   },
 ];
 
@@ -197,13 +196,14 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
           <MarginNote key={i} {...note} />
         ))}
 
-        {/* Stickers — small personal flair "stuck" to the page. Sit inside
-            the scroll area so they travel with the paper as you scroll. */}
+        {/* Stickers — all draggable, placed in page whitespace so the
+            initial positions never cover body text. Visitors can peel
+            them up and stick them wherever. */}
         <Sticker
           size={54}
           rotation={-10}
-          top="41%"
-          left="14%"
+          top={70}
+          right={300}
           delayMs={2200}
         >
           <CoffeeCupIcon />
@@ -212,12 +212,34 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
         <Sticker
           size={56}
           rotation={8}
-          top="66%"
-          left="13%"
+          top={460}
+          right={20}
           background="#ffefd5"
-          delayMs={2600}
+          delayMs={2400}
         >
           <BasketballIcon />
+        </Sticker>
+
+        <Sticker
+          size={58}
+          rotation={-6}
+          top={880}
+          right={280}
+          background="#ffe1d4"
+          delayMs={2600}
+        >
+          <LobsterIcon />
+        </Sticker>
+
+        <Sticker
+          size={54}
+          rotation={12}
+          top={1380}
+          left="2%"
+          background="#0a0a0a"
+          delayMs={2800}
+        >
+          <MonsterIcon />
         </Sticker>
       </div>
 
@@ -328,6 +350,129 @@ function BasketballIcon() {
         stroke="#1a1a2e"
         strokeWidth="1.2"
         fill="none"
+      />
+    </svg>
+  );
+}
+
+function LobsterIcon() {
+  // Stylized lobster — red body with two claws and antennae. Simple
+  // enough to read inside a ~55px sticker.
+  return (
+    <svg
+      width="34"
+      height="34"
+      viewBox="0 0 34 34"
+      aria-hidden
+      style={{ display: "block" }}
+    >
+      {/* antennae */}
+      <path
+        d="M 14 9 Q 11 5 9 2"
+        stroke="#7a1f0a"
+        strokeWidth="1"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M 20 9 Q 23 5 25 2"
+        stroke="#7a1f0a"
+        strokeWidth="1"
+        fill="none"
+        strokeLinecap="round"
+      />
+      {/* left claw */}
+      <ellipse
+        cx="7"
+        cy="14"
+        rx="3.5"
+        ry="2.6"
+        fill="#c83a1d"
+        stroke="#7a1f0a"
+        strokeWidth="0.8"
+        transform="rotate(-20 7 14)"
+      />
+      <path
+        d="M 5 12 Q 7.5 13 5 14.5"
+        stroke="#7a1f0a"
+        strokeWidth="0.7"
+        fill="none"
+      />
+      {/* right claw */}
+      <ellipse
+        cx="27"
+        cy="14"
+        rx="3.5"
+        ry="2.6"
+        fill="#c83a1d"
+        stroke="#7a1f0a"
+        strokeWidth="0.8"
+        transform="rotate(20 27 14)"
+      />
+      <path
+        d="M 29 12 Q 26.5 13 29 14.5"
+        stroke="#7a1f0a"
+        strokeWidth="0.7"
+        fill="none"
+      />
+      {/* head */}
+      <circle
+        cx="17"
+        cy="13"
+        r="4"
+        fill="#c83a1d"
+        stroke="#7a1f0a"
+        strokeWidth="0.8"
+      />
+      {/* eyes */}
+      <circle cx="15.5" cy="12" r="0.6" fill="#fff" />
+      <circle cx="18.5" cy="12" r="0.6" fill="#fff" />
+      {/* segmented tail */}
+      <path
+        d="M 13 17 Q 13 24 17 27 Q 21 24 21 17 Z"
+        fill="#c83a1d"
+        stroke="#7a1f0a"
+        strokeWidth="0.8"
+      />
+      <path
+        d="M 13.5 19.5 Q 17 20.5 20.5 19.5 M 14 22 Q 17 23 20 22 M 14.8 24.5 Q 17 25.2 19.2 24.5"
+        stroke="#7a1f0a"
+        strokeWidth="0.6"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+function MonsterIcon() {
+  // Three claw slashes in Monster green on a black sticker face.
+  // Not an exact brand mark — just the signature claw look.
+  return (
+    <svg
+      width="34"
+      height="34"
+      viewBox="0 0 34 34"
+      aria-hidden
+      style={{ display: "block" }}
+    >
+      {/* Three slashes — outer ones narrow-wide, middle one widest. */}
+      <path
+        d="M 8 7 L 10 27"
+        stroke="#a4ff00"
+        strokeWidth="2.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M 15.5 5 L 17.5 29"
+        stroke="#a4ff00"
+        strokeWidth="3"
+        strokeLinecap="round"
+      />
+      <path
+        d="M 24 7 L 26 27"
+        stroke="#a4ff00"
+        strokeWidth="2.6"
+        strokeLinecap="round"
       />
     </svg>
   );
