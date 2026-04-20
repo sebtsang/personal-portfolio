@@ -10,6 +10,9 @@ type Role = {
   dates: string;
   location?: string;
   logoSrc?: string;
+  /** External URL the logo links to — the company's site. Optional so
+   *  entries without a public link fall back to a non-interactive sticker. */
+  companyUrl?: string;
   /** Fallback displayed in a sticker frame when no logo is available. */
   initials?: string;
   blurb: ReactNode;
@@ -43,6 +46,7 @@ const ROLES: Role[] = [
     dates: "May 2026 – Sep 2026",
     location: "Toronto",
     logoSrc: "/logos/ey.jpeg",
+    companyUrl: "https://www.ey.com/en_ca",
     logoRotation: -4,
     blurb: <>Incoming on the AI &amp; Data team.</>,
   },
@@ -52,6 +56,7 @@ const ROLES: Role[] = [
     dates: "Apr 2026 – Present",
     location: "Waterloo",
     logoSrc: "/logos/polarity.jpeg",
+    companyUrl: "https://www.polarity.so/",
     logoRotation: 5,
     blurb: (
       <>
@@ -66,6 +71,7 @@ const ROLES: Role[] = [
     dates: "Jan 2026 – Apr 2026",
     location: "Toronto",
     logoSrc: "/logos/bmo.jpeg",
+    companyUrl: "https://www.bmo.com/en-ca/main/personal",
     logoRotation: -3,
     blurb: (
       <>
@@ -80,6 +86,7 @@ const ROLES: Role[] = [
     dates: "Mar 2026 – Apr 2026",
     location: "Toronto",
     logoSrc: "/logos/stan.jpeg",
+    companyUrl: "https://www.stan.store/",
     logoRotation: 6,
     stickerBg: "#efe8fb",
     blurb: (
@@ -95,6 +102,7 @@ const ROLES: Role[] = [
     dates: "May 2025 – Aug 2025",
     location: "Toronto",
     logoSrc: "/logos/interac.jpeg",
+    companyUrl: "https://www.interac.ca/en/",
     logoRotation: -5,
     blurb: (
       <>
@@ -109,6 +117,7 @@ const ROLES: Role[] = [
     dates: "Sep 2024 – Apr 2025",
     location: "Toronto",
     logoSrc: "/logos/interac.jpeg",
+    companyUrl: "https://www.interac.ca/en/",
     logoRotation: 3,
     blurb: (
       <>
@@ -122,9 +131,9 @@ const ROLES: Role[] = [
     title: "President",
     dates: "May 2024 – Apr 2025",
     location: "Guelph",
-    initials: "TM",
+    logoSrc: "/logos/toastmasters.jpeg",
+    companyUrl: "https://www.toastmasters.org/",
     logoRotation: -4,
-    stickerBg: "#f8e8cf",
     blurb: (
       <>
         Ran the UofG Toastmasters club — helping students who were terrified to
@@ -138,6 +147,7 @@ const ROLES: Role[] = [
     dates: "May 2024 – Aug 2024",
     location: "Toronto",
     logoSrc: "/logos/spirit-of-math.jpeg",
+    companyUrl: "https://spiritofmath.com/",
     logoRotation: 4,
     blurb: <>Built the data backbone for a new ERP — finance ops ran smoother for it.</>,
   },
@@ -147,6 +157,7 @@ const ROLES: Role[] = [
     dates: "May 2023 – Aug 2023",
     location: "Toronto",
     logoSrc: "/logos/spirit-of-math.jpeg",
+    companyUrl: "https://spiritofmath.com/",
     logoRotation: -6,
     blurb: (
       <>
@@ -400,71 +411,99 @@ function LogoSticker({ role }: { role: Role }) {
   const size = 64;
   const bg = role.stickerBg ?? "#fbfaf4";
 
-  return (
+  const inner = (
     <div
       style={{
-        width: size,
-        height: size,
-        flexShrink: 0,
-        transform: `rotate(${role.logoRotation}deg)`,
-        filter: "drop-shadow(2px 3px 6px rgba(0,0,0,0.22))",
-        transition:
-          "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms ease",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = `rotate(${role.logoRotation}deg) scale(1.06)`;
-        e.currentTarget.style.filter =
-          "drop-shadow(3px 5px 9px rgba(0,0,0,0.28))";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = `rotate(${role.logoRotation}deg) scale(1)`;
-        e.currentTarget.style.filter =
-          "drop-shadow(2px 3px 6px rgba(0,0,0,0.22))";
+        width: "100%",
+        height: "100%",
+        background: bg,
+        padding: 4,
+        border: "1px solid rgba(0,0,0,0.06)",
+        borderRadius: 6,
+        overflow: "hidden",
       }}
     >
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          background: bg,
-          padding: 4,
-          border: "1px solid rgba(0,0,0,0.06)",
-          borderRadius: 6,
-          overflow: "hidden",
-        }}
+      {role.logoSrc ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={role.logoSrc}
+          alt={`${role.company} logo`}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            display: "block",
+          }}
+          draggable={false}
+        />
+      ) : (
+        <div
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "var(--font-script)",
+            fontSize: 26,
+            fontWeight: 500,
+            color: "var(--color-ink)",
+            opacity: 0.75,
+          }}
+        >
+          {role.initials ?? role.company.slice(0, 2).toUpperCase()}
+        </div>
+      )}
+    </div>
+  );
+
+  const baseStyle: React.CSSProperties = {
+    display: "block",
+    width: size,
+    height: size,
+    flexShrink: 0,
+    transform: `rotate(${role.logoRotation}deg)`,
+    filter: "drop-shadow(2px 3px 6px rgba(0,0,0,0.22))",
+    transition:
+      "transform 260ms cubic-bezier(0.22, 1, 0.36, 1), filter 260ms ease",
+    cursor: role.companyUrl ? "pointer" : "default",
+    textDecoration: "none",
+    color: "inherit",
+  };
+
+  const onEnter = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.transform = `rotate(${role.logoRotation}deg) scale(1.06)`;
+    e.currentTarget.style.filter =
+      "drop-shadow(3px 5px 9px rgba(0,0,0,0.28))";
+  };
+  const onLeave = (e: React.MouseEvent<HTMLElement>) => {
+    e.currentTarget.style.transform = `rotate(${role.logoRotation}deg) scale(1)`;
+    e.currentTarget.style.filter =
+      "drop-shadow(2px 3px 6px rgba(0,0,0,0.22))";
+  };
+
+  // Wrap in an <a> when a companyUrl is present, otherwise fall back to a
+  // non-interactive div so the sticker is a keyboard-accessible link only
+  // when it has somewhere to go.
+  if (role.companyUrl) {
+    return (
+      <a
+        href={role.companyUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`${role.company} website (opens in new tab)`}
+        style={baseStyle}
+        onMouseEnter={onEnter}
+        onMouseLeave={onLeave}
       >
-        {role.logoSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={role.logoSrc}
-            alt={`${role.company} logo`}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "contain",
-              display: "block",
-            }}
-            draggable={false}
-          />
-        ) : (
-          <div
-            style={{
-              width: "100%",
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "var(--font-script)",
-              fontSize: 26,
-              fontWeight: 500,
-              color: "var(--color-ink)",
-              opacity: 0.75,
-            }}
-          >
-            {role.initials ?? role.company.slice(0, 2).toUpperCase()}
-          </div>
-        )}
-      </div>
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <div style={baseStyle} onMouseEnter={onEnter} onMouseLeave={onLeave}>
+      {inner}
     </div>
   );
 }
