@@ -8,8 +8,12 @@
  *
  * Override the model with LLM_MODEL. Each provider ships a sensible
  * default if LLM_MODEL isn't set.
+ *
+ * The system prompt is assembled here via buildSystemPrompt(provider)
+ * so callers don't need to know about the prompt structure.
  */
 
+import { buildSystemPrompt } from "./prompt";
 import { streamOllama } from "./ollama";
 import { streamClaude } from "./claude";
 import { streamOpenAI } from "./openai";
@@ -21,7 +25,6 @@ export type ChatMessage = {
 
 export type ChatRequest = {
   messages: ChatMessage[];
-  system: string;
   signal?: AbortSignal;
 };
 
@@ -44,14 +47,15 @@ export function currentConfig() {
 
 export async function streamChat(req: ChatRequest): Promise<Response> {
   const model = process.env.LLM_MODEL ?? DEFAULT_MODELS[PROVIDER];
+  const system = buildSystemPrompt(PROVIDER);
 
   switch (PROVIDER) {
     case "ollama":
-      return streamOllama({ ...req, model });
+      return streamOllama({ ...req, system, model });
     case "claude":
-      return streamClaude({ ...req, model });
+      return streamClaude({ ...req, system, model });
     case "openai":
-      return streamOpenAI({ ...req, model });
+      return streamOpenAI({ ...req, system, model });
     default:
       return new Response(
         JSON.stringify({
