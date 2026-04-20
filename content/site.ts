@@ -91,7 +91,7 @@ export const experience: ExperienceEntry[] = [
 
 export const currentFocus = [
   {
-    title: "OpenClaw workflows",
+    title: "Agentic AI workflows",
     description:
       "Designing agentic workflows that turn multi-step research and execution tasks into reusable systems instead of fragile prompts.",
   },

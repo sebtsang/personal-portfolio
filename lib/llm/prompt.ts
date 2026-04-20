@@ -9,10 +9,14 @@
  * Result is memoized per-provider so we read the markdown files once
  * per process (not once per request).
  *
- * CORPUS BUDGET WARNING: if the assembled prompt exceeds 5000 tokens
- * (~20,000 chars), console.warn at module load so you catch runaway
+ * CORPUS BUDGET WARNING: if the assembled prompt exceeds 8000 tokens
+ * (~32,000 chars), console.warn at module load so you catch runaway
  * corpus growth before it hits prompt-cache thresholds or the small
- * models' context window.
+ * models' context window. Threshold bumped from 5000 after the full
+ * corpus landed (bio + experience + projects + opinions + taste +
+ * quirks + looking-for + faq) — we're comfortably inside every
+ * configured model's context window and well under any retrieval
+ * cutover point. Revisit if the corpus grows past ~12k tokens.
  */
 
 import fs from "node:fs";
@@ -24,7 +28,16 @@ import { override as openaiOverride } from "@/lib/persona/overrides/openai";
 import type { LLMProvider } from "@/lib/llm";
 
 const CORPUS_DIR = path.join(process.cwd(), "content", "corpus");
-const CORPUS_FILES = ["bio.md", "experience.md", "projects.md", "opinions.md", "faq.md"] as const;
+const CORPUS_FILES = [
+  "bio.md",
+  "experience.md",
+  "projects.md",
+  "opinions.md",
+  "taste.md",
+  "quirks.md",
+  "looking-for.md",
+  "faq.md",
+] as const;
 
 const OVERRIDES: Record<LLMProvider, string> = {
   ollama: ollamaOverride,
@@ -59,9 +72,9 @@ function buildForProvider(provider: LLMProvider): string {
 
   // ~1 token per 4 chars (rough English estimate — good enough for a warning threshold)
   const approxTokens = Math.round(assembled.length / 4);
-  if (approxTokens > 5000) {
+  if (approxTokens > 8000) {
     console.warn(
-      `[prompt] Assembled system prompt is ~${approxTokens} tokens (>5000). ` +
+      `[prompt] Assembled system prompt is ~${approxTokens} tokens (>8000). ` +
         `Consider trimming content/corpus/*.md or moving to retrieval.`
     );
   }
