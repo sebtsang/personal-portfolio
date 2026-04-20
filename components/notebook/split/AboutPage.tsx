@@ -141,7 +141,7 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
             lineHeight: "var(--line)",
           }}
         >
-          page 01
+          journal · about
         </div>
 
         {/* Handwritten page title */}

@@ -83,7 +83,7 @@ export function ContentPagePlaceholder({ onClose }: { onClose: () => void }) {
             lineHeight: "var(--line)",
           }}
         >
-          page
+          journal · {label || "page"}
         </div>
 
         {/* Handwritten page title — clamp so it fits the narrow left pane */}

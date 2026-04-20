@@ -147,7 +147,7 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
             lineHeight: "var(--line)",
           }}
         >
-          page
+          journal · linkedin
         </div>
 
         {/* Page title */}

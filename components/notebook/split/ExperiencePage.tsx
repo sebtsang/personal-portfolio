@@ -229,7 +229,7 @@ export function ExperiencePage({ onClose }: { onClose: () => void }) {
             lineHeight: "var(--line)",
           }}
         >
-          page
+          journal · experience
         </div>
 
         {/* Page title */}

@@ -116,7 +116,7 @@ export function ContactPage({ onClose }: { onClose: () => void }) {
             lineHeight: "var(--line)",
           }}
         >
-          page
+          journal · contact
         </div>
 
         {/* Page title */}
