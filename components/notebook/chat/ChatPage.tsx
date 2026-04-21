@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
+import { CoverBackButton } from "../chrome/CoverBackButton";
 import { NotebookInput } from "./NotebookInput";
 import { NotebookMessage, type ChatRole } from "./NotebookMessage";
 import { WritingIndicator } from "./WritingIndicator";
@@ -33,8 +33,6 @@ export function ChatPage({
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
-
-  const metaIndent = compact ? "calc(12% + 8px)" : "calc(12% + 20px)";
 
   return (
     <div
@@ -71,55 +69,26 @@ export function ChatPage({
             backgroundRepeat: "repeat-y",
           }}
         >
-          {/* Top meta — "← cover · journal · home" (full) or nothing (compact,
-              split view already shows a back button). "← cover" navigates to
-              "/" which re-mounts the shell and shows the landing again. */}
+          {/* Chat home chrome — matches the content-page pattern:
+              back button on its own row at the top, meta label below.
+              Only shows in full mode; compact (split view) has its own
+              PageBackButton inside SplitView. */}
+          {!compact && <CoverBackButton />}
           {!compact && (
             <div
               style={{
                 position: "absolute",
-                top: "calc(var(--line) * 0.75)",
-                left: metaIndent,
+                top: "calc(var(--line) * 2.5)",
+                left: "calc(3% + 28px)",
                 fontFamily: "var(--font-mono)",
                 fontSize: 10,
                 letterSpacing: "0.25em",
                 textTransform: "uppercase",
                 color: "color-mix(in srgb, var(--color-ink-soft) 55%, transparent)",
                 lineHeight: "var(--line)",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
               }}
             >
-              <Link
-                href="/"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 4,
-                  color: "inherit",
-                  textDecoration: "none",
-                  borderBottom:
-                    "1px dashed color-mix(in srgb, var(--color-ink-soft) 30%, transparent)",
-                  paddingBottom: 1,
-                  transition:
-                    "color 160ms var(--ease-out-expo), border-color 160ms var(--ease-out-expo)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--color-ink-soft)";
-                  e.currentTarget.style.borderBottomColor =
-                    "var(--color-ink-soft)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "inherit";
-                  e.currentTarget.style.borderBottomColor =
-                    "color-mix(in srgb, var(--color-ink-soft) 30%, transparent)";
-                }}
-              >
-                ← cover
-              </Link>
-              <span aria-hidden>·</span>
-              <span>journal · home</span>
+              journal · home
             </div>
           )}
 
