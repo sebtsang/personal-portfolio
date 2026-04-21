@@ -64,7 +64,7 @@ export function CoverBackButton() {
         data-label
         style={{
           fontFamily: "var(--font-script)",
-          fontSize: 22,
+          fontSize: "var(--fs-script)",
           color: "var(--color-ink-soft)",
           opacity: 0.7,
           transition: "opacity 180ms ease",

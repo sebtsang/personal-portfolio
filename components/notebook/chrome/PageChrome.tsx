@@ -58,7 +58,7 @@ export function PageChrome({ showDate = true }: { showDate?: boolean }) {
             top: 28,
             left: "max(90px, 8%)",
             fontFamily: "var(--font-script)",
-            fontSize: 22,
+            fontSize: "var(--fs-script)",
             color: "var(--color-ink)",
             opacity: 0.45,
             transform: "rotate(-2deg)",

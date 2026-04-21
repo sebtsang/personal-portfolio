@@ -30,7 +30,7 @@ export function ScrollCue({ delay = 3800 }: { delay?: number }) {
       <div
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 11,
+          fontSize: "var(--fs-hint)",
           letterSpacing: "0.3em",
           color: "var(--color-ink-faint)",
           textTransform: "uppercase",

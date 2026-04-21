@@ -84,7 +84,7 @@ export function ContactPage({ onClose }: { onClose: () => void }) {
             top: "calc(var(--line) * 2.5)",
             left: "calc(3% + 28px)",
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",
             textTransform: "uppercase",
             color:
@@ -99,7 +99,7 @@ export function ContactPage({ onClose }: { onClose: () => void }) {
         <h1
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: "clamp(56px, 9vw, 96px)",
+            fontSize: "var(--fs-display)",
             fontWeight: 500,
             color: "var(--color-ink)",
             margin: 0,
@@ -113,7 +113,7 @@ export function ContactPage({ onClose }: { onClose: () => void }) {
         <p
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: 24,
+            fontSize: "var(--fs-body)",
             fontWeight: 400,
             color: "var(--color-ink)",
             margin: 0,
@@ -134,7 +134,7 @@ export function ContactPage({ onClose }: { onClose: () => void }) {
         <div
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: 38,
+            fontSize: "var(--fs-lg)",
             color: "var(--color-ink)",
             opacity: 0.85,
             marginTop: "calc(var(--line) * 2.5)",
@@ -197,7 +197,7 @@ function ContactCard({
         <div
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: "var(--fs-meta)",
             letterSpacing: "0.3em",
             textTransform: "uppercase",
             color:
@@ -284,7 +284,7 @@ function FieldRow({
       <div
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 10,
+          fontSize: "var(--fs-meta)",
           letterSpacing: "0.22em",
           textTransform: "uppercase",
           color:
@@ -301,7 +301,7 @@ function FieldRow({
         style={{
           flex: 1,
           fontFamily: "var(--font-script)",
-          fontSize: 26,
+          fontSize: "var(--fs-body)",
           fontWeight: 500,
           color: "var(--color-ink)",
           lineHeight: 1.1,
@@ -323,7 +323,7 @@ function FieldRow({
         <div
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: 18,
+            fontSize: "var(--fs-chip)",
             color: "var(--color-ink-soft)",
             opacity: 0.85,
             whiteSpace: "nowrap",

@@ -51,7 +51,7 @@ export function ContentPagePlaceholder({ onClose }: { onClose: () => void }) {
             top: "calc(var(--line) * 2.5)",
             left: "calc(3% + 28px)",
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",
             textTransform: "uppercase",
             color:
@@ -66,7 +66,7 @@ export function ContentPagePlaceholder({ onClose }: { onClose: () => void }) {
         <h1
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: "clamp(48px, 9vw, 96px)",
+            fontSize: "var(--fs-display)",
             fontWeight: 500,
             color: "var(--color-ink)",
             margin: 0,
@@ -81,7 +81,7 @@ export function ContentPagePlaceholder({ onClose }: { onClose: () => void }) {
         <p
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: 26,
+            fontSize: "var(--fs-body)",
             fontWeight: 400,
             color: "var(--color-ink-soft)",
             opacity: 0.75,
@@ -96,7 +96,7 @@ export function ContentPagePlaceholder({ onClose }: { onClose: () => void }) {
         <p
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: 22,
+            fontSize: "var(--fs-script)",
             fontWeight: 400,
             color: "var(--color-ink-soft)",
             opacity: 0.55,
@@ -110,7 +110,7 @@ export function ContentPagePlaceholder({ onClose }: { onClose: () => void }) {
           <span
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 13,
+              fontSize: "var(--fs-input)",
               letterSpacing: "0.1em",
               textTransform: "uppercase",
               opacity: 0.8,

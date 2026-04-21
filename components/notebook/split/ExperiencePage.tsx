@@ -197,7 +197,7 @@ export function ExperiencePage({ onClose }: { onClose: () => void }) {
             top: "calc(var(--line) * 2.5)",
             left: "calc(3% + 28px)",
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",
             textTransform: "uppercase",
             color:
@@ -212,7 +212,7 @@ export function ExperiencePage({ onClose }: { onClose: () => void }) {
         <h1
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: "clamp(56px, 9vw, 96px)",
+            fontSize: "var(--fs-display)",
             fontWeight: 500,
             color: "var(--color-ink)",
             margin: 0,
@@ -324,7 +324,7 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
           <div
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 11,
+              fontSize: "var(--fs-hint)",
               letterSpacing: "0.15em",
               textTransform: "uppercase",
               color: "var(--color-ink-faint)",
@@ -340,7 +340,7 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
           <div
             style={{
               fontFamily: "var(--font-script)",
-              fontSize: 30,
+              fontSize: "var(--fs-md)",
               fontWeight: 500,
               color: "var(--color-ink)",
               lineHeight: "var(--line)",
@@ -352,7 +352,7 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
           <div
             style={{
               fontFamily: "var(--font-script)",
-              fontSize: 22,
+              fontSize: "var(--fs-script)",
               fontStyle: "italic",
               color: "var(--color-ink-soft)",
               lineHeight: "var(--line)",
@@ -367,7 +367,7 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
       <div
         style={{
           fontFamily: "var(--font-script)",
-          fontSize: 22,
+          fontSize: "var(--fs-script)",
           fontWeight: 400,
           color: "var(--color-ink)",
           lineHeight: "var(--line)",
@@ -421,7 +421,7 @@ function LogoSticker({ role }: { role: Role }) {
             alignItems: "center",
             justifyContent: "center",
             fontFamily: "var(--font-script)",
-            fontSize: 26,
+            fontSize: "var(--fs-body)",
             fontWeight: 500,
             color: "var(--color-ink)",
             opacity: 0.75,

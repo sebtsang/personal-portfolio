@@ -64,7 +64,7 @@ export function LandingPage({ onAdvance }: { onAdvance: () => void }) {
       <div
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 14,
+          fontSize: "var(--fs-input)",
           fontWeight: 500,
           letterSpacing: "0.35em",
           color: "var(--color-ink-faint)",

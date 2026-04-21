@@ -29,7 +29,7 @@ export function SlashCommandRow({
         <span
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: "var(--fs-meta)",
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             color: "color-mix(in srgb, var(--color-ink-soft) 45%, transparent)",
@@ -50,7 +50,7 @@ export function SlashCommandRow({
             padding: 0,
             cursor: "pointer",
             fontFamily: "var(--font-script)",
-            fontSize: compact ? 18 : 22,
+            fontSize: compact ? "var(--fs-chip)" : "var(--fs-script)",
             color: "color-mix(in srgb, var(--color-ink-soft) 70%, transparent)",
             borderBottom:
               "1px dashed color-mix(in srgb, var(--color-ink-soft) 30%, transparent)",

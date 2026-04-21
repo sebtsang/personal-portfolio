@@ -109,7 +109,7 @@ export function NotebookInput({
             <span
               style={{
                 fontFamily: "var(--font-mono)",
-                fontSize: 10,
+                fontSize: "var(--fs-meta)",
                 letterSpacing: "0.2em",
                 textTransform: "uppercase",
                 color: "color-mix(in srgb, var(--color-ink-soft) 50%, transparent)",
@@ -139,7 +139,7 @@ export function NotebookInput({
                 border: "none",
                 outline: "none",
                 fontFamily: "var(--font-mono)",
-                fontSize: compact ? 12 : 14,
+                fontSize: "var(--fs-input)",
                 color: "var(--color-ink)",
                 caretColor: "var(--color-ink-soft)",
                 lineHeight: "var(--line)",
@@ -157,7 +157,7 @@ export function NotebookInput({
                   top: "50%",
                   transform: "translateY(-50%)",
                   fontFamily: "var(--font-mono)",
-                  fontSize: 10,
+                  fontSize: "var(--fs-meta)",
                   letterSpacing: "0.15em",
                   color:
                     "color-mix(in srgb, var(--color-ink-soft) 40%, transparent)",

@@ -115,7 +115,7 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
             top: "calc(var(--line) * 2.5)",
             left: "calc(3% + 28px)",
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",
             textTransform: "uppercase",
             color:
@@ -130,7 +130,7 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
         <h1
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: "clamp(56px, 9vw, 96px)",
+            fontSize: "var(--fs-display)",
             fontWeight: 500,
             color: "var(--color-ink)",
             margin: 0,
@@ -144,7 +144,7 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
         <p
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: 22,
+            fontSize: "var(--fs-script)",
             color: "var(--color-ink-soft)",
             opacity: 0.75,
             margin: 0,
@@ -204,7 +204,7 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
         <div
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
+            fontSize: "var(--fs-hint)",
             letterSpacing: "0.25em",
             textTransform: "uppercase",
             color:
@@ -339,7 +339,7 @@ function PostCard({
         <div
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: 22,
+            fontSize: "var(--fs-script)",
             lineHeight: 1.1,
             color: "var(--color-ink)",
             opacity: 0.85,
@@ -356,7 +356,7 @@ function PostCard({
             bottom: 10,
             right: 12,
             fontFamily: "var(--font-mono)",
-            fontSize: 9,
+            fontSize: "var(--fs-kbd)",
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             color:
@@ -408,7 +408,7 @@ function NavArrow({
         padding: 12,
         cursor: "pointer",
         fontFamily: "var(--font-script)",
-        fontSize: 36,
+        fontSize: "var(--fs-lg)",
         color: "var(--color-ink-soft)",
         opacity: 0.55,
         lineHeight: 1,

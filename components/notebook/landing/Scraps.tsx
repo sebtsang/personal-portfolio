@@ -184,7 +184,7 @@ function TapedCard({ ready }: { ready: boolean }) {
           <div
             style={{
               fontFamily: "var(--font-script)",
-              fontSize: 16,
+              fontSize: "var(--fs-chip)",
               color: "var(--color-ink)",
               opacity: 0.55,
               marginBottom: 4,
@@ -195,7 +195,7 @@ function TapedCard({ ready }: { ready: boolean }) {
           <div
             style={{
               fontFamily: "var(--font-script)",
-              fontSize: 22,
+              fontSize: "var(--fs-script)",
               color: "var(--color-ink)",
               opacity: 0.85,
               lineHeight: 1.15,
@@ -206,7 +206,7 @@ function TapedCard({ ready }: { ready: boolean }) {
           <div
             style={{
               fontFamily: "var(--font-script)",
-              fontSize: 18,
+              fontSize: "var(--fs-chip)",
               color: "var(--color-ink)",
               opacity: 0.55,
               marginTop: 6,
@@ -267,11 +267,11 @@ function YellowSticky({ ready }: { ready: boolean }) {
           animation: "fadeIn 0.8s ease 1.6s both",
         }}
       >
-        <div style={{ fontSize: 14, opacity: 0.7, marginBottom: 4 }}>
+        <div style={{ fontSize: "var(--fs-input)", opacity: 0.7, marginBottom: 4 }}>
           mon 9am
         </div>
-        <div style={{ fontSize: 22 }}>coffee w/</div>
-        <div style={{ fontSize: 22 }}>Tom</div>
+        <div style={{ fontSize: "var(--fs-script)" }}>coffee w/</div>
+        <div style={{ fontSize: "var(--fs-script)" }}>Tom</div>
         <div
           style={{
             position: "absolute",
@@ -322,7 +322,7 @@ function TodoList({ ready: _ready }: { ready: boolean }) {
     >
       <div
         style={{
-          fontSize: 18,
+          fontSize: "var(--fs-chip)",
           opacity: 0.7,
           marginBottom: 6,
           textDecoration: "underline",
@@ -364,7 +364,7 @@ function TodoItem({
         }
       }}
       style={{
-        fontSize: 17,
+        fontSize: "var(--fs-chip)",
         opacity: done ? 0.45 : 0.75,
         display: "flex",
         gap: 8,
@@ -460,7 +460,7 @@ function InkAnnotation({
     <div
       style={{
         fontFamily: "var(--font-script)",
-        fontSize: 20,
+        fontSize: "var(--fs-script)",
         lineHeight: 1.1,
         color: "var(--color-ink)",
         opacity: inkOpacity,
@@ -537,7 +537,7 @@ function MarginAnnotations({ ready }: { ready: boolean }) {
         gap={8}
         textOrder="before"
         text={<>hi, I&apos;m</>}
-        textStyle={{ fontSize: 20 }}
+        textStyle={{ fontSize: "var(--fs-script)" }}
         svg={{
           width: 60,
           height: 30,
@@ -589,7 +589,7 @@ function MarginAnnotations({ ready }: { ready: boolean }) {
             stuff
           </span>
         }
-        textStyle={{ fontSize: 18, lineHeight: 1.15, whiteSpace: "normal" }}
+        textStyle={{ fontSize: "var(--fs-chip)", lineHeight: 1.15, whiteSpace: "normal" }}
         svg={{
           width: 28,
           height: 60,

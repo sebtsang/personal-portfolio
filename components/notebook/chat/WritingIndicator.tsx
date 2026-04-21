@@ -25,14 +25,14 @@ export const WritingIndicator = memo(function WritingIndicator({
   }, []);
   const dots = ".".repeat(tick % 4);
 
-  const fontSize = compact ? 20 : 26;
+  const fontSize = compact ? "var(--fs-script)" : "var(--fs-body)";
   const lineHeight = "var(--line)";
   const paddingLeft = compact ? "calc(12% + 8px)" : "calc(12% + 16px)";
   const paddingRight = compact ? "6%" : "8%";
 
   const labelStyle: React.CSSProperties = {
     fontFamily: "var(--font-mono)",
-    fontSize: 10,
+    fontSize: "var(--fs-meta)",
     letterSpacing: "0.2em",
     textTransform: "uppercase",
     color: "color-mix(in srgb, var(--color-ink-soft) 65%, transparent)",

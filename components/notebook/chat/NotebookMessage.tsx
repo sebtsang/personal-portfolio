@@ -39,13 +39,13 @@ export const NotebookMessage = memo(function NotebookMessage({
     ? "color-mix(in srgb, var(--color-ink-soft) 50%, transparent)"
     : "color-mix(in srgb, var(--color-ink-soft) 65%, transparent)";
 
-  const fontSize = compact ? 20 : 26;
+  const fontSize = compact ? "var(--fs-script)" : "var(--fs-body)";
   // Always ride the 32px ruler grid so every wrapped line lands on a rule.
   const lineHeight = "var(--line)";
 
   const labelStyle: React.CSSProperties = {
     fontFamily: "var(--font-mono)",
-    fontSize: 10,
+    fontSize: "var(--fs-meta)",
     letterSpacing: "0.2em",
     textTransform: "uppercase",
     color: labelColor,

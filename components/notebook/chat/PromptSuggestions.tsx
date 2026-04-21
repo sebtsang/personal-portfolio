@@ -66,7 +66,7 @@ export function PromptSuggestions({
         <span
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: "var(--fs-meta)",
             letterSpacing: "0.2em",
             textTransform: "uppercase",
             color:
@@ -90,7 +90,7 @@ export function PromptSuggestions({
             padding: compact ? "2px 10px" : "3px 12px",
             cursor: "pointer",
             fontFamily: "var(--font-script)",
-            fontSize: compact ? 15 : 17,
+            fontSize: "var(--fs-chip)",
             color:
               "color-mix(in srgb, var(--color-ink-soft) 72%, transparent)",
             lineHeight: 1.3,

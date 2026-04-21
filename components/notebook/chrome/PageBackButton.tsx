@@ -51,7 +51,7 @@ export function PageBackButton({ onClose }: { onClose: () => void }) {
         data-label
         style={{
           fontFamily: "var(--font-script)",
-          fontSize: 22,
+          fontSize: "var(--fs-script)",
           color: "var(--color-ink-soft)",
           opacity: 0.7,
           transition: "opacity 180ms ease",
@@ -65,7 +65,7 @@ export function PageBackButton({ onClose }: { onClose: () => void }) {
         data-kbd
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 9,
+          fontSize: "var(--fs-kbd)",
           letterSpacing: "0.2em",
           textTransform: "uppercase",
           color: "var(--color-ink-faint)",

@@ -109,7 +109,7 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
             top: "calc(var(--line) * 2.5)",
             left: "calc(3% + 28px)",
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",
             textTransform: "uppercase",
             color:
@@ -124,7 +124,7 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
         <h1
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: "clamp(56px, 9vw, 96px)",
+            fontSize: "var(--fs-display)",
             fontWeight: 500,
             color: "var(--color-ink)",
             margin: 0,
@@ -171,7 +171,7 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
             // right: 130 + width 200 = 330) never overlap body text.
             maxWidth: "calc(100% - 360px)",
             fontFamily: "var(--font-script)",
-            fontSize: 24,
+            fontSize: "var(--fs-body)",
             fontWeight: 400,
             color: "var(--color-ink)",
             lineHeight: "var(--line)",
@@ -598,7 +598,7 @@ function PolaroidFrame({
         <div
           style={{
             fontFamily: "var(--font-script)",
-            fontSize: 20,
+            fontSize: "var(--fs-script)",
             color: "var(--color-ink)",
             opacity: 0.75,
             textAlign: "center",
@@ -665,7 +665,7 @@ function MarginNote({
         right,
         transform: `rotate(${rotate}deg)`,
         fontFamily: "var(--font-script)",
-        fontSize: 17,
+        fontSize: "var(--fs-chip)",
         color: "var(--color-ink)",
         opacity: 0.55,
         lineHeight: 1.15,

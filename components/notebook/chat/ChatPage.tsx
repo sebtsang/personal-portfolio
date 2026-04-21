@@ -103,7 +103,7 @@ export function ChatPage({
                 // red margin on the full-viewport chat home.
                 left: "calc(12% + 20px)",
                 fontFamily: "var(--font-mono)",
-                fontSize: 10,
+                fontSize: "var(--fs-meta)",
                 letterSpacing: "0.25em",
                 textTransform: "uppercase",
                 color: "color-mix(in srgb, var(--color-ink-soft) 55%, transparent)",

@@ -112,11 +112,10 @@ export function CornerPeel({
             x={size + 32 - 16}
             y={size + 32 - 14}
             fontFamily='"Caveat", cursive'
-            fontSize="18"
             fill="#5a5446"
             textAnchor="end"
             opacity="0.7"
-            style={{ transition: "opacity 0.2s" }}
+            style={{ transition: "opacity 0.2s", fontSize: "var(--fs-chip)" }}
           >
             next →
           </text>
