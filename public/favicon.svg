@@ -1,4 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="18" fill="#171717"/>
-  <path d="M18 22.5C18 16.701 22.701 12 28.5 12H45V20H29.5C26.462 20 24 22.462 24 25.5C24 28.538 26.462 31 29.5 31H39.5C47.508 31 54 37.492 54 45.5C54 53.508 47.508 60 39.5 60H12V52H38.5C42.09 52 45 49.09 45 45.5C45 41.91 42.09 39 38.5 39H28.5C22.701 39 18 34.299 18 28.5V22.5Z" fill="#F7F4EE"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <g transform="rotate(-5 32 32)">
+    <!-- Cream notebook body. Thin navy stroke at 35% opacity gives it a
+         defined edge on light browser tabs (where cream and tab chrome
+         can blend) without reading as a heavy outline on dark tabs. -->
+    <rect x="6.5" y="3.5" width="51" height="57" rx="3"
+          fill="#faf7f0"
+          stroke="#1a1a2e" stroke-width="1.5" stroke-opacity="0.35"/>
+    <!-- Red vertical margin rule — matches the site's ruled paper and
+         makes the favicon instantly recognizable to anyone who's visited. -->
+    <line x1="20" y1="8" x2="20" y2="56" stroke="#c9483a" stroke-width="1.8" stroke-opacity="0.85"/>
+    <!-- Faint horizontal ruled lines — paper texture at ≥32px, invisible at 16px -->
+    <line x1="22" y1="22" x2="52" y2="22" stroke="#1a1a2e" stroke-width="0.8" stroke-opacity="0.18"/>
+    <line x1="22" y1="32" x2="52" y2="32" stroke="#1a1a2e" stroke-width="0.8" stroke-opacity="0.18"/>
+    <line x1="22" y1="42" x2="52" y2="42" stroke="#1a1a2e" stroke-width="0.8" stroke-opacity="0.18"/>
+    <!-- Spiral binding coils — 5 ring-holes on the left edge. Radius 4 is
+         large enough to read clearly at 16×16 as coils (vs a blur at
+         smaller r). Navy outer + cream center creates the ring effect. -->
+    <circle cx="11" cy="12" r="4" fill="#1a1a2e"/>
+    <circle cx="11" cy="12" r="1.8" fill="#faf7f0"/>
+    <circle cx="11" cy="22" r="4" fill="#1a1a2e"/>
+    <circle cx="11" cy="22" r="1.8" fill="#faf7f0"/>
+    <circle cx="11" cy="32" r="4" fill="#1a1a2e"/>
+    <circle cx="11" cy="32" r="1.8" fill="#faf7f0"/>
+    <circle cx="11" cy="42" r="4" fill="#1a1a2e"/>
+    <circle cx="11" cy="42" r="1.8" fill="#faf7f0"/>
+    <circle cx="11" cy="52" r="4" fill="#1a1a2e"/>
+    <circle cx="11" cy="52" r="1.8" fill="#faf7f0"/>
+  </g>
 </svg>
