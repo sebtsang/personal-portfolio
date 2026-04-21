@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { SlashCommandRow } from "./SlashCommandRow";
 import { PromptSuggestions } from "./PromptSuggestions";
 
@@ -73,9 +74,26 @@ export function NotebookInput({
           pointerEvents: "auto",
         }}
       >
-        {showSuggestions && (
-          <PromptSuggestions onSelect={prefill} compact={compact} />
-        )}
+        {/* Prompt suggestion chips fade + slide away smoothly when the
+            user sends their first message, instead of popping out and
+            letting the slash row jump into their slot. */}
+        <AnimatePresence initial={false}>
+          {showSuggestions && (
+            <motion.div
+              key="prompt-suggestions"
+              initial={{ opacity: 0, y: -4, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: 6, height: 0 }}
+              transition={{
+                duration: 0.3,
+                ease: [0.16, 1, 0.3, 1],
+              }}
+              style={{ overflow: "hidden" }}
+            >
+              <PromptSuggestions onSelect={prefill} compact={compact} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <SlashCommandRow onDispatch={submit} compact={compact} />
 

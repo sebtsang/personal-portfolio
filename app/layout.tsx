@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { CommandPalette } from "@/components/CommandPalette";
 import "./globals.css";
 
 const SITE_URL =
@@ -70,6 +71,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         {children}
+        <CommandPalette />
         <Analytics />
         <SpeedInsights />
       </body>
