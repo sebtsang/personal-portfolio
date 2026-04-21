@@ -33,12 +33,33 @@
   --color-sticky-yellow: rgb(253 230 138);
 
   /* Baseline grid — every ruled line is --line apart, every handwritten
-     line-height matches this so text always sits on a rule. */
-  --line: 32px;
+     line-height matches this so text always sits on a rule. Fluid so the
+     whole rhythm breathes across 1280–2560px desktops, anchored to ~32px
+     at 1440p where the site was originally designed. */
+  --line: clamp(28px, 2.22vw, 40px);
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-flip: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-draw: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Fluid type scale — lives outside @theme because Tailwind v4 tree-shakes
+   @theme vars that don't match a utility namespace. Declared on :root so
+   components can reference via `style={{ fontSize: "var(--fs-body)" }}`.
+   Anchored so 1440px viewport preserves current sizes; min values hit at
+   1280px, max values cap at 2560px. Wired up to components in Phase 2. */
+:root {
+  --fs-kbd: clamp(8px, 0.625vw, 11px);
+  --fs-meta: clamp(9px, 0.694vw, 12px);
+  --fs-hint: clamp(10px, 0.76vw, 13px);
+  --fs-input: clamp(12px, 0.972vw, 16px);
+  --fs-chip: clamp(14px, 1.18vw, 20px);
+  --fs-script: clamp(18px, 1.53vw, 26px);
+  --fs-body: clamp(22px, 1.81vw, 32px);
+  --fs-md: clamp(24px, 2.08vw, 36px);
+  --fs-lg: clamp(30px, 2.64vw, 46px);
+  --fs-xl: clamp(34px, 2.92vw, 52px);
+  --fs-display: clamp(56px, 9.72vw, 140px);
 }
 
 @layer base {
