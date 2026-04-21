@@ -20,6 +20,15 @@ const WELCOME_BUBBLES = [
 ];
 
 /**
+ * Match "open the menu / palette / commands" style phrases including
+ * the shortcut slash commands /menu /cmd /palette /commands. Handled in
+ * handleSubmit BEFORE matchIntent because this dispatches a window
+ * event to open the palette instead of opening a content page.
+ */
+const PALETTE_INTENT =
+  /^\/(menu|cmd|commands?|palette)\s*$|^(open|show)\s+(the\s+)?(menu|command\s+menu|palette|commands?)\s*\??$/i;
+
+/**
  * Default one-liner to inject when the LLM emits a tool call with no
  * preceding text. Per-tool because the blank-bubble UX is most jarring
  * when the page opens silently — a one-word acknowledgment keeps the
@@ -321,6 +330,17 @@ export function NotebookShell({
       // If the user sends before all seed bubbles have mounted, snap them
       // all in so their message doesn't get inserted between seeds.
       setSeedPhase(WELCOME_BUBBLES.length);
+
+      // /menu, /cmd, /palette, "open the menu" — open the command
+      // palette instead of appending to the chat. Handled before
+      // matchIntent because there's no tool for this; it dispatches
+      // the same window event the ⌘K hint chip uses.
+      if (PALETTE_INTENT.test(trimmed)) {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("sebjournal:open-palette"));
+        }
+        return;
+      }
 
       const intent = matchIntent(trimmed);
       if (intent) {

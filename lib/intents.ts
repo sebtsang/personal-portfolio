@@ -30,7 +30,7 @@ type Intent = {
 // Phrases that signal "I want to navigate to / see a page". Anchored to
 // message start so "I don't want to see X" doesn't spuriously match.
 const NAV_PHRASE =
-  /^\s*(\/?(show|see|view|read|open|pull\s+up|take\s+me\s+to|go\s+to)\s+(me\s+|us\s+)?|(can|could|will|would)\s+(i|you|we)\s+(see|show|view|look\s+at|check|read|pull\s+up|open)\s+(me\s+|us\s+)?|(let|lemme)\s+me?\s+(see|view|check|read|look\s+at)\s+|(i|we)('?ll|\s+will|\s+would\s+like|\s+want|\s+wanna|\s+need|'?d\s+like)(\s+to)?\s+(see|view|look\s+at|check|read|know(\s+about)?)\s+|tell\s+me(\s+about)?\s+|what'?s\s+(your|his)\s+|what\s+(is|are)\s+(your|his)\s+|what\s+has\s+(he|seb)\s+|what\s+(did|does|do)\s+(he|seb|you)\s+|where\s+has\s+(he|seb)\s+)/i;
+  /^\s*(\/?(show|see|view|read|open|pull\s+up|take\s+me\s+to|go\s+to)\s+(me\s+|us\s+)?|(can|could|will|would)\s+(i|you|we)\s+(see|show|view|look\s+at|check|read|pull\s+up|open|contact|reach|email|message|dm)\s+(me\s+|us\s+)?|(let|lemme)\s+me?\s+(see|view|check|read|look\s+at)\s+|(i|we)('?ll|\s+will|\s+would\s+like|\s+want|\s+wanna|\s+need|'?d\s+like)(\s+to)?\s+(see|view|look\s+at|check|read|know(\s+about)?|contact|reach|email|message|dm)\s+|(how\s+(do|can|should|would|to)\s+(i|you|we|one)?\s*)|tell\s+me(\s+about)?\s+|what'?s\s+(your|his)\s+|what\s+(is|are)\s+(your|his)\s+|what\s+has\s+(he|seb)\s+|what\s+(did|does|do)\s+(he|seb|you)\s+|where\s+has\s+(he|seb)\s+)/i;
 
 const TOPIC_PATTERNS: Record<Exclude<ToolName, "showProjects" | "showProject">, RegExp> = {
   showAbout:

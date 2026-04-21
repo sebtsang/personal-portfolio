@@ -26,20 +26,31 @@ export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Global ⌘K / Ctrl+K toggle. Ignore when a form field is focused so
-  // users can actually type ⌘K characters in the chat input if they
-  // somehow want to (they don't, but it's polite).
+  // Global key handler: ⌘K / Ctrl+K toggles the palette; Esc closes it
+  // when open. Both use the CAPTURE phase + stopImmediatePropagation so
+  // that when the palette is open, Esc closes the palette without also
+  // reaching NotebookShell's Escape-closes-split listener on window
+  // (both would otherwise fire since both are window-level).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const isMod = e.metaKey || e.ctrlKey;
       if (isMod && e.key.toLowerCase() === "k") {
         e.preventDefault();
+        e.stopImmediatePropagation();
         setOpen((o) => !o);
+        return;
+      }
+      if (e.key === "Escape" && open) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setOpen(false);
+        return;
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () =>
+      window.removeEventListener("keydown", onKey, { capture: true });
+  }, [open]);
 
   // Custom event for non-keyboard triggers (e.g. the ⌘K hint chip in
   // SlashCommandRow, used for mobile and click-first users).
@@ -250,14 +261,14 @@ export function CommandPalette() {
 
                 <PaletteGroup heading="Navigate">
                   <PaletteItem
-                    label="Home — chat"
-                    shortcut="/home"
-                    onSelect={navigate("/home")}
-                  />
-                  <PaletteItem
                     label="Landing page"
                     shortcut="/"
                     onSelect={navigate("/")}
+                  />
+                  <PaletteItem
+                    label="Home — chat"
+                    shortcut="/home"
+                    onSelect={navigate("/home")}
                   />
                   <PaletteItem
                     label="About"
