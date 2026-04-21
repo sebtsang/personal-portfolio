@@ -31,3 +31,4 @@ yarn-error.log*
 
 # local dev tooling (Claude Code session state, plans, preview config)
 .claude/
+.env.vercel
