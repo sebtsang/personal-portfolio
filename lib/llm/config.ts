@@ -45,4 +45,15 @@ export const MODEL_CONFIG: Record<LLMProvider, ModelParams> = {
     topP: 1.0,
     maxTokens: 400,
   },
+  github: {
+    // GitHub Models via OpenAI-compatible endpoint — same default
+    // characteristics as direct OpenAI but lower maxTokens because
+    // GitHub's free tier has a per-minute token budget you'll blow
+    // through fast if every response is 400 tokens. 250 balances
+    // "long enough for real answers" with "not wasting budget."
+    // Bump up if you switch to the paid tier.
+    temperature: 0.85,
+    topP: 1.0,
+    maxTokens: 250,
+  },
 };

@@ -108,20 +108,40 @@ LLM_MODEL=...         # optional override; each provider has a default
 
 Then set the matching credential:
 
-| Provider | Env vars | Default model |
-|---|---|---|
-| `ollama` (local) | none (daemon must be running) | `gpt-oss:120b-cloud` |
-| `ollama` (cloud) | `OLLAMA_API_KEY=...` | `gpt-oss:120b-cloud` |
-| `claude` | `ANTHROPIC_API_KEY=sk-ant-...` | `claude-haiku-4-5-20251001` |
-| `openai` | `OPENAI_API_KEY=sk-...` | `gpt-4.1-mini` |
+| Provider | Env vars | Default model | Cost |
+|---|---|---|---|
+| `github` | `GITHUB_TOKEN=github_pat_...` | `openai/gpt-4.1-mini` | **free** (rate-limited tier) |
+| `ollama` (cloud) | `OLLAMA_API_KEY=...` | `gpt-oss:120b-cloud` | pay-per-token |
+| `ollama` (local) | none (daemon must be running) | `gpt-oss:120b-cloud` | free local GPU |
+| `claude` | `ANTHROPIC_API_KEY=sk-ant-...` | `claude-haiku-4-5-20251001` | pay-per-token |
+| `openai` | `OPENAI_API_KEY=sk-...` | `gpt-4.1-mini` | pay-per-token |
 
-**Model-choice notes:** The default was previously `qwen3.5:cloud`, but
+**Why GitHub is the default:** free-tier OpenAI-compatible inference,
+no subscription needed, works with any GitHub account. Get a PAT at
+[github.com/settings/personal-access-tokens](https://github.com/settings/personal-access-tokens)
+with "Models: read" permission. Model catalog at
+[github.com/marketplace/models](https://github.com/marketplace/models) —
+prefix names with `openai/`, `meta/`, `deepseek/` etc.
+
+**Failover pattern:** set `LLM_FALLBACK_PROVIDER` to a second provider
+and `streamChat` auto-retries on 5xx / 429 / pre-stream errors. Good
+pairing for reliability:
+
+```bash
+LLM_PROVIDER=github           # free primary
+LLM_FALLBACK_PROVIDER=ollama  # paid backup if GitHub rate-limits or fails
+OLLAMA_API_KEY=...
+GITHUB_TOKEN=...
+```
+
+**Model-choice notes:** Earlier defaults used `qwen3.5:cloud` but
 reasoning models (Qwen / GLM / MiniMax) occasionally burn their entire
 output-token budget on internal chain-of-thought despite `think: false`
-and return empty content. `gpt-oss:120b-cloud` is a non-reasoning model
-of similar quality that doesn't hit this failure mode. If you swap in a
+and return empty content. `gpt-oss:120b-cloud` (Ollama) and
+`openai/gpt-4.1-mini` (GitHub Models) are non-reasoning models of
+similar quality that don't hit this failure mode. If you swap in a
 reasoning model, drop `maxTokens` in [lib/llm/config.ts](lib/llm/config.ts)
-back to 180 to cap the dead time.
+to cap the dead time.
 
 Restart the dev server after changing env vars. No code changes
 needed.

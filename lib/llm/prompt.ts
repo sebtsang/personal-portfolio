@@ -25,6 +25,7 @@ import { VOICE } from "@/lib/persona/voice";
 import { override as ollamaOverride } from "@/lib/persona/overrides/ollama";
 import { override as claudeOverride } from "@/lib/persona/overrides/claude";
 import { override as openaiOverride } from "@/lib/persona/overrides/openai";
+import { override as githubOverride } from "@/lib/persona/overrides/github";
 import type { LLMProvider } from "@/lib/llm";
 
 const CORPUS_DIR = path.join(process.cwd(), "content", "corpus");
@@ -43,6 +44,7 @@ const OVERRIDES: Record<LLMProvider, string> = {
   ollama: ollamaOverride,
   claude: claudeOverride,
   openai: openaiOverride,
+  github: githubOverride,
 };
 
 // Memoized per-provider after first build.
