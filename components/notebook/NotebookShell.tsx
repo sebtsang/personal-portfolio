@@ -20,6 +20,20 @@ const WELCOME_BUBBLES = [
 ];
 
 /**
+ * Default one-liner to inject when the LLM emits a tool call with no
+ * preceding text. Per-tool because the blank-bubble UX is most jarring
+ * when the page opens silently — a one-word acknowledgment keeps the
+ * conversation readable. Kept short so it doesn't fight the model's
+ * own text when the model actually does produce some.
+ */
+const TOOL_FALLBACK_REPLY: Record<ToolName, string> = {
+  showAbout: "Here's the about page.",
+  showExperience: "Pulling up the timeline.",
+  showContact: "Contact page — on it.",
+  showLinkedIn: "Flipping through the posts.",
+};
+
+/**
  * Detect a 429 from /api/chat (whose body is `{ error: "rate-limited",
  * retryAfter, which }`) and translate it into a journal-voice bot reply.
  * Returns null for any other failure so the caller falls back to a console
@@ -98,6 +112,23 @@ export function NotebookShell({
         toolCall.toolName as ToolName,
         toolCall.args as Record<string, unknown>,
       );
+      // Safety net: if the LLM called a tool with no preceding text,
+      // the user sees a blank SEBBOT bubble. voice.ts has a hard rule
+      // against this, but models occasionally skip it anyway. Inject a
+      // default one-liner onto the current assistant message so the
+      // transition reads naturally regardless.
+      setMessages((prev) => {
+        if (prev.length === 0) return prev;
+        const last = prev[prev.length - 1];
+        if (last.role !== "assistant") return prev;
+        if (last.content && last.content.trim().length > 0) return prev;
+        const fallback = TOOL_FALLBACK_REPLY[toolCall.toolName as ToolName]
+          ?? "Pulling that up.";
+        return [
+          ...prev.slice(0, -1),
+          { ...last, content: fallback },
+        ];
+      });
     },
     onError: (err) => {
       console.error("[chat] request failed:", err);
