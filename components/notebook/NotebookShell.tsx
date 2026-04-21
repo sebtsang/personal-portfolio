@@ -116,11 +116,19 @@ export function NotebookShell({
     deepLink ? WELCOME_BUBBLES.length : 0,
   );
 
-  // Deep-link: push the initial view into the store on mount so the
-  // split view opens with the right content.
+  // Align the Zustand view store with the route on every mount.
+  //
+  // Critical bug fixed here: the store persists across Next route
+  // changes (it's global), so navigating /contact → /home via
+  // router.push used to leave `view = { kind: "contact" }` in the
+  // store. The new /home-route NotebookShell mounted, but SplitView
+  // still rendered the Contact page because the store thought a
+  // split was open. URL changed, UI didn't.
+  //
+  // Now: always setView to match the route. Deep-links push their
+  // initialView; /home and /landing push empty. Runs once on mount.
   useEffect(() => {
-    if (deepLink && initialView) setView(initialView);
-    // Run once on mount.
+    setView(initialView ?? { kind: "empty" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
