@@ -107,6 +107,17 @@ export async function streamOllama({
       tool_calls?: string[];
     } = {}
   ) => {
+    // Always log to terminal in dev — Upstash Redis logging (below) is
+    // opt-in via env vars, but we want per-request token visibility locally
+    // regardless of whether Redis is configured.
+    const latencyMs = Date.now() - (logContext?.startedAt ?? Date.now());
+    const pt = opts.prompt_tokens ?? 0;
+    const ct = opts.completion_tokens ?? 0;
+    const tc = opts.tool_calls?.length ? ` tools=[${opts.tool_calls.join(",")}]` : "";
+    console.log(
+      `[ollama] ${model} ${status} prompt=${pt} completion=${ct} total=${pt + ct} latency=${latencyMs}ms${tc}`
+    );
+
     if (!logContext) return;
     logChat({
       ts: logContext.startedAt,
@@ -116,7 +127,7 @@ export async function streamOllama({
       prompt_tokens: opts.prompt_tokens,
       completion_tokens: opts.completion_tokens,
       tool_calls: opts.tool_calls ?? [],
-      latency_ms: Date.now() - logContext.startedAt,
+      latency_ms: latencyMs,
       status,
       feedback_flag: logContext.feedbackFlag,
     });

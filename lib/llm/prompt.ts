@@ -9,7 +9,7 @@
  * Result is memoized per-provider so we read the markdown files once
  * per process (not once per request).
  *
- * CORPUS BUDGET WARNING: if the assembled prompt exceeds 8000 tokens
+ * CORPUS BUDGET WARNING: if the assembled prompt exceeds 9000 tokens
  * (~32,000 chars), console.warn at module load so you catch runaway
  * corpus growth before it hits prompt-cache thresholds or the small
  * models' context window. Threshold bumped from 5000 after the full
@@ -72,9 +72,9 @@ function buildForProvider(provider: LLMProvider): string {
 
   // ~1 token per 4 chars (rough English estimate — good enough for a warning threshold)
   const approxTokens = Math.round(assembled.length / 4);
-  if (approxTokens > 8000) {
+  if (approxTokens > 9000) {
     console.warn(
-      `[prompt] Assembled system prompt is ~${approxTokens} tokens (>8000). ` +
+      `[prompt] Assembled system prompt is ~${approxTokens} tokens (>9000). ` +
         `Consider trimming content/corpus/*.md or moving to retrieval.`
     );
   }
