@@ -183,7 +183,7 @@ export function ExperiencePage({ onClose }: { onClose: () => void }) {
           inset: 0,
           paddingTop: "calc(var(--line) * 3)",
           paddingBottom: "calc(var(--line) * 3)",
-          paddingLeft: "calc(12% + 16px)",
+          paddingLeft: "calc(12% + var(--pad-content))",
           paddingRight: "8%",
           overflowY: "auto",
         }}
@@ -195,7 +195,7 @@ export function ExperiencePage({ onClose }: { onClose: () => void }) {
           style={{
             position: "absolute",
             top: "calc(var(--line) * 2.5)",
-            left: "calc(3% + 28px)",
+            left: "calc(3% + var(--pad-chrome))",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",

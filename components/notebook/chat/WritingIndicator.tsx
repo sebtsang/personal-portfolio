@@ -27,7 +27,7 @@ export const WritingIndicator = memo(function WritingIndicator({
 
   const fontSize = compact ? "var(--fs-script)" : "var(--fs-body)";
   const lineHeight = "var(--line)";
-  const paddingLeft = compact ? "calc(12% + 8px)" : "calc(12% + 16px)";
+  const paddingLeft = compact ? "calc(12% + var(--pad-content-sm))" : "calc(12% + var(--pad-content))";
   const paddingRight = compact ? "6%" : "8%";
 
   const labelStyle: React.CSSProperties = {

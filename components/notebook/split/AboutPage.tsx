@@ -89,7 +89,7 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
           inset: 0,
           paddingTop: "calc(var(--line) * 3)",
           paddingBottom: "calc(var(--line) * 3)",
-          paddingLeft: "calc(12% + 16px)",
+          paddingLeft: "calc(12% + var(--pad-content))",
           paddingRight: "8%",
           overflowY: "auto",
           // Ruled lines travel with the content (same trick as the chat)
@@ -107,7 +107,7 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
           style={{
             position: "absolute",
             top: "calc(var(--line) * 2.5)",
-            left: "calc(3% + 28px)",
+            left: "calc(3% + var(--pad-chrome))",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",
@@ -567,7 +567,7 @@ function PolaroidFrame({
       <div
         style={{
           background: "#fbfaf4",
-          padding: "12px 12px 44px 12px",
+          padding: "var(--pad-chip) var(--pad-chip) 44px var(--pad-chip)",
           border: "1px solid rgba(0,0,0,0.06)",
         }}
       >

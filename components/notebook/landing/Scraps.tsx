@@ -173,7 +173,7 @@ function TapedCard({ ready }: { ready: boolean }) {
             width: "100%",
             height: "100%",
             background: "var(--color-paper-warm)",
-            padding: "12px 14px",
+            padding: "var(--pad-chip) var(--pad-chip-wide)",
             position: "relative",
             border: "1px solid rgba(0,0,0,0.05)",
             backgroundImage:

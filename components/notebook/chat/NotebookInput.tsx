@@ -69,7 +69,7 @@ export function NotebookInput({
     >
       <div
         style={{
-          paddingLeft: compact ? "calc(12% + 8px)" : "calc(12% + 16px)",
+          paddingLeft: compact ? "calc(12% + var(--pad-content-sm))" : "calc(12% + var(--pad-content))",
           paddingRight: compact ? "6%" : "8%",
           pointerEvents: "auto",
         }}

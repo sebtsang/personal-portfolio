@@ -14,7 +14,7 @@ export function PageBackButton({ onClose }: { onClose: () => void }) {
       style={{
         position: "absolute",
         top: "calc(var(--line) * 1.25)",
-        left: "calc(3% + 28px)",
+        left: "calc(3% + var(--pad-chrome))",
         background: "transparent",
         border: "none",
         padding: 0,

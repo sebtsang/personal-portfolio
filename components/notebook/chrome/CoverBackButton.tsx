@@ -36,7 +36,7 @@ export function CoverBackButton() {
         // indent (12% + 20px) to land in the same visual column as
         // message text — which is also just to the right of the
         // vertical margin at ~12% viewport width.
-        left: "calc(12% + 20px)",
+        left: "calc(12% + var(--pad-content-lg))",
         background: "transparent",
         border: "none",
         padding: 0,

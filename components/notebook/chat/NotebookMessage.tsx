@@ -62,12 +62,12 @@ export const NotebookMessage = memo(function NotebookMessage({
     // Wrap at word boundaries only — never split a word mid-line.
     wordBreak: "normal",
     overflowWrap: "normal",
-    maxWidth: compact ? "100%" : 720,
+    maxWidth: compact ? "100%" : "clamp(560px, 50vw, 900px)",
   };
 
   // Both modes share this padding so the label + text column starts just
   // inside the red spread margin line.
-  const paddingLeft = compact ? "calc(12% + 8px)" : "calc(12% + 16px)";
+  const paddingLeft = compact ? "calc(12% + var(--pad-content-sm))" : "calc(12% + var(--pad-content))";
   const paddingRight = compact ? "6%" : "8%";
 
   if (compact) {

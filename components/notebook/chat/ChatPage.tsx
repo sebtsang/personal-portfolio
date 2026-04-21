@@ -101,7 +101,7 @@ export function ChatPage({
                 // Aligned with CoverBackButton above; same reasoning
                 // as in CoverBackButton — 12% lands just inside the
                 // red margin on the full-viewport chat home.
-                left: "calc(12% + 20px)",
+                left: "calc(12% + var(--pad-content-lg))",
                 fontFamily: "var(--font-mono)",
                 fontSize: "var(--fs-meta)",
                 letterSpacing: "0.25em",
