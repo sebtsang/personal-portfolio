@@ -9,6 +9,27 @@ content pages live inside the journal — `/about`, `/experience`,
 Built with Next.js 15, the Vercel AI SDK, Framer Motion, and a
 pluggable LLM backend (Ollama / Claude / OpenAI).
 
+## Tech stack
+
+| Layer | Choice | Why |
+|---|---|---|
+| **Framework** | Next.js 15 (App Router) | Streaming, edge+node runtimes, API routes, OG image generation |
+| **Runtime** | React 19 + TypeScript 5 | Strict types across corpus, tools, routes |
+| **Styling** | Tailwind CSS v4 (`@theme`) + PostCSS | v4's CSS-first tokens; no config.js |
+| **Fonts** | Caveat (body), JetBrains Mono (meta), Fraunces + Instrument Serif (display) | Handwritten-journal aesthetic without Google Fonts requests |
+| **Animation** | Framer Motion 11 | Layout animations, `AnimatePresence` page flips, 3D `rotateY` transitions |
+| **State** | Zustand 5 | Stage view store (which page is open) + tool dispatch |
+| **LLM SDK** | Vercel AI SDK v4 (`ai`, `@ai-sdk/react`, `@ai-sdk/anthropic`, `@ai-sdk/openai`) | `useChat` hook, `streamText`, tool-calling wire protocol |
+| **Validation** | Zod 3 | Request schema, tool arg validation, provider-agnostic |
+| **Rate limiting** | `@upstash/ratelimit` + `@upstash/redis` | Per-IP sliding windows (8/10s burst + 40/hour), fails open |
+| **Logging** | Structured JSON to Upstash Redis via `waitUntil` | Hashed IPs, 7-day TTL, opt-in feedback tag |
+| **Analytics** | `@vercel/analytics` + `@vercel/speed-insights` | Pageviews + Web Vitals, inert unless enabled in dashboard |
+| **UI primitives** | `cmdk`, `lucide-react`, `lenis` (smooth scroll) | Command palette, icons, scroll feel |
+| **Dev tooling** | `tsx` (smoke + logs scripts), Next's `eslint-config-next` | Zero extra build steps |
+| **Hosting** | Vercel | Auto-deploys on push, function config pinned in `vercel.json` |
+
+Full dep list in [package.json](package.json).
+
 ## Architecture
 
 ### Spread layout
@@ -89,10 +110,18 @@ Then set the matching credential:
 
 | Provider | Env vars | Default model |
 |---|---|---|
-| `ollama` (local) | none (daemon must be running) | `qwen3.5:cloud` |
-| `ollama` (cloud) | `OLLAMA_API_KEY=...` | `qwen3.5:cloud` |
+| `ollama` (local) | none (daemon must be running) | `gpt-oss:120b-cloud` |
+| `ollama` (cloud) | `OLLAMA_API_KEY=...` | `gpt-oss:120b-cloud` |
 | `claude` | `ANTHROPIC_API_KEY=sk-ant-...` | `claude-haiku-4-5-20251001` |
 | `openai` | `OPENAI_API_KEY=sk-...` | `gpt-4.1-mini` |
+
+**Model-choice notes:** The default was previously `qwen3.5:cloud`, but
+reasoning models (Qwen / GLM / MiniMax) occasionally burn their entire
+output-token budget on internal chain-of-thought despite `think: false`
+and return empty content. `gpt-oss:120b-cloud` is a non-reasoning model
+of similar quality that doesn't hit this failure mode. If you swap in a
+reasoning model, drop `maxTokens` in [lib/llm/config.ts](lib/llm/config.ts)
+back to 180 to cap the dead time.
 
 Restart the dev server after changing env vars. No code changes
 needed.
@@ -116,11 +145,45 @@ needed.
   [lib/persona/overrides/](lib/persona/overrides/)
 - **Generation params** (temperature, top_p, max tokens):
   [lib/llm/config.ts](lib/llm/config.ts)
-- **Prose corpus** — edit as markdown, ships in the system prompt:
-  - [content/corpus/bio.md](content/corpus/bio.md)
-  - [content/corpus/experience.md](content/corpus/experience.md)
-  - [content/corpus/opinions.md](content/corpus/opinions.md)
-  - [content/corpus/faq.md](content/corpus/faq.md)
+- **Prose corpus** — edit as markdown, ships in the system prompt
+  (loaded by [lib/llm/prompt.ts](lib/llm/prompt.ts)):
+  - [content/corpus/bio.md](content/corpus/bio.md) — identity, career,
+    voice calibration, hard privacy rules
+  - [content/corpus/experience.md](content/corpus/experience.md) —
+    per-role bot-facing notes + stack
+  - [content/corpus/projects.md](content/corpus/projects.md) —
+    deflection ruleset (projects not surfaced)
+  - [content/corpus/opinions.md](content/corpus/opinions.md) — real
+    takes + gated AI-and-economy take
+  - [content/corpus/taste.md](content/corpus/taste.md) — people, tools,
+    products Seb actually rates
+  - [content/corpus/quirks.md](content/corpus/quirks.md) — basketball,
+    loves, preferences, the gated driving fear
+  - [content/corpus/looking-for.md](content/corpus/looking-for.md) —
+    contact policy, open-buckets, LinkedIn preferred
+  - [content/corpus/faq.md](content/corpus/faq.md) — canned replies
+    for classic questions
+
+Current corpus lands at ~8.4k tokens of system prompt. Warning threshold
+in `prompt.ts` is 9k. If you grow past 12k start thinking about retrieval.
+
+### Blank-bubble safety net
+
+Tool-calling LLMs occasionally emit a tool call with no preceding text,
+which renders as a silent page open with an empty SEBBOT bubble. Three
+layers of defense:
+
+1. **Intent matcher** ([lib/intents.ts](lib/intents.ts)) — catches common
+   phrasings client-side and dispatches with a canned one-liner before
+   the LLM is involved. Uses a function-based matcher: exact/short
+   patterns, plus a nav-phrase regex + per-tool topic keyword combo.
+2. **voice.ts hard rule** — explicit "never emit a tool call with empty
+   content; never write \[showTool\] bracket notation as literal text"
+   with correct/wrong contrast examples.
+3. **Client-side fallback** ([components/notebook/NotebookShell.tsx](components/notebook/NotebookShell.tsx)) —
+   `onToolCall` checks the current assistant message and injects a
+   per-tool default one-liner (`TOOL_FALLBACK_REPLY`) if content is
+   empty. Final safety net even if the first two fail.
 
 ## Editing the pages
 
@@ -269,12 +332,18 @@ never logged outside the feedback bucket.
 ## Project layout
 
 ```
+vercel.json                → function runtime, security headers,
+                             no-store on /api/chat, OG caching
+next.config.ts             → Next framework config
 app/
-  layout.tsx               → minimal root wrapper
+  layout.tsx               → root wrapper + metadata + Analytics/SpeedInsights
   page.tsx                 → renders <NotebookShell />
   about/page.tsx           → renders shell with initialView={about}
   api/chat/route.ts        → validates, rate-limits, logs, delegates
   globals.css              → Tailwind v4 @theme tokens + keyframes
+  opengraph-image.tsx      → 1200×630 edge-rendered social card
+  not-found.tsx            → "page torn out" 404
+  manifest.ts              → PWA manifest (/manifest.webmanifest)
 components/notebook/
   NotebookShell.tsx        → phase state (landing | chat | split),
                              useChat wiring, advance triggers,
@@ -330,15 +399,28 @@ lib/
     voice.ts               → stable voice + few-shot
     overrides/             → per-model nudges
   tools.ts                 → shared Zod tool schemas (4 tools)
-  intents.ts               → regex → tool matcher
-  store.ts                 → Zustand view store
+  intents.ts               → function-based matcher: exact patterns +
+                             nav-phrase + per-tool topic keyword combo
+  store.ts                 → Zustand view store + dispatchTool
   validation.ts            → Zod request schema + budget check
-  sanitize.ts              → garbage heuristics
+                             (discriminated union allows empty assistant
+                             content — see blank-bubble safety net)
+  sanitize.ts              → garbage heuristics (non-printable / repeat /
+                             base64 detection)
   ratelimit.ts             → Upstash ratelimit wrapper
-  logger.ts                → structured log writer
+                             (8/10s burst + 40/hour sliding windows)
+  logger.ts                → structured log writer (fire-and-forget
+                             via @vercel/functions waitUntil)
+  redis.ts                 → shared Upstash client; reads either
+                             UPSTASH_REDIS_REST_* or KV_REST_API_*
 content/
-  site.ts, linkedin.ts     → structured data
-  corpus/*.md              → prose corpus (LLM-facing)
+  site.ts                  → profile, socialLinks, experience array,
+                             currentFocus (UI-facing)
+  linkedin.ts              → LinkedIn post metadata (5 posts)
+  corpus/                  → prose corpus (LLM-facing, 8 files):
+                             bio.md, experience.md, projects.md,
+                             opinions.md, taste.md, quirks.md,
+                             looking-for.md, faq.md
 public/
   photos/seb-{1,2,3}.jpg   → portrait polaroids
   logos/{ey,polarity,bmo,stan,interac,toastmasters,spirit-of-math}.*
