@@ -154,49 +154,97 @@ Each content page is a single file under
 
 ## Deploying to Vercel
 
-### 1. Project setup
+The repo is wired for Vercel out of the box. Most config lives in
+code ([vercel.json](vercel.json), [next.config.ts](next.config.ts),
+[app/layout.tsx](app/layout.tsx), [app/manifest.ts](app/manifest.ts))
+so a fresh provision is mostly env vars + a few dashboard toggles.
 
-```bash
-gh repo create   # if not already
-```
+### 1. Import the repo
 
-Import the repo into Vercel. Next.js auto-detects.
+Push to GitHub, then import into Vercel. Next.js auto-detects — no
+build/install overrides needed. Run `vercel link` locally so the CLI
+knows the project for `vercel env pull`, `vercel logs`, etc.
 
-### 2. Env vars (Vercel → Settings → Environment Variables)
+### 2. Env vars
 
-Mandatory:
-- `LLM_PROVIDER` — `ollama` | `claude` | `openai`
-- One of `OLLAMA_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`
+| Var | Required? | Where to set | Sensitive? |
+|-----|-----------|--------------|-----------|
+| `LLM_PROVIDER` | yes | All environments | no (just config) |
+| `OLLAMA_API_KEY` / `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` | one of, matching provider | Production + Preview | yes |
+| `LOG_SALT` | recommended | Production + Preview (Dev disallows Sensitive flag) | yes |
+| `LLM_MODEL` | optional | per env | no |
+| `OLLAMA_BASE_URL` | optional (only if not using Ollama Cloud) | per env | no |
+| Upstash creds | recommended (see §3) | All environments | no — leave readable so `vercel env pull` works locally |
 
-Strongly recommended (rate limiting + logging):
-- `UPSTASH_REDIS_REST_URL`
-- `UPSTASH_REDIS_REST_TOKEN`
-- `LOG_SALT` — generate with `openssl rand -hex 16`
-
-Optional:
-- `LLM_MODEL` — override default for chosen provider
-- `OLLAMA_BASE_URL` — only if you're not using Ollama Cloud
+Generate `LOG_SALT` once with `openssl rand -hex 16` and never rotate
+it (rotating breaks IP-hash continuity in chat logs).
 
 ### 3. Upstash Redis (rate limiting + logging)
 
 Vercel dashboard → Integrations →
-[Upstash](https://vercel.com/integrations/upstash) → Install. Create a
-Redis database (global, free tier). Link it to your portfolio project —
-this auto-populates `UPSTASH_REDIS_REST_URL` and
-`UPSTASH_REDIS_REST_TOKEN`.
+[Upstash](https://vercel.com/integrations/upstash) → Install on the
+project. When it asks for a Custom Prefix, **leave it empty** and
+check all three environments. The integration provisions a Redis DB
+(free tier is fine for a portfolio) and injects:
 
-Without Upstash, rate limiting and logging both fail-silent: requests
-pass through, no logs stored, no breakage. You can deploy without it
-and add it later.
+- `KV_REST_API_URL`
+- `KV_REST_API_TOKEN`
+- `KV_REST_API_READ_ONLY_TOKEN`
+- `KV_URL`, `REDIS_URL`
 
-### 4. Function config (already set in code)
+[lib/redis.ts](lib/redis.ts) reads either the `KV_REST_API_*` (Vercel
+integration) or `UPSTASH_REDIS_REST_*` (manual) names — works with
+either. Without Upstash, rate limiting and logging silently fail-open:
+requests pass through, no logs, no breakage.
 
-- Runtime: `nodejs` (required — hand-rolled Ollama stream needs Node).
-- `maxDuration`: 60s. Vercel Hobby caps at 300s, Pro at 800s.
-- Request body cap: 4.5 MB (platform limit); our validation rejects
-  well before this.
+### 4. Code-managed config (no dashboard action)
 
-### 5. Post-deploy smoke test
+These are pinned in the repo; don't touch them in the dashboard or
+they'll drift:
+
+- **Function runtime + limits** ([vercel.json](vercel.json)) —
+  `/api/chat` runs on `nodejs` with `maxDuration: 60s`, `memory: 1024`.
+- **Security headers** ([vercel.json](vercel.json)) — HSTS,
+  X-Content-Type-Options, X-Frame-Options DENY, Referrer-Policy,
+  Permissions-Policy (camera/mic/geo/topics off), no-store on
+  `/api/chat`. CSP is intentionally **not** set — Framer Motion's
+  inline styles would need a permissive `style-src 'unsafe-inline'`
+  that defeats the point. Add as `Content-Security-Policy-Report-Only`
+  first if you want to revisit.
+- **OG card / metadata / robots** ([app/layout.tsx](app/layout.tsx)).
+  `metadataBase` resolves from `VERCEL_PROJECT_PRODUCTION_URL` (auto)
+  or `NEXT_PUBLIC_SITE_URL` (override for a custom domain).
+- **OG image** ([app/opengraph-image.tsx](app/opengraph-image.tsx)) —
+  edge-rendered 1200×630 journal page.
+- **PWA manifest** ([app/manifest.ts](app/manifest.ts)) — served at
+  `/manifest.webmanifest`.
+- **404 page** ([app/not-found.tsx](app/not-found.tsx)) — "page torn
+  out" styled to the journal.
+- **Web Analytics + Speed Insights** components are mounted in
+  [app/layout.tsx](app/layout.tsx). Inert until you toggle the
+  Analytics + Speed Insights tabs ON in the dashboard (see §5).
+
+### 5. Dashboard-only checklist (one-time per project)
+
+Things that can't be expressed in code:
+
+- [ ] **Deployment Protection** → Settings → Deployment Protection →
+      Vercel Authentication: **Standard Protection**. Auth-gates all
+      preview/branch URLs (so Google can't index your WIP); leaves
+      production public.
+- [ ] **Mark secrets Sensitive** → Settings → Environment Variables.
+      Edit `OLLAMA_API_KEY` and `LOG_SALT` → Sensitive ON. Note:
+      "Sensitive" is only allowed on Production + Preview, not
+      Development — uncheck Development on those rows before saving.
+- [ ] **Enable Web Analytics** → Analytics tab → Enable (Hobby tier).
+- [ ] **Enable Speed Insights** → Speed Insights tab → Enable.
+- [ ] **Failed-deploy notifications** → Settings → Notifications →
+      enable "Failed Deployments".
+- [ ] **Custom domain** (if you own one) → Settings → Domains. Auto
+      issues HTTPS. After it's live, set `NEXT_PUBLIC_SITE_URL` to the
+      custom origin so OG/canonical URLs use it.
+
+### 6. Post-deploy smoke test
 
 ```bash
 npm run smoke https://your-deployment.vercel.app
