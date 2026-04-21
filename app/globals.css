@@ -237,16 +237,3 @@
 ::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--color-rule-navy) 30%, transparent);
 }
-
-/* cmdk command palette — keyboard-selected item gets an ink-soft wash */
-[cmdk-item][data-selected="true"] {
-  background: color-mix(in srgb, var(--color-rule-navy) 12%, transparent) !important;
-}
-[cmdk-group-heading] {
-  font-family: var(--font-mono) !important;
-  padding: 10px 22px 4px !important;
-  font-size: 10px !important;
-  letter-spacing: 0.22em !important;
-  text-transform: uppercase !important;
-  color: color-mix(in srgb, var(--color-ink-soft) 50%, transparent) !important;
-}

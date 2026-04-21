@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { NotebookInput } from "./NotebookInput";
 import { NotebookMessage, type ChatRole } from "./NotebookMessage";
 import { WritingIndicator } from "./WritingIndicator";
@@ -70,7 +71,9 @@ export function ChatPage({
             backgroundRepeat: "repeat-y",
           }}
         >
-          {/* Top meta — "journal · home" (full) or just a dot (compact) */}
+          {/* Top meta — "← cover · journal · home" (full) or nothing (compact,
+              split view already shows a back button). "← cover" navigates to
+              "/" which re-mounts the shell and shows the landing again. */}
           {!compact && (
             <div
               style={{
@@ -83,9 +86,40 @@ export function ChatPage({
                 textTransform: "uppercase",
                 color: "color-mix(in srgb, var(--color-ink-soft) 55%, transparent)",
                 lineHeight: "var(--line)",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
               }}
             >
-              journal · home
+              <Link
+                href="/"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 4,
+                  color: "inherit",
+                  textDecoration: "none",
+                  borderBottom:
+                    "1px dashed color-mix(in srgb, var(--color-ink-soft) 30%, transparent)",
+                  paddingBottom: 1,
+                  transition:
+                    "color 160ms var(--ease-out-expo), border-color 160ms var(--ease-out-expo)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "var(--color-ink-soft)";
+                  e.currentTarget.style.borderBottomColor =
+                    "var(--color-ink-soft)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "inherit";
+                  e.currentTarget.style.borderBottomColor =
+                    "color-mix(in srgb, var(--color-ink-soft) 30%, transparent)";
+                }}
+              >
+                ← cover
+              </Link>
+              <span aria-hidden>·</span>
+              <span>journal · home</span>
             </div>
           )}
 
