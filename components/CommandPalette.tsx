@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Command } from "cmdk";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { useStageStore } from "@/lib/store";
 import { profile } from "@/content/site";
 
 /**
@@ -12,17 +11,15 @@ import { profile } from "@/content/site";
  * available on every route. Opens with ⌘K / Ctrl+K, closes with Esc
  * or clicking the backdrop. Items cover:
  *
- *   - Navigation between the four content pages + home
- *   - "Close page" when a split view is open (resets store)
+ *   - Navigation between landing, home, and the four content pages
  *   - External actions (copy email, open LinkedIn / GitHub)
  *
  * Keeps state local — cmdk handles search/filter + keyboard nav; we
- * just own the open/close flag and the item handlers.
+ * just own the open/close flag and the item handlers. Closing a split
+ * view is already Esc-bound in NotebookShell; no palette item needed.
  */
 export function CommandPalette() {
   const router = useRouter();
-  const view = useStageStore((s) => s.view);
-  const setView = useStageStore((s) => s.setView);
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -76,11 +73,6 @@ export function CommandPalette() {
     [closeAnd, router],
   );
 
-  const closeSplit = useCallback(
-    () => closeAnd(() => setView({ kind: "empty" })),
-    [closeAnd, setView],
-  );
-
   const copyEmail = useCallback(
     () =>
       closeAnd(() => {
@@ -104,8 +96,6 @@ export function CommandPalette() {
       }),
     [closeAnd],
   );
-
-  const isSplitOpen = view.kind !== "empty";
 
   const copiedToast = useMemo(
     () =>
@@ -259,9 +249,9 @@ export function CommandPalette() {
                   Nothing here. Try "about", "linkedin", "email"…
                 </Command.Empty>
 
-                <PaletteGroup heading="Navigate">
+                <PaletteGroup heading="Navigate Journal">
                   <PaletteItem
-                    label="Landing page"
+                    label="Journal cover"
                     shortcut="/"
                     onSelect={navigate("/")}
                   />
@@ -291,16 +281,6 @@ export function CommandPalette() {
                     onSelect={navigate("/contact")}
                   />
                 </PaletteGroup>
-
-                {isSplitOpen && (
-                  <PaletteGroup heading="Page">
-                    <PaletteItem
-                      label="Close this page"
-                      shortcut="esc"
-                      onSelect={closeSplit}
-                    />
-                  </PaletteGroup>
-                )}
 
                 <PaletteGroup heading="Contact">
                   <PaletteItem
