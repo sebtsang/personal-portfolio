@@ -25,16 +25,10 @@
  *   no setup friction.
  */
 
-import { Redis } from "@upstash/redis";
 import { waitUntil } from "@vercel/functions";
 import crypto from "node:crypto";
+import { redis, hasUpstash } from "./redis";
 import type { LLMProvider } from "./llm";
-
-const hasUpstash =
-  !!process.env.UPSTASH_REDIS_REST_URL &&
-  !!process.env.UPSTASH_REDIS_REST_TOKEN;
-
-const redis = hasUpstash ? Redis.fromEnv() : null;
 
 const LOG_LIST_KEY = "chat:logs";
 const FEEDBACK_LIST_KEY = "chat:feedback";

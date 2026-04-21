@@ -12,7 +12,7 @@
  * Vercel dashboard or Upstash console).
  */
 
-import { Redis } from "@upstash/redis";
+import { redis } from "../lib/redis";
 import type { ChatLog } from "../lib/logger";
 
 const ERRORS_ONLY = process.argv.includes("--errors");
@@ -20,17 +20,14 @@ const countArg = process.argv.find((a) => /^\d+$/.test(a));
 const COUNT = countArg ? Number(countArg) : 50;
 
 async function main() {
-  if (
-    !process.env.UPSTASH_REDIS_REST_URL ||
-    !process.env.UPSTASH_REDIS_REST_TOKEN
-  ) {
+  if (!redis) {
     console.error(
-      "UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN must be set in .env.local."
+      "Upstash credentials missing. Set UPSTASH_REDIS_REST_URL + _TOKEN " +
+        "(or KV_REST_API_URL + _TOKEN from the Vercel-Upstash integration) " +
+        "in .env.local.",
     );
     process.exit(1);
   }
-
-  const redis = Redis.fromEnv();
   // LRANGE 0 N-1 returns most recent first (we LPUSH).
   const raw = (await redis.lrange("chat:logs", 0, COUNT - 1)) as string[];
   const entries: ChatLog[] = raw
