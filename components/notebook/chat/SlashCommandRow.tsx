@@ -103,7 +103,6 @@ export function SlashCommandRow({
           letterSpacing: "0.08em",
           color: "color-mix(in srgb, var(--color-ink-soft) 60%, transparent)",
           lineHeight: 1.2,
-          marginLeft: compact ? 0 : "auto",
           transition:
             "color 160ms var(--ease-out-expo), border-color 160ms var(--ease-out-expo), background 160ms var(--ease-out-expo)",
         }}
