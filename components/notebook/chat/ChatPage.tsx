@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useDeferredValue, useEffect, useRef } from "react";
 import { CoverBackButton } from "../chrome/CoverBackButton";
 import { NotebookInput } from "./NotebookInput";
 import { NotebookMessage, type ChatRole } from "./NotebookMessage";
@@ -27,7 +27,19 @@ export function ChatPage({
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // Auto-scroll to bottom when a new message arrives.
+  // Deferred render for the messages list. When useChat streams in
+  // tokens (arriving 20-100/s), React would normally re-render the
+  // whole list on every token — which can cause page-flip / layout
+  // animations to stutter. useDeferredValue lets React keep the old
+  // list painted while higher-priority work (animations, input
+  // handling) is pending; the new list catches up during idle time.
+  // Perceived chat latency is unchanged; smoothness of concurrent
+  // animations improves meaningfully.
+  const deferredMessages = useDeferredValue(messages);
+
+  // Auto-scroll to bottom when a new message arrives. Drive off the
+  // RAW messages (not the deferred value) so scrolling feels
+  // instantaneous even while the list paints a frame behind.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -127,7 +139,7 @@ export function ChatPage({
             </svg>
           )}
 
-          {messages.map((m, i) => (
+          {deferredMessages.map((m, i) => (
             <div key={m.id}>
               {i > 0 && <div style={{ height: "var(--line)" }} />}
               <NotebookMessage

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 const CYCLE_MS = 450;
 
@@ -8,8 +8,16 @@ const CYCLE_MS = 450;
  * Pseudo-message rendered while SebBot is streaming. Matches the
  * NotebookMessage layout: inline label + text in home mode, stacked in
  * compact mode, with the label sitting just inside the red margin.
+ *
+ * memo'd so parent re-renders (which happen on every streamed token
+ * because the messages array grows) don't also re-render this — its
+ * internal tick interval handles the dot animation locally.
  */
-export function WritingIndicator({ compact = false }: { compact?: boolean }) {
+export const WritingIndicator = memo(function WritingIndicator({
+  compact = false,
+}: {
+  compact?: boolean;
+}) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const id = window.setInterval(() => setTick((t) => t + 1), CYCLE_MS);
@@ -79,4 +87,4 @@ export function WritingIndicator({ compact = false }: { compact?: boolean }) {
       <div style={{ ...textStyle, flex: 1, minWidth: 0 }}>{body}</div>
     </div>
   );
-}
+});

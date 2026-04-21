@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { HandwrittenText } from "../primitives/HandwrittenText";
 
 export type ChatRole = "user" | "assistant";
@@ -14,8 +15,14 @@ export type ChatRole = "user" | "assistant";
  * Compact mode (narrow chat sidebar in split view): label stacks
  * ABOVE the message, both at the same left padding. No horizontal
  * room for inline labels at ~28% viewport width.
+ *
+ * Wrapped in React.memo so streaming chat updates don't re-render
+ * previously-rendered messages on every token. The only prop that
+ * usually changes per message is `text` (for the currently-streaming
+ * one); older messages' props are stable so their re-renders drop
+ * to zero. Big main-thread relief during concurrent animations.
  */
-export function NotebookMessage({
+export const NotebookMessage = memo(function NotebookMessage({
   text,
   role,
   compact = false,
@@ -101,4 +108,4 @@ export function NotebookMessage({
       </div>
     </div>
   );
-}
+});
