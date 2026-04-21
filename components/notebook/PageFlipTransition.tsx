@@ -3,12 +3,21 @@
 import type { ReactNode } from "react";
 
 /**
- * Right-bound book-page flip: the landing page rotates from right to left
- * around the left spine (rotateY, transform-origin at left-center), revealing
- * the next page beneath. 1.1s, cubic-bezier(0.76, 0, 0.24, 1).
+ * Right-bound book-page flip: the landing page rotates around the left spine
+ * (rotateY, transform-origin at left-center). 1.1s, cubic-bezier(0.76, 0, 0.24, 1).
  *
  * Uses plain CSS transitions (not framer-motion) so that onTransitionEnd
  * fires reliably — the shell uses it to drop the landing layer.
+ *
+ * Two directions:
+ *   opening: 0° → -180°  (landing flips away, revealing chat beneath)
+ *   closing: -180° → 0°  (back-face sweeps around, landing covers chat)
+ *
+ * Callers always transition `flipping` false → true to trigger the animation;
+ * `direction` decides which angle pair that maps to. For closing, the
+ * component therefore mounts with flipping=false and renders at -180° so
+ * its ruled back-face sits over the chat; one frame later the caller sets
+ * flipping=true and the CSS transition rotates it into view.
  *
  * The flipping element has two absolutely-positioned children: the FRONT
  * face (the landing itself, passed as children) and a BACK face with a
@@ -18,14 +27,23 @@ import type { ReactNode } from "react";
  */
 export function PageFlipTransition({
   flipping,
+  direction = "opening",
   onTransitionEnd,
   children,
 }: {
   flipping: boolean;
+  direction?: "opening" | "closing";
   onTransitionEnd?: () => void;
   children: ReactNode;
 }) {
-  const progress = flipping ? 1 : 0;
+  const angleDeg =
+    direction === "closing"
+      ? flipping
+        ? 0
+        : -180
+      : flipping
+        ? -180
+        : 0;
   return (
     <div
       onTransitionEnd={(e) => {
@@ -38,12 +56,8 @@ export function PageFlipTransition({
         inset: 0,
         transformStyle: "preserve-3d",
         transformOrigin: "left center",
-        transform: `rotateY(${progress * -180}deg)`,
+        transform: `rotateY(${angleDeg}deg)`,
         transition: "transform 1100ms cubic-bezier(0.76, 0, 0.24, 1)",
-        filter:
-          progress > 0 && progress < 1
-            ? "drop-shadow(-20px 20px 40px rgba(0,0,0,0.25))"
-            : "none",
         willChange: "transform",
         zIndex: 20,
       }}

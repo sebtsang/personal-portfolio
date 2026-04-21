@@ -9,6 +9,7 @@ import type { ToolName } from "@/lib/tools";
 import { Paper } from "./chrome/Paper";
 import { PageChrome } from "./chrome/PageChrome";
 import { SpiralBinding } from "./chrome/SpiralBinding";
+import { CLOSE_JOURNAL_EVENT } from "./chrome/CoverBackButton";
 import { PageFlipTransition } from "./PageFlipTransition";
 import { LandingPage } from "./landing/LandingPage";
 import type { ChatMessage } from "./chat/ChatPage";
@@ -101,11 +102,17 @@ export function NotebookShell({
   const [showLanding, setShowLanding] = useState(!entersWithChatMounted);
   const [flipping, setFlipping] = useState(false);
   const [chatMounted, setChatMounted] = useState(entersWithChatMounted);
+  const [closing, setClosing] = useState(false);
   const [seedPhase, setSeedPhase] = useState(
     // Deep-link jumps seeds to completion (user came for the split, not
     // to read the intro). /home animates them in.
     deepLink ? WELCOME_BUBBLES.length : 0,
   );
+
+  // Tracks a close animation in flight so rapid repeat clicks / stray
+  // scroll input during the flip don't re-trigger it or race it with
+  // the opening flow.
+  const closingRef = useRef(false);
 
   // Align the Zustand view store with the route on every mount.
   //
@@ -263,7 +270,7 @@ export function NotebookShell({
   });
 
   const advance = useCallback(() => {
-    if (!showLanding || flipping) return;
+    if (!showLanding || flipping || closing) return;
     setChatMounted(true);
     setFlipping(true);
     window.setTimeout(() => {
@@ -281,7 +288,52 @@ export function NotebookShell({
       );
       cumulative += text.length * CHAR_DELAY_MS + CHAR_DURATION_MS + SEED_GAP_MS;
     });
-  }, [flipping, showLanding]);
+  }, [flipping, showLanding, closing]);
+
+  // Closing flow — the reverse of `advance`. Mounts the landing at
+  // rotateY(-180°) over the still-visible chat (direction="closing" +
+  // flipping=false) then, one commit later, flips it back to 0° so the
+  // cover appears to fall closed over the chat. NotebookShell itself
+  // stays mounted so the animation runs without a route change — the
+  // URL update happens via pushState at the end, which is why
+  // CoverBackButton dispatches an event instead of navigating.
+  const handleClose = useCallback(() => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    setShowLanding(true);
+    setFlipping(false);
+    setClosing(true);
+  }, []);
+
+  useEffect(() => {
+    const onClose = () => handleClose();
+    window.addEventListener(CLOSE_JOURNAL_EVENT, onClose);
+    return () => window.removeEventListener(CLOSE_JOURNAL_EVENT, onClose);
+  }, [handleClose]);
+
+  // Drives the closing transition *after* React has committed the initial
+  // `closing=true, flipping=false` render. If we scheduled setFlipping(true)
+  // alongside the state updates in handleClose (via rAF or similar), React
+  // 18's automatic batching would coalesce both state updates into a single
+  // commit, and the landing would mount already at flipping=true with
+  // transform rotateY(0°) — skipping the -180° start frame entirely, so no
+  // CSS transition would fire. Splitting it into a useEffect guarantees at
+  // least one paint at -180° before the flip triggers.
+  useEffect(() => {
+    if (!closing) return;
+    setFlipping(true);
+    const id = window.setTimeout(() => {
+      setClosing(false);
+      setFlipping(false);
+      setChatMounted(false);
+      setSeedPhase(0);
+      closingRef.current = false;
+      if (typeof window !== "undefined") {
+        window.history.pushState({}, "", "/");
+      }
+    }, FLIP_MS);
+    return () => window.clearTimeout(id);
+  }, [closing]);
 
   // Landing-advance triggers: any non-trivial scroll (wheel or trackpad, any
   // direction), any arrow key / Space / Enter / PageUp / PageDown, or any
@@ -479,9 +531,14 @@ export function NotebookShell({
       </AnimatePresence>
 
       {/* Landing — stays mounted until flip completes. Paper spans the full
-          viewport; the spiral binding sits on top at left 0. */}
+          viewport; the spiral binding sits on top at left 0. While `closing`
+          is true, PageFlipTransition runs in reverse so the cover appears
+          to fall back down over the chat. */}
       {showLanding && (
-        <PageFlipTransition flipping={flipping}>
+        <PageFlipTransition
+          flipping={flipping}
+          direction={closing ? "closing" : "opening"}
+        >
           <div
             style={{
               position: "absolute",

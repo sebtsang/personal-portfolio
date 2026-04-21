@@ -1,21 +1,18 @@
 "use client";
 
+export const CLOSE_JOURNAL_EVENT = "sebjournal:close-journal";
+
 /**
- * Top-left back button for the chat home — navigates to "/" (the
- * landing / journal cover). Mirrors PageBackButton's treatment so
- * the home page shares the chrome language of the content pages:
- * handwritten Caveat label, dashed underline affordance on hover.
+ * Top-left back button for the chat home — returns the user to the
+ * journal cover (landing). Mirrors PageBackButton's treatment so the
+ * home page shares the chrome language of the content pages: handwritten
+ * Caveat label, dashed underline affordance on hover.
  *
- * Uses window.location.href instead of Next router / <Link> because
- * the URL state on this app is maintained via a mix of Next's router
- * (palette + route changes) and raw window.history.pushState (the
- * URL-sync effect in NotebookShell, for smooth in-app transitions).
- * Those two can desync — Next thinks you're on /home while the URL
- * actually reads /contact — which makes Link navigation to "/"
- * intermittently not trigger. A hard navigation sidesteps all of
- * that: the browser unloads, / route loads fresh, landing plays.
- * Since we WANT the cover to be a full reset of the journal anyway,
- * the brief reload is semantically aligned with the metaphor.
+ * Dispatches a window event instead of navigating. NotebookShell listens
+ * for it and plays the closing flip (-180° → 0°) in-place, then resets
+ * chat state and pushState's the URL back to "/". Staying mounted keeps
+ * the animation silky and avoids the Next router ↔ pushState desync risk
+ * that previously forced a hard navigation.
  */
 export function CoverBackButton() {
   return (
@@ -23,10 +20,10 @@ export function CoverBackButton() {
       type="button"
       onClick={() => {
         if (typeof window !== "undefined") {
-          window.location.href = "/";
+          window.dispatchEvent(new Event(CLOSE_JOURNAL_EVENT));
         }
       }}
-      aria-label="Go back to the journal cover"
+      aria-label="Close the journal and return to the cover"
       style={{
         position: "absolute",
         top: "calc(var(--line) * 1.25)",
