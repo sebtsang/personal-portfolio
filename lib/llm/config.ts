@@ -19,12 +19,17 @@ export type ModelParams = {
 
 export const MODEL_CONFIG: Record<LLMProvider, ModelParams> = {
   ollama: {
-    // Reasoning-adjacent models (Qwen/GLM/MiniMax) hit num_predict fast
-    // when they stall on tool indecision. 180 caps that dead time at
-    // ~6-7s. Our no-tools retry path covers the rest.
+    // 250 chosen for gpt-oss:120b-cloud (current default). Previous 180
+    // was tuned for qwen3.5:cloud's reasoning-spiral failure mode —
+    // gpt-oss is less prone to that and was hitting the cap on legitimate
+    // substantive answers, producing mid-sentence truncations like
+    // "Probably the Interac stint where he" <EOF>. 250 gives ~190 words
+    // of room — enough for a two-breath answer without letting the bot
+    // drift verbose. Empty-reply retry path still covers the rare
+    // CoT-burn case. If you swap back to qwen/GLM/MiniMax, drop to 180.
     temperature: 0.85,
     topP: 0.95,
-    maxTokens: 180,
+    maxTokens: 250,
   },
   claude: {
     // Claude defaults toward verbose + helpful. Dialing temp down helps
