@@ -59,7 +59,14 @@ export function ChatPage({
           style={{
             position: "relative",
             minHeight: "100%",
-            paddingTop: "calc(var(--line) * 3)",
+            // Full mode needs space for two stacked chrome rows (back
+            // button at line 1.25, meta label at line 2.5) plus a
+            // one-line breathing gap before messages begin. Compact
+            // mode has no chrome here (split view owns its back
+            // button), so a tighter top padding is fine.
+            paddingTop: compact
+              ? "calc(var(--line) * 3)"
+              : "calc(var(--line) * 4.5)",
             paddingBottom: compact ? 240 : 280,
             // Ruled lines tile across the full scroll height so they
             // travel with the content. Line at y=26px of each 32px row.
