@@ -6,6 +6,12 @@ import { useChat } from "@ai-sdk/react";
 import { matchIntent } from "@/lib/intents";
 import { useStageStore, type StageView } from "@/lib/store";
 import type { ToolName } from "@/lib/tools";
+import {
+  clearMessages as clearStoredMessages,
+  loadMessages as loadStoredMessages,
+  saveMessages as saveStoredMessages,
+  type StoredMessage,
+} from "@/lib/storage/messageStore";
 import { Paper } from "./chrome/Paper";
 import { PageChrome } from "./chrome/PageChrome";
 import { SpiralBinding } from "./chrome/SpiralBinding";
@@ -13,6 +19,10 @@ import { PageFlipTransition } from "./PageFlipTransition";
 import { LandingPage } from "./landing/LandingPage";
 import type { ChatMessage } from "./chat/ChatPage";
 import { SplitView } from "./split/SplitView";
+
+/** Regex for "clear this conversation" — checked in handleSubmit before matchIntent. */
+const CLEAR_INTENT =
+  /^\/clear\s*$|^clear (conversation|chat|history|messages|state|all)\s*$/i;
 
 const WELCOME_BUBBLES = [
   "You've opened Seb's journal. I'm SebBot — handling the easy questions while he ships.",
@@ -97,6 +107,35 @@ export function NotebookShell({
   useEffect(() => {
     if (deepLink && initialView) setView(initialView);
     // Run once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Session memory — hydrate useChat from localStorage on mount.
+  // Landing flip still always plays (per Seb: "you closed the journal,
+  // you reopened it"), and welcome seeds still animate in; stored
+  // messages show up below the seeds once the chat is mounted. See
+  // lib/storage/messageStore.ts for the shape + cap.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    const stored = loadStoredMessages();
+    if (stored.length > 0) {
+      // StoredMessage.createdAt is a number (survives JSON); useChat's
+      // Message.createdAt is a Date. Convert here on the boundary so
+      // messageStore.ts stays JSON-compatible.
+      setMessages(
+        stored.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          createdAt:
+            typeof m.createdAt === "number"
+              ? new Date(m.createdAt)
+              : undefined,
+        })),
+      );
+    }
+    setHydrated(true);
+    // Run once on mount; setMessages is stable from useChat.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -246,6 +285,32 @@ export function NotebookShell({
     setView({ kind: "empty" });
   }, [setView]);
 
+  // Persist aiMessages to localStorage whenever they change (and after
+  // initial hydration — writing before hydrate would nuke stored state
+  // with the empty initial array). Seeds aren't stored in aiMessages,
+  // so no filtering needed. Only persist the role/content/id/createdAt
+  // subset (tool invocations + streaming flags are session-only).
+  useEffect(() => {
+    if (!hydrated) return;
+    const toPersist: StoredMessage[] = aiMessages
+      .filter((m) => m.role === "user" || m.role === "assistant")
+      .map((m) => ({
+        id: m.id,
+        role: m.role as "user" | "assistant",
+        content: m.content,
+        createdAt:
+          m.createdAt instanceof Date
+            ? m.createdAt.getTime()
+            : undefined,
+      }));
+    saveStoredMessages(toPersist);
+  }, [aiMessages, hydrated]);
+
+  const clearConversation = useCallback(() => {
+    clearStoredMessages();
+    setMessages([]);
+  }, [setMessages]);
+
   // One message stream: seeds first, then everything else in insertion
   // order from useChat. Intent-matched slash commands and LLM-streamed
   // exchanges live in the same list so they stay in chronological order.
@@ -281,6 +346,14 @@ export function NotebookShell({
       // all in so their message doesn't get inserted between seeds.
       setSeedPhase(WELCOME_BUBBLES.length);
 
+      // /clear — wipe stored history + current session state.
+      // Intentionally not part of matchIntent because it's a
+      // client-side UX action, not a tool dispatch.
+      if (CLEAR_INTENT.test(trimmed)) {
+        clearConversation();
+        return;
+      }
+
       const intent = matchIntent(trimmed);
       if (intent) {
         const userId =
@@ -308,7 +381,7 @@ export function NotebookShell({
 
       append({ role: "user", content: trimmed });
     },
-    [append, dispatchTool, setMessages],
+    [append, clearConversation, dispatchTool, setMessages],
   );
 
   return (
