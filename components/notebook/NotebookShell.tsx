@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useChat } from "@ai-sdk/react";
 import { matchIntent } from "@/lib/intents";
@@ -149,6 +149,71 @@ export function NotebookShell({
     // Run once on mount; constants above are module-level.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // URL ↔ view sync. Two directions:
+  //
+  //   (a) View → URL: whenever `view` or `showLanding` changes, pushState
+  //       the matching path. Uses window.history.pushState (not the Next
+  //       router) so the same NotebookShell instance stays mounted and
+  //       in-flight animations (page flip, split-to-split slide) don't
+  //       restart on URL updates.
+  //
+  //   (b) URL → view: listen for `popstate` (browser back/forward) and
+  //       update the store to match the new URL. Keeps the spread in
+  //       sync with browser history without the user noticing.
+  //
+  // The landing page (path "/") is intentionally NOT tracked by this
+  // effect — it has its own mounted state (showLanding=true) that would
+  // be lost if we just pushState'd. The palette's "Landing page" item
+  // uses router.push("/") for a full route change to get back there.
+  //
+  // Skip the very first effect run (urlSyncMounted ref) so deep-link
+  // mounts don't briefly push "/home" before the separate setView
+  // effect catches up to initialView on the next render.
+  const urlSyncMounted = useRef(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!urlSyncMounted.current) {
+      urlSyncMounted.current = true;
+      return;
+    }
+    if (showLanding) return; // landing visible: don't touch URL
+    const targetPath =
+      view.kind === "empty" ? "/home" : `/${view.kind}`;
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({}, "", targetPath);
+    }
+  }, [view, showLanding]);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const path = window.location.pathname;
+      // "/" (landing) triggers a full Next route change — handled by
+      // the framework re-rendering app/page.tsx, not by us.
+      if (path === "/") return;
+      // Map URL to view.
+      const kind =
+        path === "/home"
+          ? ("empty" as const)
+          : (path.slice(1) as StageView["kind"]);
+      const validKinds: StageView["kind"][] = [
+        "empty",
+        "about",
+        "experience",
+        "linkedin",
+        "contact",
+      ];
+      if (!validKinds.includes(kind)) return;
+      // Make sure we're out of the landing state (popstate can arrive
+      // before the re-render if the user rapidly back/forwards).
+      if (showLanding) setShowLanding(false);
+      if (!chatMounted) setChatMounted(true);
+      setSeedPhase(WELCOME_BUBBLES.length);
+      setView({ kind } as StageView);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [setView, showLanding, chatMounted]);
 
   const {
     messages: aiMessages,
