@@ -92,11 +92,10 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
           paddingLeft: "calc(12% + var(--pad-content))",
           paddingRight: "8%",
           overflowY: "auto",
-          // Ruled lines travel with the content (same trick as the chat)
-          backgroundImage:
-            "linear-gradient(to bottom, transparent 25px, rgba(61, 52, 139, 0.12) 26px, transparent 27px)",
-          backgroundSize: "100% var(--line, 32px)",
-          backgroundRepeat: "repeat-y",
+          // Ruled lines travel with the content (same trick as the chat).
+          // Formula in globals.css keeps text baseline on rule at every
+          // viewport.
+          backgroundImage: "var(--rule-background)",
         }}
       >
         {/* Page meta stacked in the top-left gutter: back button + page

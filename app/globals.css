@@ -71,6 +71,24 @@
   --pad-chrome: clamp(20px, 1.94vw, 36px);      /* ~28px@1440 — chrome button indent */
   --pad-chip: clamp(8px, 0.83vw, 14px);         /* ~12px@1440 — card interior */
   --pad-chip-wide: clamp(10px, 0.97vw, 16px);   /* ~14px@1440 — card interior (x) */
+
+  /* Ruled-paper background. One navy line drawn at 0.76 of each --line
+     tile, repeated down the full height. That fraction is where Caveat
+     body text's baseline falls — empirically measured at 0.751–0.763
+     across 1280–2560px viewports (sub-pixel spread) — so text written
+     in var(--font-script) rides the rule at every viewport.
+     Previously every ruled container had its own inline gradient with
+     a hardcoded `26px` offset, which only matched the baseline near
+     1440 and drifted ~4.5px either way at 1280/2560. Keeping the
+     formula in one place means future type-scale tweaks only need one
+     edit. The navy opacity (0.12) and soft ±1px feather match the
+     original visual weight. */
+  --rule-background: repeating-linear-gradient(to bottom,
+    transparent 0,
+    transparent calc(var(--line) * 0.76 - 1px),
+    rgba(61, 52, 139, 0.12) calc(var(--line) * 0.76),
+    transparent calc(var(--line) * 0.76 + 1px),
+    transparent var(--line));
 }
 
 @layer base {

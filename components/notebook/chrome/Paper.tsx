@@ -75,9 +75,11 @@ export function Paper({
         />
       )}
 
-      {/* Ruled horizontal lines at --line pitch (32px).
-          Pages that draw their own baseline-aligned rules (e.g. the landing)
-          hide these by setting --rule-repeat-opacity: 0 on :root. */}
+      {/* Ruled horizontal lines. Formula lives in globals.css as
+          --rule-background; the line sits at 0.76 × --line so Caveat body
+          text rides it at every viewport. Pages that draw their own
+          baseline-aligned rules (e.g. the landing) hide these by setting
+          --rule-repeat-opacity: 0 on :root. */}
       {ruled && (
         <div
           aria-hidden
@@ -85,10 +87,7 @@ export function Paper({
             position: "absolute",
             inset: 0,
             pointerEvents: "none",
-            backgroundImage:
-              "linear-gradient(to bottom, transparent 25px, rgba(61, 52, 139, 0.12) 26px, transparent 27px)",
-            backgroundSize: "100% var(--line, 32px)",
-            backgroundRepeat: "repeat-y",
+            backgroundImage: "var(--rule-background)",
             opacity: "var(--rule-repeat-opacity, 1)",
             transition: "opacity 0.3s",
           }}

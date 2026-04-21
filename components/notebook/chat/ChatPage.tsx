@@ -78,14 +78,12 @@ export function ChatPage({
             // button), so a tighter top padding is fine.
             paddingTop: compact
               ? "calc(var(--line) * 3)"
-              : "calc(var(--line) * 4.5)",
+              : "calc(var(--line) * 5)",
             paddingBottom: compact ? 240 : 280,
             // Ruled lines tile across the full scroll height so they
-            // travel with the content. Line at y=26px of each 32px row.
-            backgroundImage:
-              "linear-gradient(to bottom, transparent 25px, rgba(61, 52, 139, 0.12) 26px, transparent 27px)",
-            backgroundSize: "100% var(--line, 32px)",
-            backgroundRepeat: "repeat-y",
+            // travel with the content. Formula from globals.css so every
+            // ruled surface shares one baseline-anchored offset.
+            backgroundImage: "var(--rule-background)",
           }}
         >
           {/* Chat home chrome — matches the content-page pattern:
