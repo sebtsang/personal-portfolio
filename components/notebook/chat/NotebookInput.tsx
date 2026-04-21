@@ -2,19 +2,29 @@
 
 import { useEffect, useRef, useState } from "react";
 import { SlashCommandRow } from "./SlashCommandRow";
+import { PromptSuggestions } from "./PromptSuggestions";
 
 export function NotebookInput({
   onSubmit,
   compact = false,
   autoFocus = true,
+  showSuggestions = false,
 }: {
   onSubmit: (text: string) => void;
   compact?: boolean;
   autoFocus?: boolean;
+  /** Show the random-prompt chip row above the slash commands — only on empty-chat state. */
+  showSuggestions?: boolean;
 }) {
   const [val, setVal] = useState("");
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const prefill = (text: string) => {
+    setVal(text);
+    // Focus the input so the caret lands ready for the user to edit/hit enter.
+    inputRef.current?.focus();
+  };
 
   useEffect(() => {
     if (!autoFocus) return;
@@ -63,6 +73,10 @@ export function NotebookInput({
           pointerEvents: "auto",
         }}
       >
+        {showSuggestions && (
+          <PromptSuggestions onSelect={prefill} compact={compact} />
+        )}
+
         <SlashCommandRow onDispatch={submit} compact={compact} />
 
         <div

@@ -141,6 +141,10 @@ export function ChatPage({
         onSubmit={onSubmit}
         compact={compact}
         autoFocus={autoFocus}
+        // Show the prompt chips only on the empty-chat state
+        // (before any user message). After that, they'd compete with
+        // the conversation for attention.
+        showSuggestions={!messages.some((m) => m.role === "user")}
       />
     </div>
   );
