@@ -15,14 +15,16 @@ import type { ChatMessage } from "./chat/ChatPage";
 import { SplitView } from "./split/SplitView";
 
 const WELCOME_BUBBLES = [
-  "You found Seb's chat home — good. I'm SebBot, the assistant he left here to answer the easy questions.",
-  "Ask something specific (projects, internships, how he actually thinks), or try a slash command below.",
+  "You've opened Seb's journal. I'm SebBot — handling the easy questions while he ships.",
+  "Ask anything about him, or try the slash commands below: /about /experience /linkedin /contact.",
 ];
 
 const FLIP_MS = 1100;
 // Must match HandwrittenText defaults so seed 2 starts after seed 1 finishes.
-const CHAR_DELAY_MS = 25;
-const CHAR_DURATION_MS = 220;
+// Faster per-char pacing keeps the pen-writing feel but lands total welcome
+// time at ~3.6s instead of the previous ~7s.
+const CHAR_DELAY_MS = 10;
+const CHAR_DURATION_MS = 180;
 const SEED_GAP_MS = 300;
 
 export function NotebookShell({

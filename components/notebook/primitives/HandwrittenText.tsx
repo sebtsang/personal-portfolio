@@ -16,7 +16,7 @@ import { memo } from "react";
  */
 export const HandwrittenText = memo(function HandwrittenText({
   text,
-  charDelayMs = 25,
+  charDelayMs = 10,
   durationMs = 180,
 }: {
   text: string;
