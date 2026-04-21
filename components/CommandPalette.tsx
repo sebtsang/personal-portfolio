@@ -41,6 +41,15 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Custom event for non-keyboard triggers (e.g. the ⌘K hint chip in
+  // SlashCommandRow, used for mobile and click-first users).
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener("sebjournal:open-palette", onOpen);
+    return () =>
+      window.removeEventListener("sebjournal:open-palette", onOpen);
+  }, []);
+
   const closeAnd = useCallback(
     (fn: () => void) => () => {
       setOpen(false);
@@ -136,29 +145,41 @@ export function CommandPalette() {
           />
         )}
         {open && (
-          <motion.div
-            key="palette"
-            initial={{ opacity: 0, y: -8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          // Outer wrapper owns the center-of-viewport positioning
+          // (translate -50% both axes). The inner motion.div owns the
+          // small y/scale entry animation — separating them keeps
+          // framer motion from overriding the centering transform.
+          <div
+            key="palette-wrapper"
             style={{
               position: "fixed",
-              top: "20vh",
+              top: "50%",
               left: "50%",
-              transform: "translateX(-50%)",
+              transform: "translate(-50%, -50%)",
               width: "min(560px, 92vw)",
               zIndex: 1001,
-              background: "#faf7f0",
-              border:
-                "1px solid color-mix(in srgb, var(--color-ink-soft) 32%, transparent)",
-              borderRadius: 10,
-              boxShadow:
-                "0 14px 50px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.06)",
-              overflow: "hidden",
-              fontFamily: "var(--font-mono)",
+              pointerEvents: "none",
             }}
           >
+            <motion.div
+              key="palette"
+              initial={{ opacity: 0, y: -4, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              style={{
+                width: "100%",
+                background: "#faf7f0",
+                border:
+                  "1px solid color-mix(in srgb, var(--color-ink-soft) 32%, transparent)",
+                borderRadius: 10,
+                boxShadow:
+                  "0 14px 50px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.06)",
+                overflow: "hidden",
+                fontFamily: "var(--font-mono)",
+                pointerEvents: "auto",
+              }}
+            >
             <Command label="Sebastian's journal — command palette">
               <div
                 style={{
@@ -230,6 +251,11 @@ export function CommandPalette() {
                 <PaletteGroup heading="Navigate">
                   <PaletteItem
                     label="Home — chat"
+                    shortcut="/home"
+                    onSelect={navigate("/home")}
+                  />
+                  <PaletteItem
+                    label="Landing page"
                     shortcut="/"
                     onSelect={navigate("/")}
                   />
@@ -284,7 +310,8 @@ export function CommandPalette() {
                 </PaletteGroup>
               </Command.List>
             </Command>
-          </motion.div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 

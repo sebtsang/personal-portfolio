@@ -70,6 +70,7 @@ const SEED_GAP_MS = 300;
 
 export function NotebookShell({
   initialView,
+  skipLanding = false,
 }: {
   /**
    * If set to a non-empty view, skip the landing flip entirely and open
@@ -77,6 +78,13 @@ export function NotebookShell({
    * deep-link routes like /about.
    */
   initialView?: StageView;
+  /**
+   * Skip the landing flip and mount the chat directly (no split view).
+   * Seeds still stagger in — this is the "you opened the journal to the
+   * home page" entry used by the /home route and by the palette's
+   * "Home" item. Ignored when `initialView` is set (deep-link wins).
+   */
+  skipLanding?: boolean;
 } = {}) {
   const view = useStageStore((s) => s.view);
   const setView = useStageStore((s) => s.setView);
@@ -84,11 +92,18 @@ export function NotebookShell({
   const isSplit = view.kind !== "empty";
 
   const deepLink = !!initialView && initialView.kind !== "empty";
+  // Chat-only entry (/home): same "no landing flip" behavior as deep-link,
+  // but seeds still animate in since there's no split content competing
+  // for attention.
+  const chatOnly = !deepLink && skipLanding;
+  const entersWithChatMounted = deepLink || chatOnly;
 
-  const [showLanding, setShowLanding] = useState(!deepLink);
+  const [showLanding, setShowLanding] = useState(!entersWithChatMounted);
   const [flipping, setFlipping] = useState(false);
-  const [chatMounted, setChatMounted] = useState(deepLink);
+  const [chatMounted, setChatMounted] = useState(entersWithChatMounted);
   const [seedPhase, setSeedPhase] = useState(
+    // Deep-link jumps seeds to completion (user came for the split, not
+    // to read the intro). /home animates them in.
     deepLink ? WELCOME_BUBBLES.length : 0,
   );
 
@@ -97,6 +112,32 @@ export function NotebookShell({
   useEffect(() => {
     if (deepLink && initialView) setView(initialView);
     // Run once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // /home entry: seeds animate in on mount (same timing as the normal
+  // post-landing flow, but without the flip). Deep-link skips this
+  // because seedPhase is pre-set to full, and normal landing skips it
+  // because advance() is the trigger there.
+  useEffect(() => {
+    if (!chatOnly) return;
+    let cumulative = 80;
+    const timers: number[] = [];
+    WELCOME_BUBBLES.forEach((text, i) => {
+      const mountAt = cumulative;
+      timers.push(
+        window.setTimeout(
+          () => setSeedPhase((p) => Math.max(p, i + 1)),
+          mountAt,
+        ),
+      );
+      cumulative +=
+        text.length * CHAR_DELAY_MS + CHAR_DURATION_MS + SEED_GAP_MS;
+    });
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+    };
+    // Run once on mount; constants above are module-level.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
