@@ -19,6 +19,33 @@ const WELCOME_BUBBLES = [
   "Ask anything about him, or try the slash commands below: /about /experience /linkedin /contact.",
 ];
 
+/**
+ * Detect a 429 from /api/chat (whose body is `{ error: "rate-limited",
+ * retryAfter, which }`) and translate it into a journal-voice bot reply.
+ * Returns null for any other failure so the caller falls back to a console
+ * log instead of pretending the bot said something.
+ */
+function rateLimitReply(err: unknown): string | null {
+  const msg = err instanceof Error ? err.message : String(err);
+  const jsonStart = msg.indexOf("{");
+  if (jsonStart < 0) return null;
+  try {
+    const body = JSON.parse(msg.slice(jsonStart)) as {
+      error?: string;
+      retryAfter?: number;
+      which?: "burst" | "hourly";
+    };
+    if (body.error !== "rate-limited") return null;
+    if (body.which === "hourly") {
+      const mins = Math.max(1, Math.round((body.retryAfter ?? 60) / 60));
+      return `ok i need a coffee break — too many questions in an hour. try me again in ~${mins} min.`;
+    }
+    return "easy there — you're typing faster than i can write. give me a sec and try again.";
+  } catch {
+    return null;
+  }
+}
+
 const FLIP_MS = 1100;
 // Must match HandwrittenText defaults so seed 2 starts after seed 1 finishes.
 // Faster per-char pacing keeps the pen-writing feel but lands total welcome
@@ -74,6 +101,19 @@ export function NotebookShell({
     },
     onError: (err) => {
       console.error("[chat] request failed:", err);
+      const reply = rateLimitReply(err);
+      if (!reply) return;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id:
+            typeof crypto !== "undefined" && "randomUUID" in crypto
+              ? crypto.randomUUID()
+              : `b-${Date.now()}`,
+          role: "assistant",
+          content: reply,
+        },
+      ]);
     },
   });
 
