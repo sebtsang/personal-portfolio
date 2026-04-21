@@ -30,7 +30,13 @@ export function CoverBackButton() {
       style={{
         position: "absolute",
         top: "calc(var(--line) * 1.25)",
-        left: "calc(3% + 28px)",
+        // Sit just inside the red margin rule. Content pages use
+        // `3% + 28px` because they're inside a narrower offset pane;
+        // chat home is full-viewport, so we align with the chat-text
+        // indent (12% + 20px) to land in the same visual column as
+        // message text — which is also just to the right of the
+        // vertical margin at ~12% viewport width.
+        left: "calc(12% + 20px)",
         background: "transparent",
         border: "none",
         padding: 0,

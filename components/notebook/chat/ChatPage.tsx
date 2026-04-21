@@ -79,7 +79,10 @@ export function ChatPage({
               style={{
                 position: "absolute",
                 top: "calc(var(--line) * 2.5)",
-                left: "calc(3% + 28px)",
+                // Aligned with CoverBackButton above; same reasoning
+                // as in CoverBackButton — 12% lands just inside the
+                // red margin on the full-viewport chat home.
+                left: "calc(12% + 20px)",
                 fontFamily: "var(--font-mono)",
                 fontSize: 10,
                 letterSpacing: "0.25em",
