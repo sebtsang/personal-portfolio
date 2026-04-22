@@ -26,6 +26,7 @@ export function ChatPage({
   autoFocus?: boolean;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   // Deferred render for the messages list. When useChat streams in
   // tokens (arriving 20-100/s), React would normally re-render the
@@ -37,14 +38,62 @@ export function ChatPage({
   // animations improves meaningfully.
   const deferredMessages = useDeferredValue(messages);
 
-  // Auto-scroll to bottom when a new message arrives. Drive off the
-  // RAW messages (not the deferred value) so scrolling feels
-  // instantaneous even while the list paints a frame behind.
+  // Follow-to-bottom auto-scroll. Three events need to pin the
+  // viewport on the newest content:
+  //   1. user sends a message        (messages.length grows)
+  //   2. writing indicator appears   (isWriting flips true)
+  //   3. bot streams tokens          (last message text grows; same length)
+  // The old implementation only covered #1. A ResizeObserver on the
+  // content container catches all three (and the indicator's removal
+  // when the stream ends too), because every one of them changes the
+  // inner div's height.
+  //
+  // We only auto-follow if the user is *already* near the bottom — a
+  // `pinned` flag tracks their scroll position so manual scroll-up to
+  // read history isn't hijacked by a fresh streaming reply. Compact
+  // mode (split-view chat) shows a small slice of the log, so the
+  // follow behavior matters most there; home mode benefits too but
+  // with a taller viewport, users are more likely to scroll up.
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages.length]);
+    const outer = scrollRef.current;
+    const inner = contentRef.current;
+    if (!outer || !inner) return;
+
+    const NEAR_BOTTOM_PX = 120; // within this of the floor = "follow me"
+    const isNearBottom = () =>
+      outer.scrollHeight - outer.scrollTop - outer.clientHeight <
+      NEAR_BOTTOM_PX;
+
+    let pinned = true;
+    // Ignore one scroll event immediately after we programmatically
+    // set scrollTop — otherwise the self-triggered scroll would be
+    // read as user intent and flip `pinned` erroneously.
+    let ignoreNextScroll = false;
+    const onScroll = () => {
+      if (ignoreNextScroll) {
+        ignoreNextScroll = false;
+        return;
+      }
+      pinned = isNearBottom();
+    };
+    outer.addEventListener("scroll", onScroll, { passive: true });
+
+    const snap = () => {
+      if (!pinned) return;
+      ignoreNextScroll = true;
+      outer.scrollTop = outer.scrollHeight;
+    };
+
+    // Initial state: user hasn't scrolled yet → pinned to bottom.
+    snap();
+
+    const obs = new ResizeObserver(snap);
+    obs.observe(inner);
+    return () => {
+      obs.disconnect();
+      outer.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   return (
     <div
@@ -68,6 +117,7 @@ export function ChatPage({
         }}
       >
         <div
+          ref={contentRef}
           style={{
             position: "relative",
             minHeight: "100%",
