@@ -29,20 +29,17 @@ type Intent = {
 
 // Phrases that signal "I want to VIEW a page" — restricted to explicit
 // command/viewing verbs. Questions about the underlying info ("where has
-// he worked", "how do I contact him", "tell me about seb") are left to
-// the LLM so it can give a conversational answer and optionally nudge
-// the user toward the full page. Anchored to message start so
-// "I don't want to see X" and similar negations don't match.
+// he worked", "tell me about seb") are left to the LLM so it can give a
+// conversational answer and optionally nudge the user toward the full
+// page. Anchored to message start so "I don't want to see X" and
+// similar negations don't match.
 //
-// Design rule: this matcher routes only when the user asks for a page.
-// Asking a question that the page happens to answer → LLM handles it.
-// One gray area worth noting: "how do I contact him" is structurally a
-// question but its answer is entirely on the contact page, so routing
-// it wouldn't be wrong. Seb explicitly chose to keep it LLM for
-// consistency; revisit by re-adding a "how (do|can) i X (contact|
-// email|reach)" alternation here.
+// Exception: "how (do|can|should) i (contact|reach|email|message|dm|get
+// in touch)" — structurally a question but its answer is entirely the
+// contact page, so route it. Narrow on purpose: the verb list is only
+// contact-related, so "how do I make pasta" / "how can I help" stay LLM.
 const NAV_PHRASE =
-  /^\s*(\/?(show|see|view|read|open|pull\s+up|take\s+me\s+to|go\s+to)\s+(me\s+|us\s+)?|(can|could|will|would)\s+(i|you|we)\s+(see|show|view|look\s+at|check|read|pull\s+up|open)\s+(me\s+|us\s+)?|(let|lemme)\s+me?\s+(see|view|check|read|look\s+at)\s+|(i|we)('?ll|\s+will|\s+would\s+like|\s+want|\s+wanna|\s+need|'?d\s+like)(\s+to)?\s+(see|view|look\s+at|check|read|open)\s+)/i;
+  /^\s*(\/?(show|see|view|read|open|pull\s+up|take\s+me\s+to|go\s+to)\s+(me\s+|us\s+)?|(can|could|will|would)\s+(i|you|we)\s+(see|show|view|look\s+at|check|read|pull\s+up|open)\s+(me\s+|us\s+)?|(let|lemme)\s+me?\s+(see|view|check|read|look\s+at)\s+|(i|we)('?ll|\s+will|\s+would\s+like|\s+want|\s+wanna|\s+need|'?d\s+like)(\s+to)?\s+(see|view|look\s+at|check|read|open)\s+|how\s+(do|can|should|would|to)\s+(i|we|one)?\s*(contact|reach|email|message|dm|get\s+in\s+touch)\s+)/i;
 
 const TOPIC_PATTERNS: Record<Exclude<ToolName, "showProjects" | "showProject">, RegExp> = {
   showAbout:
