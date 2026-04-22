@@ -44,12 +44,17 @@ const TOPIC_PATTERNS: Record<Exclude<ToolName, "showProjects" | "showProject">, 
 };
 
 // Short/exact patterns that should match even without a nav phrase.
+// Includes the specific prompt-suggestion chip texts so clicking a chip
+// always routes deterministically — without these entries the LLM would
+// be asked to infer navigation from phrasings like "what's his deal",
+// which it sometimes describes ("Pulling up the about page…") without
+// actually emitting the tool call, and the page fails to open.
 const EXACT_PATTERNS: Record<
   Exclude<ToolName, "showProjects" | "showProject">,
   RegExp
 > = {
   showAbout:
-    /^\/about$|^(about|your\s+story|who\s+are\s+you|who\s+is\s+seb)\??$/i,
+    /^\/about$|^(about|your\s+story|who\s+are\s+you|who\s+is\s+seb|what'?s\s+his\s+deal|what\s+does\s+he\s+do\s+on\s+weekends)\??$/i,
   showExperience: /^\/experience$|^(experience|jobs?|companies|career|resume)\??$/i,
   showContact: /^\/contact$|^(contact|email)\??$/i,
   showLinkedIn:
