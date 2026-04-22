@@ -1,12 +1,20 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 
 /**
  * Prompt suggestions shown under the chat input on the empty-chat state.
  * Picks 3 random prompts from the pool on mount (stable per render, new
  * shuffle on refresh — matches the journal metaphor where each "open"
  * is a new session).
+ *
+ * SSR note: the seed is seeded from Date.now(), which differs between
+ * the server render and the client hydration — Next.js flags that as a
+ * Recoverable hydration-mismatch error. We sidestep it by rendering a
+ * deterministic default (first three from POOL) on the server AND on
+ * the initial client render, then swapping to a time-seeded shuffle in
+ * a useEffect. The SSR and hydration trees match; the swap happens
+ * post-hydration and React accepts it as a normal state update.
  *
  * Click behavior: prefill the input (not auto-send) so the user can
  * edit or abandon. Consistent with the wider "always confirm before
@@ -50,7 +58,14 @@ export function PromptSuggestions({
   onSelect: (text: string) => void;
   compact?: boolean;
 }) {
-  const picks = useMemo(() => pickThree(Date.now()), []);
+  // Initial render (SSR + first client paint) uses the first three from
+  // POOL so the two trees match. After mount we seed from Date.now()
+  // and React updates the chips — no hydration warning, same
+  // per-session randomness the component originally offered.
+  const [picks, setPicks] = useState<string[]>(() => POOL.slice(0, 3));
+  useEffect(() => {
+    setPicks(pickThree(Date.now()));
+  }, []);
 
   return (
     <div
