@@ -40,8 +40,12 @@ export function ContentPagePlaceholder({ onClose }: { onClose: () => void }) {
           paddingLeft: "calc(12% + var(--pad-content))",
           paddingRight: "8%",
           overflowY: "auto",
-          // Ruled lines travel with the content on scroll.
+          // Ruled lines travel with the content on scroll. background-
+          // attachment: local binds the bg to the content so the rules
+          // move together with the text — without it the bg sticks to
+          // the scroll container and text drifts across fixed rules.
           backgroundImage: "var(--rule-background)",
+          backgroundAttachment: "local",
         }}
       >
         <PageBackButton onClose={onClose} />

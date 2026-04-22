@@ -92,10 +92,14 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
           paddingLeft: "calc(12% + var(--pad-content))",
           paddingRight: "8%",
           overflowY: "auto",
-          // Ruled lines travel with the content (same trick as the chat).
-          // Formula in globals.css keeps text baseline on rule at every
-          // viewport.
+          // Ruled lines travel with the content as the user scrolls.
+          // background-attachment: local binds the bg to the content, not
+          // to the scroll container — without it the rules would stick to
+          // the div while text moved past them, making the text drift
+          // off-grid visually. Formula in globals.css keeps text baseline
+          // on rule at every viewport.
           backgroundImage: "var(--rule-background)",
+          backgroundAttachment: "local",
         }}
       >
         {/* Page meta stacked in the top-left gutter: back button + page

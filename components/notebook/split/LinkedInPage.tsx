@@ -104,8 +104,12 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
-          // Ruled lines travel with the content on scroll.
+          // Ruled lines travel with the content on scroll. background-
+          // attachment: local binds the bg to the content so the rules
+          // move together with the text — without it the bg sticks to
+          // the scroll container and text drifts across fixed rules.
           backgroundImage: "var(--rule-background)",
+          backgroundAttachment: "local",
         }}
       >
         <PageBackButton onClose={onClose} />
