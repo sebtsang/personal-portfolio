@@ -26,10 +26,13 @@ type Role = {
 
 /** Highlighted metric — same handwriting, slightly larger + heavier. */
 function Metric({ children }: { children: ReactNode }) {
+  // Emphasis via weight + full-ink color + negative letter-spacing — no
+  // fontSize override, because a 1.18em span on a blurb line would push
+  // the line-box taller than --line and drift every following line off
+  // the ruled grid.
   return (
     <span
       style={{
-        fontSize: "1.18em",
         fontWeight: 600,
         color: "var(--color-ink)",
         letterSpacing: "-0.01em",
@@ -287,7 +290,9 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
     <div
       style={{
         position: "relative",
-        marginBottom: "calc(var(--line) * 2.5)",
+        // Integer-line-multiple gap so every role's text lands on a rule.
+        // Half-line values (e.g. 2.5) push odd/even roles off-grid.
+        marginBottom: "calc(var(--line) * 2)",
         opacity: shown ? 1 : 0,
         transform: shown ? "translateY(0)" : "translateY(12px)",
         transition:
@@ -316,7 +321,8 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
           display: "flex",
           alignItems: "flex-start",
           gap: 16,
-          marginBottom: 4,
+          // No inter-element spacing here so blurb's top lands exactly at
+          // (role top + 3 × --line) — keeps the grid intact.
           minHeight: "calc(var(--line) * 2)",
         }}
       >
@@ -365,16 +371,18 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
         </div>
       </div>
 
-      {/* Blurb — sits on the ruled grid */}
+      {/* Blurb — primary body text, sits on the ruled grid. Uses --fs-body
+          (not --fs-script) so its baseline lands on the rule at 0.76 ×
+          --line; smaller --fs-script has a higher baseline fraction
+          (~0.72) that drifts above the rule. */}
       <div
         style={{
           fontFamily: "var(--font-script)",
-          fontSize: "var(--fs-script)",
+          fontSize: "var(--fs-body)",
           fontWeight: 400,
           color: "var(--color-ink)",
           lineHeight: "var(--line)",
           maxWidth: 560,
-          marginTop: 2,
         }}
       >
         {role.blurb}

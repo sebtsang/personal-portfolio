@@ -150,7 +150,6 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
             color: "var(--color-ink-soft)",
             opacity: 0.75,
             margin: 0,
-            marginTop: 2,
             marginBottom: "var(--line)",
             lineHeight: "var(--line)",
             maxWidth: 560,
