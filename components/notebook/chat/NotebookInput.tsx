@@ -21,12 +21,6 @@ export function NotebookInput({
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const prefill = (text: string) => {
-    setVal(text);
-    // Focus the input so the caret lands ready for the user to edit/hit enter.
-    inputRef.current?.focus();
-  };
-
   useEffect(() => {
     if (!autoFocus) return;
     const t = setTimeout(() => inputRef.current?.focus(), 200);
@@ -90,7 +84,7 @@ export function NotebookInput({
               }}
               style={{ overflow: "hidden" }}
             >
-              <PromptSuggestions onSelect={prefill} compact={compact} />
+              <PromptSuggestions onSelect={submit} compact={compact} />
             </motion.div>
           )}
         </AnimatePresence>

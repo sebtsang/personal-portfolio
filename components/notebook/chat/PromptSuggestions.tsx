@@ -16,9 +16,11 @@ import { useEffect, useState } from "react";
  * a useEffect. The SSR and hydration trees match; the swap happens
  * post-hydration and React accepts it as a normal state update.
  *
- * Click behavior: prefill the input (not auto-send) so the user can
- * edit or abandon. Consistent with the wider "always confirm before
- * doing" spirit of the chat.
+ * Click behavior: fire the chip's text as a user message immediately
+ * (no prefill step). The suggestions are only shown on the empty-chat
+ * state, where they're meant as shortcuts — forcing an Enter press
+ * after the click felt like friction for what's clearly a committed
+ * intent.
  *
  * Visibility: only when no user messages exist yet. Parent (ChatPage)
  * computes this from the messages array and passes `showSuggestions`.
