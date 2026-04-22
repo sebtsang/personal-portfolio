@@ -84,14 +84,22 @@ export const NotebookMessage = memo(function NotebookMessage({
   }
 
   // Home mode: label inline, fixed-width column; text fills the rest.
-  // The label overrides lineHeight to 1 (was var(--line)) because flex
-  // baseline alignment measures each item's line-box ascent+descent,
-  // and a mono label with lineHeight:var(--line) has much more leading
-  // below its baseline than Caveat body does. That asymmetry inflates
-  // the row ~6px beyond --line, and the overflow accumulates message
-  // by message — every subsequent body baseline drifts further off
-  // the ruled grid. Collapsing label lineHeight shrinks its line-box
-  // so Caveat's descent dominates and the row is exactly --line tall.
+  //
+  // lineHeight:1 on the label: flex baseline alignment measures each
+  // item's line-box ascent+descent. A mono label with lineHeight:var(--line)
+  // has more leading below its baseline than Caveat body does, which
+  // inflates the row ~6px past --line and drifts every subsequent
+  // message off the ruled grid. Collapsing the label's line-box to its
+  // text lets Caveat's descent win and the row stays exactly --line tall.
+  //
+  // translateY on the label: without it, the label's baseline sits flush
+  // on the rule (shared with body baseline via flex), which reads as
+  // "label glued to the rule". Compact mode gets ~6px of breathing
+  // room for free because the label lives on its own line-box and its
+  // baseline (mono, ~0.57 of --line) is above the rule (at 0.76). We
+  // mimic that here by translating the label up by 0.19 × --line, the
+  // same fractional offset. Body position is untouched; transform is
+  // purely visual.
   return (
     <div
       style={{
@@ -108,6 +116,7 @@ export const NotebookMessage = memo(function NotebookMessage({
           lineHeight: 1,
           flexShrink: 0,
           width: 64,
+          transform: "translateY(calc(var(--line) * -0.19))",
         }}
       >
         {isUser ? "you" : "sebbot"}

@@ -83,10 +83,21 @@ export const WritingIndicator = memo(function WritingIndicator({
         gap: 12,
       }}
     >
-      {/* lineHeight override: see NotebookMessage — the mono label's line-box
-          descent would otherwise dominate the flex-baseline row and push it
-          ~6px past --line, drifting subsequent messages off the ruled grid. */}
-      <div style={{ ...labelStyle, lineHeight: 1, flexShrink: 0, width: 64 }}>sebbot</div>
+      {/* lineHeight + translateY: see NotebookMessage home-mode for the
+          full rationale. lineHeight:1 keeps the row exactly --line tall;
+          translateY(-0.19 × --line) pushes the label off the rule so it
+          has the same visual breathing room compact mode gets naturally. */}
+      <div
+        style={{
+          ...labelStyle,
+          lineHeight: 1,
+          flexShrink: 0,
+          width: 64,
+          transform: "translateY(calc(var(--line) * -0.19))",
+        }}
+      >
+        sebbot
+      </div>
       <div style={{ ...textStyle, flex: 1, minWidth: 0 }}>{body}</div>
     </div>
   );
