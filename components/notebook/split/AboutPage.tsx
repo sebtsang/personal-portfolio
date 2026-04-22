@@ -109,9 +109,9 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
         <div
           style={{
             position: "absolute",
-            // Baseline at midpoint of slot between rule 1 and rule 2.
-            // See CoverBackButton for the formula rationale.
-            top: "calc(var(--line) * 2.26 - var(--fs-meta) * 0.86)",
+            // Baseline floats 0.19 × --line above rule 2 — matches the
+            // sender-label offset in chat home.
+            top: "calc(var(--line) * 2.57 - var(--fs-meta) * 0.86)",
             left: "calc(3% + var(--pad-chrome))",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--fs-meta)",

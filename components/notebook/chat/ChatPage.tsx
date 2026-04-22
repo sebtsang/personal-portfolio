@@ -145,9 +145,9 @@ export function ChatPage({
             <div
               style={{
                 position: "absolute",
-                // Label baseline at midpoint of the slot between rule 1
-                // and rule 2 — floats between rules for breathing room.
-                top: "calc(var(--line) * 2.26 - var(--fs-meta) * 0.86)",
+                // Baseline floats 0.19 × --line above rule 2 —
+                // matches the sender-label offset in chat home.
+                top: "calc(var(--line) * 2.57 - var(--fs-meta) * 0.86)",
                 // Aligned with CoverBackButton above; same reasoning
                 // as in CoverBackButton — 12% lands just inside the
                 // red margin on the full-viewport chat home.

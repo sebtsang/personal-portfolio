@@ -26,15 +26,13 @@ export function CoverBackButton() {
       aria-label="Close the journal and return to the cover"
       style={{
         position: "absolute",
-        // Position so the label's baseline falls at the MIDPOINT of the
-        // slot between rule 0 and rule 1 (rules live at 0.76 × --line +
-        // k × --line; midpoint between two consecutive rules is at
-        // (k + 0.26) × --line). Sitting off the rule gives the chrome
-        // some breathing room — same vibe as a label in a real notebook
-        // that floats in the margin rather than riding the writing line.
+        // Baseline floats 0.19 × --line above the rule below it — same
+        // amount of breathing room the chat's SEBBOT / YOU sender labels
+        // get (see NotebookMessage home-mode). Rule below the back button
+        // sits at 1.76 × --line, so baseline target is 1.57 × --line.
         // With lineHeight:1, Caveat's baseline sits ~0.82 × fontSize
         // below the element's top.
-        top: "calc(var(--line) * 1.26 - var(--fs-script) * 0.82)",
+        top: "calc(var(--line) * 1.57 - var(--fs-script) * 0.82)",
         // Sit just inside the red margin rule. Content pages use
         // `3% + 28px` because they're inside a narrower offset pane;
         // chat home is full-viewport, so we align with the chat-text
