@@ -12,13 +12,11 @@ type ContactField = {
   icon: ReactNode;
 };
 
+// Order matters — LinkedIn is Seb's preferred first-contact channel, so
+// it sits at the top. Email is still available (click-to-copy kept for
+// convenience) but lives at the bottom to subtly nudge visitors toward
+// the DM path instead of cold-emailing gmail.
 const FIELDS: ContactField[] = [
-  {
-    label: "email",
-    display: "sebrtsang@gmail.com",
-    href: "mailto:sebrtsang@gmail.com",
-    icon: <EnvelopeIcon />,
-  },
   {
     label: "linkedin",
     display: "/in/sebtsang",
@@ -36,6 +34,12 @@ const FIELDS: ContactField[] = [
     display: "@sebrtsang",
     href: "https://x.com/sebrtsang",
     icon: <XIcon />,
+  },
+  {
+    label: "email",
+    display: "sebrtsang@gmail.com",
+    href: "mailto:sebrtsang@gmail.com",
+    icon: <EnvelopeIcon />,
   },
 ];
 
@@ -129,8 +133,8 @@ export function ContactPage({ onClose }: { onClose: () => void }) {
             maxWidth: 560,
           }}
         >
-          easiest way to find me is email — I read everything that lands there.
-          LinkedIn works too if that&apos;s your thing.
+          easiest way to reach me is LinkedIn DM — I read every one. email
+          works too if that&apos;s your thing.
         </p>
 
         {/* Taped contact card */}

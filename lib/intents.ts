@@ -78,7 +78,7 @@ const REPLIES: Record<
 > = {
   showAbout: "Cool — pulling up the about page.",
   showExperience: "Pulling up the timeline now.",
-  showContact: "Easiest way: email. Here's everything.",
+  showContact: "Easiest way: LinkedIn DM. Here's everything.",
   showLinkedIn:
     "Flipping through the greatest hits. Click a card to see the full post.",
 };
