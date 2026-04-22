@@ -109,7 +109,8 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
         <div
           style={{
             position: "absolute",
-            top: "calc(var(--line) * 2.5)",
+            // Baseline on rule #2. See CoverBackButton for the formula.
+            top: "calc(var(--line) * 2 + var(--line) * 0.76 - var(--fs-meta) * 0.86)",
             left: "calc(3% + var(--pad-chrome))",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--fs-meta)",
@@ -117,7 +118,7 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
             textTransform: "uppercase",
             color:
               "color-mix(in srgb, var(--color-ink-soft) 55%, transparent)",
-            lineHeight: "var(--line)",
+            lineHeight: 1,
           }}
         >
           journal · about

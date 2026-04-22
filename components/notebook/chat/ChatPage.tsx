@@ -145,7 +145,10 @@ export function ChatPage({
             <div
               style={{
                 position: "absolute",
-                top: "calc(var(--line) * 2.5)",
+                // Label baseline on ruled line #2. Mono at lineHeight:1
+                // puts baseline ~0.86 × fontSize below element top, so
+                // back-calculate from target rule minus that offset.
+                top: "calc(var(--line) * 2 + var(--line) * 0.76 - var(--fs-meta) * 0.86)",
                 // Aligned with CoverBackButton above; same reasoning
                 // as in CoverBackButton — 12% lands just inside the
                 // red margin on the full-viewport chat home.
@@ -155,7 +158,7 @@ export function ChatPage({
                 letterSpacing: "0.25em",
                 textTransform: "uppercase",
                 color: "color-mix(in srgb, var(--color-ink-soft) 55%, transparent)",
-                lineHeight: "var(--line)",
+                lineHeight: 1,
               }}
             >
               journal · home
