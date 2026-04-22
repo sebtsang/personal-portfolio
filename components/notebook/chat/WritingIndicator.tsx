@@ -83,7 +83,10 @@ export const WritingIndicator = memo(function WritingIndicator({
         gap: 12,
       }}
     >
-      <div style={{ ...labelStyle, flexShrink: 0, width: 64 }}>sebbot</div>
+      {/* lineHeight override: see NotebookMessage — the mono label's line-box
+          descent would otherwise dominate the flex-baseline row and push it
+          ~6px past --line, drifting subsequent messages off the ruled grid. */}
+      <div style={{ ...labelStyle, lineHeight: 1, flexShrink: 0, width: 64 }}>sebbot</div>
       <div style={{ ...textStyle, flex: 1, minWidth: 0 }}>{body}</div>
     </div>
   );

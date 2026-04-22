@@ -84,6 +84,14 @@ export const NotebookMessage = memo(function NotebookMessage({
   }
 
   // Home mode: label inline, fixed-width column; text fills the rest.
+  // The label overrides lineHeight to 1 (was var(--line)) because flex
+  // baseline alignment measures each item's line-box ascent+descent,
+  // and a mono label with lineHeight:var(--line) has much more leading
+  // below its baseline than Caveat body does. That asymmetry inflates
+  // the row ~6px beyond --line, and the overflow accumulates message
+  // by message — every subsequent body baseline drifts further off
+  // the ruled grid. Collapsing label lineHeight shrinks its line-box
+  // so Caveat's descent dominates and the row is exactly --line tall.
   return (
     <div
       style={{
@@ -97,6 +105,7 @@ export const NotebookMessage = memo(function NotebookMessage({
       <div
         style={{
           ...labelStyle,
+          lineHeight: 1,
           flexShrink: 0,
           width: 64,
         }}
