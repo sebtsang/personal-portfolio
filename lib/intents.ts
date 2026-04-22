@@ -27,49 +27,50 @@ type Intent = {
  * the user sees a blank bubble.
  */
 
-// Phrases that signal "I want to navigate to / see a page". Anchored to
-// message start so "I don't want to see X" doesn't spuriously match.
-// "tell" is listed as a valid verb after "can you" so "can you tell me
-// about seb" routes (same intent as "tell me about seb"). The final
-// alternation `what\s+\w+\s+(has|did|does|do)\s+(he|seb|you)` catches
-// object-fronted questions like "what companies has he worked at" or
-// "what posts has he written".
+// Phrases that signal "I want to VIEW a page" — restricted to explicit
+// command/viewing verbs. Questions about the underlying info ("where has
+// he worked", "how do I contact him", "tell me about seb") are left to
+// the LLM so it can give a conversational answer and optionally nudge
+// the user toward the full page. Anchored to message start so
+// "I don't want to see X" and similar negations don't match.
+//
+// Design rule: this matcher routes only when the user asks for a page.
+// Asking a question that the page happens to answer → LLM handles it.
+// One gray area worth noting: "how do I contact him" is structurally a
+// question but its answer is entirely on the contact page, so routing
+// it wouldn't be wrong. Seb explicitly chose to keep it LLM for
+// consistency; revisit by re-adding a "how (do|can) i X (contact|
+// email|reach)" alternation here.
 const NAV_PHRASE =
-  /^\s*(\/?(show|see|view|read|open|pull\s+up|take\s+me\s+to|go\s+to)\s+(me\s+|us\s+)?|(can|could|will|would)\s+(i|you|we)\s+(see|show|view|look\s+at|check|read|pull\s+up|open|contact|reach|email|message|dm|tell)\s+(me\s+|us\s+)?|(let|lemme)\s+me?\s+(see|view|check|read|look\s+at)\s+|(i|we)('?ll|\s+will|\s+would\s+like|\s+want|\s+wanna|\s+need|'?d\s+like)(\s+to)?\s+(see|view|look\s+at|check|read|know(\s+about)?|contact|reach|email|message|dm)\s+|(how\s+(do|can|should|would|to)\s+(i|you|we|one)?\s*)|tell\s+me(\s+about)?\s+|what'?s\s+(your|his)\s+|what\s+(is|are)\s+(your|his)\s+|what\s+has\s+(he|seb)\s+|what\s+(did|does|do)\s+(he|seb|you)\s+|what\s+\w+\s+(has|did|does|do)\s+(he|seb|you)\s+|where\s+has\s+(he|seb)\s+)/i;
+  /^\s*(\/?(show|see|view|read|open|pull\s+up|take\s+me\s+to|go\s+to)\s+(me\s+|us\s+)?|(can|could|will|would)\s+(i|you|we)\s+(see|show|view|look\s+at|check|read|pull\s+up|open)\s+(me\s+|us\s+)?|(let|lemme)\s+me?\s+(see|view|check|read|look\s+at)\s+|(i|we)('?ll|\s+will|\s+would\s+like|\s+want|\s+wanna|\s+need|'?d\s+like)(\s+to)?\s+(see|view|look\s+at|check|read|open)\s+)/i;
 
 const TOPIC_PATTERNS: Record<Exclude<ToolName, "showProjects" | "showProject">, RegExp> = {
   showAbout:
-    /\b(about\s+(yourself|seb|you)|who\s+(are|is)\s+(you|seb|he)|your\s+story|his\s+story|bio|who\s+he\s+is|who\s+you\s+are)\b/i,
-  // Object-fronted "what has he done" in addition to the existing
-  // "what seb has done" — both mean the same thing.
+    /\b(about\s+(yourself|seb|you|page|section)|who\s+(are|is)\s+(you|seb)|your\s+story|his\s+story|bio|who\s+he\s+is|who\s+you\s+are)\b/i,
   showExperience:
-    /\b(experience|work(\s+history|ed)?|jobs?|companies|career|background|roles?|what\s+(he'?s|seb\s+has|seb'?s|you'?ve)\s+(done|built|worked\s+on)|what\s+has\s+(he|seb)\s+(done|built|worked\s+on)|his\s+jobs?|his\s+career|his\s+work|internships?)\b/i,
+    /\b(experience|work(\s+history|ed)?|jobs?|companies|career|background|roles?|what\s+(he'?s|seb\s+has|seb'?s|you'?ve)\s+(done|built|worked\s+on)|his\s+jobs?|his\s+career|his\s+work|internships?)\b/i,
   showContact:
     /\b(contact|email|reach(\s+out|\s+him|\s+seb)?|get\s+in\s+touch|dm|message\s+(him|seb)|how\s+to\s+reach)\b/i,
-  // Object-fronted "what has he written" in addition to "what he's written".
   showLinkedIn:
-    /\b(linkedin|posts?|writing|articles?|(what|things)\s+(he'?s|you'?ve)\s+written|what\s+has\s+(he|seb)\s+written)\b/i,
+    /\b(linkedin|posts?|writing|articles?|(what|things)\s+(he'?s|you'?ve)\s+written)\b/i,
 };
 
-// Short/exact patterns that should match even without a nav phrase.
-// Includes the specific prompt-suggestion chip texts so clicking a chip
-// always routes deterministically — without these entries the LLM would
-// be asked to infer navigation from phrasings like "what's his deal",
-// which it sometimes describes ("Pulling up the about page…") without
-// actually emitting the tool call, and the page fails to open.
-// Also covers bare topic phrases that aren't navigational questions
-// per se but read as "I want this page" — "internships", "dm",
-// "get in touch", "his work history", "who is he".
+// Bare topic words / slash commands — match without needing a command
+// verb in front. These are things a user types as a search shortcut
+// (e.g. someone types just "experience" in the input). Must match the
+// WHOLE trimmed message, so "experience was great" stays LLM.
+//
+// Intentionally does NOT include conversational phrases like "who is
+// seb", "what's his deal", "his work history" — those are questions
+// the LLM should answer, not navigation intents.
 const EXACT_PATTERNS: Record<
   Exclude<ToolName, "showProjects" | "showProject">,
   RegExp
 > = {
-  showAbout:
-    /^\/about$|^(about|your\s+story|who\s+are\s+you|who\s+is\s+(he|seb)|what'?s\s+his\s+deal|what\s+does\s+he\s+do\s+on\s+weekends)\??$/i,
+  showAbout: /^\/about$|^about\??$/i,
   showExperience:
-    /^\/experience$|^(experience|jobs?|companies|career|resume|internships?|his\s+(work(\s+history)?|jobs?|career|experience|internships?))\??$/i,
-  showContact:
-    /^\/contact$|^(contact|email|dm|get\s+in\s+touch|message\s+(him|seb))\??$/i,
+    /^\/experience$|^(experience|jobs?|companies|career|resume|internships?)\??$/i,
+  showContact: /^\/contact$|^(contact|email)\??$/i,
   showLinkedIn:
     /^\/(linkedin|posts|writing)$|^(linkedin|posts?|writing)\??$/i,
 };
