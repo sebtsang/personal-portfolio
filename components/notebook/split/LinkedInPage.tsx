@@ -91,7 +91,7 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
 
   return (
     <div style={{ position: "absolute", inset: 0 }}>
-      <Paper ruled marginRule={false} />
+      <Paper ruled={false} marginRule={false} />
 
       <div
         style={{
@@ -104,6 +104,8 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
+          // Ruled lines travel with the content on scroll.
+          backgroundImage: "var(--rule-background)",
         }}
       >
         <PageBackButton onClose={onClose} />

@@ -29,7 +29,7 @@ export function ContentPagePlaceholder({ onClose }: { onClose: () => void }) {
 
   return (
     <div style={{ position: "absolute", inset: 0 }}>
-      <Paper ruled marginRule={false} />
+      <Paper ruled={false} marginRule={false} />
 
       <div
         style={{
@@ -40,6 +40,8 @@ export function ContentPagePlaceholder({ onClose }: { onClose: () => void }) {
           paddingLeft: "calc(12% + var(--pad-content))",
           paddingRight: "8%",
           overflowY: "auto",
+          // Ruled lines travel with the content on scroll.
+          backgroundImage: "var(--rule-background)",
         }}
       >
         <PageBackButton onClose={onClose} />
