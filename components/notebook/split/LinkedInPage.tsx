@@ -118,8 +118,8 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
         <div
           style={{
             position: "absolute",
-            // Baseline on rule #2. See CoverBackButton for the formula.
-            top: "calc(var(--line) * 2 + var(--line) * 0.76 - var(--fs-meta) * 0.86)",
+            // Baseline at midpoint of slot between rule 1 and rule 2.
+            top: "calc(var(--line) * 2.26 - var(--fs-meta) * 0.86)",
             left: "calc(3% + var(--pad-chrome))",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--fs-meta)",

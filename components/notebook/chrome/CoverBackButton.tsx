@@ -26,12 +26,15 @@ export function CoverBackButton() {
       aria-label="Close the journal and return to the cover"
       style={{
         position: "absolute",
-        // Position so the label's baseline lands on ruled line #1 (at
-        // 0.76 × --line from the scroll top). With lineHeight:1 on the
-        // button, Caveat's baseline sits ~0.82 × fontSize below the
-        // element's top, so back-calculate from target rule minus that
-        // offset. Formula: rule_y - baseline_offset_from_element_top.
-        top: "calc(var(--line) * 1 + var(--line) * 0.76 - var(--fs-script) * 0.82)",
+        // Position so the label's baseline falls at the MIDPOINT of the
+        // slot between rule 0 and rule 1 (rules live at 0.76 × --line +
+        // k × --line; midpoint between two consecutive rules is at
+        // (k + 0.26) × --line). Sitting off the rule gives the chrome
+        // some breathing room — same vibe as a label in a real notebook
+        // that floats in the margin rather than riding the writing line.
+        // With lineHeight:1, Caveat's baseline sits ~0.82 × fontSize
+        // below the element's top.
+        top: "calc(var(--line) * 1.26 - var(--fs-script) * 0.82)",
         // Sit just inside the red margin rule. Content pages use
         // `3% + 28px` because they're inside a narrower offset pane;
         // chat home is full-viewport, so we align with the chat-text

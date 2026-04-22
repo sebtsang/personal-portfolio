@@ -13,10 +13,10 @@ export function PageBackButton({ onClose }: { onClose: () => void }) {
       aria-label="Flip back to chat home (Escape)"
       style={{
         position: "absolute",
-        // Label baseline on ruled line #1. See CoverBackButton for
-        // the math; 0.82 is the empirical baseline-fraction of
-        // Caveat at fs-script with lineHeight:1.
-        top: "calc(var(--line) * 1 + var(--line) * 0.76 - var(--fs-script) * 0.82)",
+        // Label baseline at midpoint of the slot between rule 0 and
+        // rule 1 — floats above the rule for breathing room. See
+        // CoverBackButton for the full explanation.
+        top: "calc(var(--line) * 1.26 - var(--fs-script) * 0.82)",
         left: "calc(3% + var(--pad-chrome))",
         background: "transparent",
         border: "none",
