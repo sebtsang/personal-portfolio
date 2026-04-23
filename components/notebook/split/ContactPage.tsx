@@ -4,6 +4,11 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
+import { HandwrittenText } from "../primitives/HandwrittenText";
+import {
+  PageAnimateContext,
+  usePageAnimate,
+} from "../primitives/PageAnimateContext";
 
 type ContactField = {
   label: string;
@@ -43,7 +48,27 @@ const FIELDS: ContactField[] = [
   },
 ];
 
-export function ContactPage({ onClose }: { onClose: () => void }) {
+// Narrative timeline (t=0 = page is ready / flip-in complete).
+// Card drop + tape → header pen-writes → field values pen-write
+// staggered → signature pen-writes.
+const CARD_PLACE_MS = 550;
+const TAPE_POP_MS = 180;
+const TAPE_1_DELAY = 550;
+const TAPE_2_DELAY = 630;
+const HEADER_DELAY = 900;
+const FIELD_START_DELAY = 1050;
+const FIELD_STAGGER = 200;
+const SIGNATURE_DELAY = 1900;
+
+export function ContactPage({
+  onClose,
+  animate = true,
+  sessionKey = 0,
+}: {
+  onClose: () => void;
+  animate?: boolean;
+  sessionKey?: number;
+}) {
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
@@ -65,6 +90,7 @@ export function ContactPage({ onClose }: { onClose: () => void }) {
   };
 
   return (
+    <PageAnimateContext.Provider value={{ animate, sessionKey }}>
     <div style={{ position: "absolute", inset: 0 }}>
       <Paper ruled={false} marginRule={false} />
 
@@ -139,9 +165,14 @@ export function ContactPage({ onClose }: { onClose: () => void }) {
         </p>
 
         {/* Taped contact card */}
-        <ContactCard fields={FIELDS} onEmailCopy={onCopyEmail} copied={copied} />
+        <ContactCard
+          key={sessionKey}
+          fields={FIELDS}
+          onEmailCopy={onCopyEmail}
+          copied={copied}
+        />
 
-        {/* Signature */}
+        {/* Signature — pen-writes last, after all fields have landed. */}
         <div
           style={{
             fontFamily: "var(--font-script)",
@@ -154,12 +185,13 @@ export function ContactPage({ onClose }: { onClose: () => void }) {
             display: "inline-block",
           }}
         >
-          — seb
+          <HandwrittenText text="— seb" delayMs={SIGNATURE_DELAY} />
         </div>
       </div>
 
       <PageCorner pageNumber="04" />
     </div>
+    </PageAnimateContext.Provider>
   );
 }
 
@@ -175,76 +207,108 @@ function ContactCard({
   copied: string | null;
 }) {
   const [hover, setHover] = useState(false);
+  const pageAnimate = usePageAnimate();
 
   return (
+    // Outer wrapper: plays the "placed onto the page" entry animation.
+    // Keyframe fades in at the lifted starting pose (opacity 0→1 in the
+    // first 20%) then settles onto the page with a slight overshoot on
+    // the scale. Longhand animation properties rather than the `animation`
+    // shorthand — mixing the shorthand with animationPlayState makes
+    // React warn about conflicting style updates.
     <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
       style={{
-        position: "relative",
         maxWidth: 520,
-        transform: `rotate(-1.5deg) scale(${hover ? 1.02 : 1})`,
-        transition:
-          "transform 320ms cubic-bezier(0.22, 1, 0.36, 1), filter 300ms ease",
-        filter: hover
-          ? "drop-shadow(5px 10px 18px rgba(0,0,0,0.22))"
-          : "drop-shadow(3px 6px 12px rgba(0,0,0,0.16))",
+        animationName: "contactCardPlace",
+        animationDuration: `${CARD_PLACE_MS}ms`,
+        animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        animationDelay: "0ms",
+        animationFillMode: "both",
+        animationPlayState: pageAnimate ? "running" : "paused",
       }}
     >
-      {/* Card body — off-white index card */}
       <div
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
         style={{
-          background: "#fbf7e9",
-          padding: "28px 32px",
-          border: "1px solid rgba(0,0,0,0.06)",
           position: "relative",
-          // Faint index-card lines on the card itself
-          backgroundImage:
-            "linear-gradient(to bottom, transparent 27px, rgba(61,52,139,0.08) 28px, transparent 29px)",
-          backgroundSize: "100% 30px",
+          transform: `scale(${hover ? 1.02 : 1})`,
+          transition:
+            "transform 320ms cubic-bezier(0.22, 1, 0.36, 1), filter 300ms ease",
+          filter: hover
+            ? "drop-shadow(5px 10px 18px rgba(0,0,0,0.22))"
+            : "drop-shadow(3px 6px 12px rgba(0,0,0,0.16))",
         }}
       >
-        {/* Header — small mono label + hand-drawn rule */}
+        {/* Card body — off-white index card */}
         <div
           style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--fs-meta)",
-            letterSpacing: "0.3em",
-            textTransform: "uppercase",
-            color:
-              "color-mix(in srgb, var(--color-ink-soft) 60%, transparent)",
-            marginBottom: 16,
+            background: "#fbf7e9",
+            padding: "28px 32px",
+            border: "1px solid rgba(0,0,0,0.06)",
+            position: "relative",
+            // Faint index-card lines on the card itself
+            backgroundImage:
+              "linear-gradient(to bottom, transparent 27px, rgba(61,52,139,0.08) 28px, transparent 29px)",
+            backgroundSize: "100% 30px",
           }}
         >
-          get in touch
+          {/* Header — pen-writes after both tape strips land. */}
+          <div
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--fs-meta)",
+              letterSpacing: "0.3em",
+              textTransform: "uppercase",
+              color:
+                "color-mix(in srgb, var(--color-ink-soft) 60%, transparent)",
+              marginBottom: 16,
+            }}
+          >
+            <HandwrittenText text="get in touch" delayMs={HEADER_DELAY} />
+          </div>
+
+          {/* Fields — each value pen-writes, staggered row-by-row. */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {fields.map((f, i) => (
+              <FieldRow
+                key={f.label}
+                field={f}
+                valueDelayMs={FIELD_START_DELAY + i * FIELD_STAGGER}
+                copyFeedback={copied === f.label ? "copied!" : null}
+                onClick={f.label === "email" ? onEmailCopy : undefined}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Fields */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {fields.map((f) => (
-            <FieldRow
-              key={f.label}
-              field={f}
-              copyFeedback={copied === f.label ? "copied!" : null}
-              onClick={f.label === "email" ? onEmailCopy : undefined}
-            />
-          ))}
-        </div>
+        {/* Tape strips holding the card to the page — each pops on
+            after the card lands, staggered 80ms so they affix one
+            after the other. */}
+        <TapeStrip
+          style={{ top: -10, left: "18%" }}
+          baseRotateDeg={-6}
+          delayMs={TAPE_1_DELAY}
+        />
+        <TapeStrip
+          style={{ top: -10, right: "15%" }}
+          baseRotateDeg={5}
+          delayMs={TAPE_2_DELAY}
+        />
       </div>
-
-      {/* Tape strips holding the card to the page */}
-      <TapeStrip style={{ top: -10, left: "18%", transform: "rotate(-6deg)" }} />
-      <TapeStrip style={{ top: -10, right: "15%", transform: "rotate(5deg)" }} />
     </div>
   );
 }
 
 function FieldRow({
   field,
+  valueDelayMs,
   copyFeedback,
   onClick,
 }: {
   field: ContactField;
+  /** When this field's value (HandwrittenText) should start pen-writing. */
+  valueDelayMs: number;
   copyFeedback: string | null;
   onClick?: (e: React.MouseEvent) => void;
 }) {
@@ -326,7 +390,7 @@ function FieldRow({
           wordBreak: "break-all",
         }}
       >
-        {field.display}
+        <HandwrittenText text={field.display} delayMs={valueDelayMs} />
       </div>
 
       {/* Copy feedback (only for email) */}
@@ -348,19 +412,42 @@ function FieldRow({
   );
 }
 
-function TapeStrip({ style }: { style: CSSProperties }) {
+function TapeStrip({
+  style,
+  baseRotateDeg,
+  delayMs,
+}: {
+  style: CSSProperties;
+  baseRotateDeg: number;
+  delayMs: number;
+}) {
+  const pageAnimate = usePageAnimate();
+  // Tape's baseline transform (`rotate(Xdeg)`) is exposed via a CSS
+  // custom property so the pop keyframe can reference it in both
+  // `from` and `to` states — the strip scales in while preserving its
+  // tilt, rather than un-tilting during the animation.
   return (
     <div
       aria-hidden
-      style={{
-        position: "absolute",
-        width: 68,
-        height: 20,
-        background: "rgba(200, 230, 240, 0.55)",
-        border: "1px solid rgba(0, 80, 120, 0.08)",
-        backdropFilter: "blur(1px)",
-        ...style,
-      }}
+      style={
+        {
+          position: "absolute",
+          width: 68,
+          height: 20,
+          background: "rgba(200, 230, 240, 0.55)",
+          border: "1px solid rgba(0, 80, 120, 0.08)",
+          backdropFilter: "blur(1px)",
+          ["--tape-base-transform" as string]: `rotate(${baseRotateDeg}deg)`,
+          transform: `rotate(${baseRotateDeg}deg)`,
+          animationName: "contactTapePop",
+          animationDuration: `${TAPE_POP_MS}ms`,
+          animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+          animationDelay: `${delayMs}ms`,
+          animationFillMode: "both",
+          animationPlayState: pageAnimate ? "running" : "paused",
+          ...style,
+        } as CSSProperties
+      }
     />
   );
 }

@@ -139,9 +139,11 @@ const MARGIN_NOTES: Array<{
 export function AboutPage({
   onClose,
   animate = true,
+  sessionKey = 0,
 }: {
   onClose: () => void;
   animate?: boolean;
+  sessionKey?: number;
 }) {
   // Randomize photo → slot and sticker → slot assignment per page open.
   // SSR + initial client paint render the deterministic identity order
@@ -160,7 +162,7 @@ export function AboutPage({
   }, []);
 
   return (
-    <PageAnimateContext.Provider value={animate}>
+    <PageAnimateContext.Provider value={{ animate, sessionKey }}>
     <div style={{ position: "absolute", inset: 0 }}>
       <Paper ruled={false} marginRule={false} />
 
@@ -227,7 +229,7 @@ export function AboutPage({
           const photo = PHOTOS[photoOrder[slotIdx]];
           return (
             <PolaroidFrame
-              key={slotIdx}
+              key={`${sessionKey}-${slotIdx}`}
               polaroid={{ ...photo, ...slot }}
               delayMs={1200 + slotIdx * 200}
             />
@@ -294,7 +296,7 @@ export function AboutPage({
 
         {/* Margin notes — handwritten asides sitting in the left gutter */}
         {MARGIN_NOTES.map((note, i) => (
-          <MarginNote key={i} {...note} />
+          <MarginNote key={`${sessionKey}-${i}`} {...note} />
         ))}
 
         {/* Stickers — all draggable, placed in whitespace so the initial
@@ -304,7 +306,10 @@ export function AboutPage({
           const sticker = STICKERS[stickerOrder[slotIdx]];
           return (
             <Sticker
-              key={slotIdx}
+              // sessionKey in the key forces a fresh Sticker mount on
+              // every revisit so its fade-in plays again (drag position
+              // resets too — acceptable for a decorative element).
+              key={`${sessionKey}-${slotIdx}`}
               size={sticker.size}
               rotation={sticker.rotation}
               background={sticker.background}
@@ -776,12 +781,17 @@ function RevealOnMount({
 }) {
   // Hold at opening frame (don't render children) until the host page
   // is ready — i.e., its flip-in has landed. When `pageAnimate` flips
-  // to true, start the delay timer and then reveal.
+  // to true, start the delay timer and reveal. When it flips back to
+  // false (user navigates away), reset so the next revisit plays the
+  // reveal again from scratch.
   const pageAnimate = usePageAnimate();
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    if (!pageAnimate) return;
+    if (!pageAnimate) {
+      setShown(false);
+      return;
+    }
     if (shown) return;
     const t = window.setTimeout(() => setShown(true), delayMs);
     return () => window.clearTimeout(t);
