@@ -253,6 +253,76 @@
   }
 }
 
+/* LinkedIn dealt-deck — each card first fades in at its above-the-stack
+   starting position (0–20%, easing-out so the appearance feels soft) and
+   then drops into place over the remaining 80%. The fade + fall split
+   produces the "appear, then fall" sequence — the card is literally not
+   visible on the page until its turn in the stagger comes up. */
+@keyframes linkedinCardDrop {
+  0% {
+    opacity: 0;
+    transform: translateY(-280px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-280px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* LinkedIn tape strip pops on after its card lands. The final
+   translateX(-50%) rotate(-4deg) is preserved so the scale happens
+   around the tape's settled position. */
+@keyframes linkedinTapePop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) rotate(-4deg) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) rotate(-4deg) scale(1);
+  }
+}
+
+/* Contact card "placed-down" gesture: soft fade-in (0–20%) at the lifted
+   starting pose, then settles onto the page with a slight overshoot on
+   the scale. The fade phase ensures the card isn't on the page at all
+   when the flip lands — it appears, then the placement motion plays. */
+@keyframes contactCardPlace {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) rotate(-6deg) scale(1.08);
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.22));
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-20px) rotate(-6deg) scale(1.08);
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.22));
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(-1.5deg) scale(1);
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.14));
+  }
+}
+
+/* Contact tape strips press on after the card lands — quick scale-pop
+   with a slight overshoot. Each strip's baseline rotation is preserved
+   via transform so the strip's tilt stays consistent. */
+@keyframes contactTapePop {
+  from {
+    opacity: 0;
+    transform: var(--tape-base-transform) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: var(--tape-base-transform) scale(1);
+  }
+}
+
 /* "Writing" dots — cycles ". -> .. -> ... -> (nothing) -> ..." via steps. */
 @keyframes writingDots {
   0% {

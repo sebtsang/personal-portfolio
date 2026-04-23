@@ -9,6 +9,10 @@ import {
 import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
+import {
+  PageAnimateContext,
+  usePageAnimate,
+} from "../primitives/PageAnimateContext";
 
 type Post = {
   url: string;
@@ -55,7 +59,29 @@ const POSTS: Post[] = [
 const CARD_WIDTH = 400;
 const CARD_HEIGHT = 460;
 
-export function LinkedInPage({ onClose }: { onClose: () => void }) {
+// Drop-animation timing. Deepest cards (absOff=2) land first, active
+// card last. Each drop is 500ms; staggered by 200ms per step. Tape
+// strip on each card pops on 40ms AFTER its card lands so the "tape
+// affixes" beat reads visibly.
+const CARD_DROP_MS = 500;
+const CARD_STAGGER_MS = 200;
+const TAPE_POP_MS = 180;
+const TAPE_AFTER_LAND_MS = 40;
+
+function cardDropDelay(absOffset: number): number {
+  // absOffset 2 → 0ms, 1 → 200ms, 0 (active) → 400ms.
+  return (2 - Math.min(absOffset, 2)) * CARD_STAGGER_MS;
+}
+
+export function LinkedInPage({
+  onClose,
+  animate = true,
+  sessionKey = 0,
+}: {
+  onClose: () => void;
+  animate?: boolean;
+  sessionKey?: number;
+}) {
   const [index, setIndex] = useState(0);
 
   const next = useCallback(
@@ -91,6 +117,7 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
   }, [next, prev]);
 
   return (
+    <PageAnimateContext.Provider value={{ animate, sessionKey }}>
     <div style={{ position: "absolute", inset: 0 }}>
       <Paper ruled={false} marginRule={false} />
 
@@ -191,22 +218,39 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
               perspective: "1800px",
             }}
           >
-            {POSTS.map((post, i) => (
-              <PostCard
-                key={post.url}
-                post={post}
-                offset={computeOffset(i, index, POSTS.length)}
-                onClick={() => {
-                  // If clicking a non-top card, bring it to front rather
-                  // than opening immediately — feels like "flipping to it."
-                  if (i !== index) {
-                    setIndex(i);
-                    return false;
-                  }
-                  return true;
-                }}
-              />
-            ))}
+            {POSTS.map((post, i) => {
+              const offset = computeOffset(i, index, POSTS.length);
+              const absOff = Math.abs(offset);
+              const dropDelay = cardDropDelay(absOff);
+              const tapeDelay = dropDelay + CARD_DROP_MS + TAPE_AFTER_LAND_MS;
+              // z-index lives on the wrapper (not on PostCard), because
+              // the wrapper's drop animation gives it a transform → new
+              // stacking context. Without this, PostCard's z-index is
+              // trapped inside that context and siblings can't compete.
+              return (
+                <CardDropWrapper
+                  key={`${sessionKey}-${post.url}`}
+                  delayMs={dropDelay}
+                  zIndex={10 - absOff}
+                >
+                  <PostCard
+                    post={post}
+                    offset={offset}
+                    tapeDelayMs={tapeDelay}
+                    onClick={() => {
+                      // If clicking a non-top card, bring it to front
+                      // rather than opening immediately — feels like
+                      // "flipping to it."
+                      if (i !== index) {
+                        setIndex(i);
+                        return false;
+                      }
+                      return true;
+                    }}
+                  />
+                </CardDropWrapper>
+              );
+            })}
           </div>
 
           <NavArrow direction="next" onClick={next} />
@@ -233,6 +277,49 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
 
       <PageCorner pageNumber="03" />
     </div>
+    </PageAnimateContext.Provider>
+  );
+}
+
+// ── Card drop wrapper ─────────────────────────────────────────────────
+
+/** Absolute-positioned wrapper that plays the drop keyframe (fade in at
+ *  translateY(-280px), then fall to translateY(0) with slight overshoot)
+ *  on mount. Pauses while the host page is held via PageAnimateContext;
+ *  resumes once the flip-in lands so the dealt-deck stagger begins from
+ *  a visible starting frame.
+ *
+ *  Animation properties are set as longhand (animationName, -Duration,
+ *  etc.) rather than the `animation` shorthand, because mixing the
+ *  shorthand with `animationPlayState` makes React warn about style
+ *  conflicts — the shorthand resets animation-play-state on every
+ *  render, which races with the longhand. */
+function CardDropWrapper({
+  delayMs,
+  zIndex,
+  children,
+}: {
+  delayMs: number;
+  zIndex: number;
+  children: React.ReactNode;
+}) {
+  const pageAnimate = usePageAnimate();
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        zIndex,
+        animationName: "linkedinCardDrop",
+        animationDuration: `${CARD_DROP_MS}ms`,
+        animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        animationDelay: `${delayMs}ms`,
+        animationFillMode: "both",
+        animationPlayState: pageAnimate ? "running" : "paused",
+      }}
+    >
+      {children}
+    </div>
   );
 }
 
@@ -255,13 +342,18 @@ function computeOffset(i: number, current: number, total: number): number {
 function PostCard({
   post,
   offset,
+  tapeDelayMs,
   onClick,
 }: {
   post: Post;
   offset: number;
+  /** When the tape strip on this card should pop on — delay relative to
+   *  the page's PageAnimate=true moment. */
+  tapeDelayMs: number;
   /** Returns true to allow the link navigation, false to intercept. */
   onClick: () => boolean;
 }) {
+  const pageAnimate = usePageAnimate();
   const isActive = offset === 0;
   const absOff = Math.abs(offset);
 
@@ -378,19 +470,25 @@ function PostCard({
         </div>
       </div>
 
-      {/* Tape strip along the top */}
+      {/* Tape strip along the top — pops on after the card lands
+          (scales 0.7 → 1 with a slight overshoot, opacity 0 → 1). */}
       <div
         aria-hidden
         style={{
           position: "absolute",
           top: -10,
           left: "50%",
-          transform: "translateX(-50%) rotate(-4deg)",
           width: 80,
           height: 20,
           background: "rgba(200, 230, 240, 0.55)",
           border: "1px solid rgba(0, 80, 120, 0.08)",
           backdropFilter: "blur(1px)",
+          animationName: "linkedinTapePop",
+          animationDuration: `${TAPE_POP_MS}ms`,
+          animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+          animationDelay: `${tapeDelayMs}ms`,
+          animationFillMode: "both",
+          animationPlayState: pageAnimate ? "running" : "paused",
         }}
       />
     </a>

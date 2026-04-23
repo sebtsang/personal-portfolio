@@ -3,16 +3,34 @@
 import { createContext, useContext } from "react";
 
 /**
- * Signals whether the page's reveal animations should play. `true` on a
- * page's first visit in the session; `false` on every subsequent visit
- * (including remounts caused by FlipStage). Set by each content page
- * (AboutPage, ExperiencePage, etc.) based on `hasSeenPage(kind)`.
+ * Per-page animation state passed via context.
  *
- * Default `true` so primitives used outside a content page (chat
- * bubbles) animate normally.
+ * - `animate`: whether reveal primitives on this page should play right
+ *   now. True when the page is currentKind AND no flip is in progress.
+ *   False during a flip (animations held at opening frame via
+ *   animationPlayState: paused or state-based reset) and when the page
+ *   is not current.
+ *
+ * - `sessionKey`: bumps each time the page becomes currentKind. Primitives
+ *   use it as a React `key` on their animated elements so CSS animations
+ *   restart from scratch on every revisit — user asked for this. State
+ *   outside the keyed animated element (polaroid drag positions, hover,
+ *   scroll position, etc.) persists because only the animated leaves are
+ *   remounted.
  */
-export const PageAnimateContext = createContext<boolean>(true);
+export type PageAnimateState = {
+  animate: boolean;
+  sessionKey: number;
+};
+
+const DEFAULT_STATE: PageAnimateState = { animate: true, sessionKey: 0 };
+
+export const PageAnimateContext = createContext<PageAnimateState>(DEFAULT_STATE);
 
 export function usePageAnimate(): boolean {
-  return useContext(PageAnimateContext);
+  return useContext(PageAnimateContext).animate;
+}
+
+export function usePageSessionKey(): number {
+  return useContext(PageAnimateContext).sessionKey;
 }

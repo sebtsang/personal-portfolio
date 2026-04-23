@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { usePageAnimate } from "./PageAnimateContext";
+import { usePageAnimate, usePageSessionKey } from "./PageAnimateContext";
 
 /**
  * Renders text as per-character `<span>`s with a staggered opacity fade so
@@ -23,32 +23,46 @@ export const HandwrittenText = memo(function HandwrittenText({
   charDelayMs = 10,
   durationMs = 180,
   animated = true,
+  delayMs = 0,
 }: {
   text: string;
   charDelayMs?: number;
   durationMs?: number;
   animated?: boolean;
+  /** Overall start-delay offset added to every character's animation-delay.
+   *  Lets multiple HandwrittenText instances participate in a timeline
+   *  (e.g., one pen-write at 800ms, next at 1100ms). The pause/resume
+   *  gating via PageAnimateContext still applies — while paused, the
+   *  clock doesn't advance, so the delay begins counting from the moment
+   *  the page becomes ready. */
+  delayMs?: number;
 }) {
   const chars = Array.from(text);
   const pageAnimate = usePageAnimate();
+  const sessionKey = usePageSessionKey();
   const playState: React.CSSProperties["animationPlayState"] = pageAnimate
     ? "running"
     : "paused";
   return (
     <>
       {chars.map((ch, i) => {
-        if (ch === "\n") return <br key={`br-${i}`} />;
+        if (ch === "\n") return <br key={`br-${sessionKey}-${i}`} />;
         if (ch === " ") return " ";
         return (
           <span
-            key={i}
+            key={`${sessionKey}-${i}`}
             style={
               animated
                 ? {
                     opacity: 0,
-                    animation: `fadeInChar ${durationMs}ms ease-out ${
-                      i * charDelayMs
-                    }ms both`,
+                    // Longhand animation props (not the `animation`
+                    // shorthand) so animationPlayState can toggle without
+                    // React warning about conflicting style updates.
+                    animationName: "fadeInChar",
+                    animationDuration: `${durationMs}ms`,
+                    animationTimingFunction: "ease-out",
+                    animationDelay: `${delayMs + i * charDelayMs}ms`,
+                    animationFillMode: "both",
                     animationPlayState: playState,
                   }
                 : { opacity: 1 }

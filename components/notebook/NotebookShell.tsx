@@ -143,6 +143,14 @@ export function NotebookShell({
   const [readyKinds, setReadyKinds] = useState<Set<PageKey>>(
     () => new Set([initialKind]),
   );
+  // Per-page session counter. Bumps each time a page becomes currentKind
+  // (first visit OR revisit after navigating away). Passed into each
+  // page's PageAnimateContext so reveal primitives can use it as a
+  // React key to force-remount their animated elements and replay the
+  // CSS animations on revisits.
+  const [sessionKeys, setSessionKeys] = useState<Record<string, number>>({
+    [initialKind]: 0,
+  });
 
   // Align store with route on mount.
   useEffect(() => {
@@ -502,6 +510,14 @@ export function NotebookShell({
         next.add(dest);
         return next;
       });
+      // Bump the destination's session counter so its reveal primitives
+      // remount via their React keys and replay the CSS animations.
+      // Every navigation to a page — first visit or revisit — fires its
+      // animations fresh.
+      setSessionKeys((prev) => ({
+        ...prev,
+        [dest]: (prev[dest] ?? 0) + 1,
+      }));
     },
     [pendingKind],
   );
@@ -579,6 +595,7 @@ export function NotebookShell({
   // PageAnimateContext inside each page component).
   const renderPage = useCallback(
     (kind: PageKey, animate: boolean) => {
+      const sessionKey = sessionKeys[kind] ?? 0;
       if (kind === "home") {
         return (
           <HomePage
@@ -599,6 +616,7 @@ export function NotebookShell({
           isWriting={writingIndicator}
           onClose={closeContentPage}
           animate={animate}
+          sessionKey={sessionKey}
         />
       );
     },
@@ -608,6 +626,7 @@ export function NotebookShell({
       writingIndicator,
       closeContentPage,
       currentKind,
+      sessionKeys,
       coverFlipping,
       showLanding,
     ],
@@ -640,7 +659,15 @@ export function NotebookShell({
             {PAGE_ORDER.filter((kind) => mountedKinds.has(kind)).map((kind) => {
               const rotation = rotations[kind] ?? 0;
               const isFlipping = flippingKind === kind;
-              const animate = readyKinds.has(kind);
+              // Animate ONLY the currently-visible page with no flip
+              // in progress. This toggles true/false as the user navigates
+              // away and back, which — combined with the per-page
+              // sessionKey — makes reveal animations replay on every
+              // revisit.
+              const animate =
+                kind === currentKind &&
+                pendingKind === null &&
+                readyKinds.has(kind);
               // Flipping page gets a high z-index during the animation
               // so it sits on top regardless of canonical stack order.
               // Opening flip: source needs to be on top (so it covers

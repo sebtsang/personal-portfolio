@@ -182,12 +182,14 @@ const FIRST_ROLE_DELAY_MS = 400;
 export function ExperiencePage({
   onClose,
   animate = true,
+  sessionKey = 0,
 }: {
   onClose: () => void;
   animate?: boolean;
+  sessionKey?: number;
 }) {
   return (
-    <PageAnimateContext.Provider value={animate}>
+    <PageAnimateContext.Provider value={{ animate, sessionKey }}>
     <div style={{ position: "absolute", inset: 0 }}>
       <Paper ruled={false} marginRule={false} />
 
@@ -297,13 +299,17 @@ function Spine() {
 
 function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
   // Hold at opening frame (opacity 0, translated 12px down) until the
-  // host page is ready — i.e., the flip-in has landed. When pageAnimate
-  // flips to true, start the stagger delay and then reveal.
+  // host page is ready. When pageAnimate flips to true, start the
+  // stagger delay and reveal. When it flips back to false (navigated
+  // away), reset so the next revisit replays the reveal.
   const pageAnimate = usePageAnimate();
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
-    if (!pageAnimate) return;
+    if (!pageAnimate) {
+      setShown(false);
+      return;
+    }
     if (shown) return;
     const t = window.setTimeout(() => setShown(true), delayMs);
     return () => window.clearTimeout(t);
