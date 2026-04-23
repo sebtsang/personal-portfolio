@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
+import { usePaneReady } from "../primitives/PaneReadyContext";
 
 type Role = {
   company: string;
@@ -285,11 +286,13 @@ function Spine() {
 
 function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
   const [shown, setShown] = useState(false);
+  const ready = usePaneReady();
 
   useEffect(() => {
+    if (!ready) return;
     const t = window.setTimeout(() => setShown(true), delayMs);
     return () => window.clearTimeout(t);
-  }, [delayMs]);
+  }, [delayMs, ready]);
 
   return (
     <div

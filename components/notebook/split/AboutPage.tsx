@@ -6,6 +6,7 @@ import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
 import { DrawnText } from "../primitives/DrawnText";
 import { HandwrittenText } from "../primitives/HandwrittenText";
+import { usePaneReady } from "../primitives/PaneReadyContext";
 import { Sticker } from "../primitives/Sticker";
 
 const BODY_PARAGRAPHS = [
@@ -763,12 +764,14 @@ function RevealOnMount({
   children: React.ReactNode;
 }) {
   const [shown, setShown] = useState(delayMs <= 0);
+  const ready = usePaneReady();
 
   useEffect(() => {
     if (shown) return;
+    if (!ready) return;
     const t = window.setTimeout(() => setShown(true), delayMs);
     return () => window.clearTimeout(t);
-  }, [delayMs, shown]);
+  }, [delayMs, shown, ready]);
 
   return <>{shown ? children : null}</>;
 }

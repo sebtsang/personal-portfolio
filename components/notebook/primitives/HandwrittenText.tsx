@@ -1,6 +1,7 @@
 "use client";
 
 import { memo } from "react";
+import { usePaneReady } from "./PaneReadyContext";
 
 /**
  * Renders text as per-character `<span>`s with a staggered opacity fade so
@@ -24,6 +25,15 @@ export const HandwrittenText = memo(function HandwrittenText({
   durationMs?: number;
 }) {
   const chars = Array.from(text);
+  // When inside a not-yet-ready split pane, keep every char's animation
+  // paused at its opening frame (opacity 0, via animation-fill-mode: both).
+  // Flipping to "running" at paneReady=true resumes the CSS clock so each
+  // char's delay starts counting from that moment — the full stagger plays
+  // with the page flat, not behind the flip.
+  const ready = usePaneReady();
+  const playState: React.CSSProperties["animationPlayState"] = ready
+    ? "running"
+    : "paused";
   return (
     <>
       {chars.map((ch, i) => {
@@ -38,6 +48,7 @@ export const HandwrittenText = memo(function HandwrittenText({
               animation: `fadeInChar ${durationMs}ms ease-out ${
                 i * charDelayMs
               }ms both`,
+              animationPlayState: playState,
             }}
           >
             {ch}

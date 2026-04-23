@@ -99,21 +99,37 @@ export function NotebookInput({
             gap: 0,
           }}
         >
-          {!compact && (
-            <span
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "var(--fs-meta)",
-                letterSpacing: "0.2em",
-                textTransform: "uppercase",
-                color: "color-mix(in srgb, var(--color-ink-soft) 50%, transparent)",
-                minWidth: 44,
-                lineHeight: "var(--line)",
-              }}
-            >
-              you —
-            </span>
-          )}
+          {/* Collapse-out instead of unmount: width animates 44 → 0 with
+              opacity, so the input's `flex: 1` neighbor smoothly claims
+              the space instead of jumping sideways when compact flips. */}
+          <motion.span
+            initial={false}
+            animate={{
+              width: compact ? 0 : 44,
+              opacity: compact ? 0 : 1,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 140,
+              damping: 24,
+              mass: 0.8,
+            }}
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "var(--fs-meta)",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              color:
+                "color-mix(in srgb, var(--color-ink-soft) 50%, transparent)",
+              lineHeight: "var(--line)",
+              display: "inline-block",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+            }}
+          >
+            you —
+          </motion.span>
           <div style={{ flex: 1, position: "relative" }}>
             <input
               ref={inputRef}
@@ -143,7 +159,7 @@ export function NotebookInput({
                 transition: "border-color 0.2s",
               }}
             />
-            {!compact && focused && val === "" && (
+            {!compact &&focused && val === "" && (
               <span
                 style={{
                   position: "absolute",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { usePaneReady } from "./PaneReadyContext";
 
 type DrawnTextProps = {
   text: string;
@@ -40,6 +41,10 @@ export function DrawnText({
 }: DrawnTextProps) {
   const rawId = useId();
   const uid = `dt${rawId.replace(/[^a-zA-Z0-9]/g, "")}`;
+  const ready = usePaneReady();
+  const playState: React.CSSProperties["animationPlayState"] = ready
+    ? "running"
+    : "paused";
 
   const sharedStyle: React.CSSProperties = {
     fontFamily: `"${fontFamily}", sans-serif`,
@@ -87,6 +92,7 @@ export function DrawnText({
             ? "inset(-20% -20% -20% -20%)"
             : "inset(-20% 100% -20% -20%)",
           animation: strokeAnim,
+          animationPlayState: playState,
         }}
       >
         {text}
@@ -103,6 +109,7 @@ export function DrawnText({
               ? "inset(-20% -20% -20% -20%)"
               : "inset(-20% 100% -20% -20%)",
             animation: fillAnim,
+            animationPlayState: playState,
           }}
         >
           {text}
