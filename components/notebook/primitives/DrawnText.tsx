@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { usePaneReady } from "./PaneReadyContext";
+import { usePageAnimate } from "./PageAnimateContext";
 
 type DrawnTextProps = {
   text: string;
@@ -41,8 +41,12 @@ export function DrawnText({
 }: DrawnTextProps) {
   const rawId = useId();
   const uid = `dt${rawId.replace(/[^a-zA-Z0-9]/g, "")}`;
-  const ready = usePaneReady();
-  const playState: React.CSSProperties["animationPlayState"] = ready
+  // Host page holds the animation at its opening frame via
+  // animationPlayState: "paused" until the flip-in lands. When
+  // pageAnimate flips to true, the clock resumes and the draw/fill
+  // sweep plays from the beginning.
+  const pageAnimate = usePageAnimate();
+  const playState: React.CSSProperties["animationPlayState"] = pageAnimate
     ? "running"
     : "paused";
 

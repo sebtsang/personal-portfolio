@@ -6,7 +6,10 @@ import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
 import { DrawnText } from "../primitives/DrawnText";
 import { HandwrittenText } from "../primitives/HandwrittenText";
-import { usePaneReady } from "../primitives/PaneReadyContext";
+import {
+  PageAnimateContext,
+  usePageAnimate,
+} from "../primitives/PageAnimateContext";
 import { Sticker } from "../primitives/Sticker";
 
 const BODY_PARAGRAPHS = [
@@ -133,7 +136,13 @@ const MARGIN_NOTES: Array<{
   },
 ];
 
-export function AboutPage({ onClose }: { onClose: () => void }) {
+export function AboutPage({
+  onClose,
+  animate = true,
+}: {
+  onClose: () => void;
+  animate?: boolean;
+}) {
   // Randomize photo → slot and sticker → slot assignment per page open.
   // SSR + initial client paint render the deterministic identity order
   // (photo i in slot i, sticker i in slot i) so hydration matches;
@@ -151,6 +160,7 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
   }, []);
 
   return (
+    <PageAnimateContext.Provider value={animate}>
     <div style={{ position: "absolute", inset: 0 }}>
       <Paper ruled={false} marginRule={false} />
 
@@ -317,6 +327,7 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
           the content. */}
       <PageCorner pageNumber="01" />
     </div>
+    </PageAnimateContext.Provider>
   );
 }
 
@@ -763,15 +774,18 @@ function RevealOnMount({
   delayMs: number;
   children: React.ReactNode;
 }) {
-  const [shown, setShown] = useState(delayMs <= 0);
-  const ready = usePaneReady();
+  // Hold at opening frame (don't render children) until the host page
+  // is ready — i.e., its flip-in has landed. When `pageAnimate` flips
+  // to true, start the delay timer and then reveal.
+  const pageAnimate = usePageAnimate();
+  const [shown, setShown] = useState(false);
 
   useEffect(() => {
+    if (!pageAnimate) return;
     if (shown) return;
-    if (!ready) return;
     const t = window.setTimeout(() => setShown(true), delayMs);
     return () => window.clearTimeout(t);
-  }, [delayMs, shown, ready]);
+  }, [delayMs, shown, pageAnimate]);
 
   return <>{shown ? children : null}</>;
 }

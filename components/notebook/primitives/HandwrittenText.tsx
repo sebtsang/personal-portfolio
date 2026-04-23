@@ -1,55 +1,58 @@
 "use client";
 
 import { memo } from "react";
-import { usePaneReady } from "./PaneReadyContext";
+import { usePageAnimate } from "./PageAnimateContext";
 
 /**
  * Renders text as per-character `<span>`s with a staggered opacity fade so
  * letters appear one at a time — the pen-writing feel — while preserving
- * native inline text flow. Critically: no `display: inline-block` per char,
- * which previously broke Caveat's kerning/connecting strokes and also let
- * the browser wrap mid-word. Each span is `display: inline`, so the
- * browser only breaks at whitespace and letters stay properly kerned.
+ * native inline text flow.
  *
- * Streaming-friendly: spans are keyed by index, so appending tokens mounts
- * only the new spans (and animates them); existing letters stay at
- * opacity 1 via `animation-fill-mode: both`.
+ * Gating semantics:
+ *   - `animated={false}`: text has already been seen (seenMessages flagged
+ *     it). Render at opacity 1, no animation ever. Used by ChatPage.
+ *   - `animated={true}` + `pageAnimate=false`: first mount while the host
+ *     page is holding its reveals (during a flip-in). Chars sit at opacity 0
+ *     with the CSS animation paused at its opening frame. Flipping
+ *     `pageAnimate` to `true` (via the host page's context) resumes each
+ *     char's animation clock so the stagger plays.
+ *   - `animated={true}` + `pageAnimate=true`: normal pen-write.
  */
 export const HandwrittenText = memo(function HandwrittenText({
   text,
   charDelayMs = 10,
   durationMs = 180,
+  animated = true,
 }: {
   text: string;
   charDelayMs?: number;
   durationMs?: number;
+  animated?: boolean;
 }) {
   const chars = Array.from(text);
-  // When inside a not-yet-ready split pane, keep every char's animation
-  // paused at its opening frame (opacity 0, via animation-fill-mode: both).
-  // Flipping to "running" at paneReady=true resumes the CSS clock so each
-  // char's delay starts counting from that moment — the full stagger plays
-  // with the page flat, not behind the flip.
-  const ready = usePaneReady();
-  const playState: React.CSSProperties["animationPlayState"] = ready
+  const pageAnimate = usePageAnimate();
+  const playState: React.CSSProperties["animationPlayState"] = pageAnimate
     ? "running"
     : "paused";
   return (
     <>
       {chars.map((ch, i) => {
         if (ch === "\n") return <br key={`br-${i}`} />;
-        // Spaces stay as plain whitespace so word-wrap works at boundaries.
         if (ch === " ") return " ";
         return (
           <span
             key={i}
-            style={{
-              opacity: 0,
-              animation: `fadeInChar ${durationMs}ms ease-out ${
-                i * charDelayMs
-              }ms both`,
-              animationPlayState: playState,
-            }}
+            style={
+              animated
+                ? {
+                    opacity: 0,
+                    animation: `fadeInChar ${durationMs}ms ease-out ${
+                      i * charDelayMs
+                    }ms both`,
+                    animationPlayState: playState,
+                  }
+                : { opacity: 1 }
+            }
           >
             {ch}
           </span>
