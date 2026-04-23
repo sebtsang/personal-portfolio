@@ -96,7 +96,7 @@ const ROLES: Role[] = [
     blurb: (
       <>
         Creator platform backed by Gary Vee, Steven Bartlett, Forerunner —
-        helping scale toward <Metric>$10M ARR</Metric>.
+        helping scale their AI product Stanley to <Metric>$10M ARR</Metric>.
       </>
     ),
   },
@@ -125,8 +125,8 @@ const ROLES: Role[] = [
     logoRotation: 3,
     blurb: (
       <>
-        Automated IT ops reporting — cut manual work by <Metric>80%</Metric>.
-        First-ever Intern of the Quarter.
+        Automated IT ops reporting — cut manual work by 80%.{" "}
+        <Metric>First-ever Intern of the Quarter.</Metric>
       </>
     ),
   },
@@ -140,8 +140,8 @@ const ROLES: Role[] = [
     logoRotation: -4,
     blurb: (
       <>
-        Ran the UofG Toastmasters club — helping students who were terrified to
-        present stop being terrified.
+        Ran the UofG Toastmasters club — helping students overcome their fear
+        of presenting and become better speakers.
       </>
     ),
   },
