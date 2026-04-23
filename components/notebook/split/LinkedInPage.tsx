@@ -61,16 +61,16 @@ const CARD_HEIGHT = 460;
 
 // Fade-in choreography: each card appears in place, strictly one at a
 // time, back-to-front with a left-then-right tiebreak within each depth.
-// 5 slots × 250ms stagger + 500ms fade = ~1.5s total timeline.
-const CARD_FADE_MS = 500;
-const CARD_STAGGER_MS = 250;
+// 5 slots × 150ms stagger + 400ms fade = ~1s total timeline.
+const CARD_FADE_MS = 400;
+const CARD_STAGGER_MS = 150;
 
 function cardFadeDelay(offset: number): number {
   // Slot by depth (deepest first), with left (negative offset) before
   // right (positive offset) within the same depth:
-  //   offset=-2 → 0ms      offset=+2 → 250ms
-  //   offset=-1 → 500ms    offset=+1 → 750ms
-  //   offset= 0 → 1000ms
+  //   offset=-2 → 0ms      offset=+2 → 150ms
+  //   offset=-1 → 300ms    offset=+1 → 450ms
+  //   offset= 0 → 600ms
   const absOff = Math.abs(offset);
   const base = (2 - Math.min(absOff, 2)) * CARD_STAGGER_MS * 2;
   const sideBump = absOff > 0 && offset > 0 ? CARD_STAGGER_MS : 0;
