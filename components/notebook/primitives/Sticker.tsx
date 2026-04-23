@@ -7,6 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { usePageAnimate } from "./PageAnimateContext";
 
 /**
  * Round sticker with drag + a "peel" animation on pickup. Starts at
@@ -38,6 +39,7 @@ export function Sticker({
 }) {
   const [hover, setHover] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const pageAnimate = usePageAnimate();
 
   // Null = use the configured top/left/right/bottom. Non-null = dragged
   // coordinates in the positioned-ancestor coordinate space.
@@ -114,6 +116,7 @@ export function Sticker({
         transition,
         filter: shadow,
         animation: `fadeIn 0.7s ease ${delayMs}ms both`,
+        animationPlayState: pageAnimate ? "running" : "paused",
         zIndex: dragging ? 12 : 4,
         cursor: dragging ? "grabbing" : "grab",
         userSelect: "none",

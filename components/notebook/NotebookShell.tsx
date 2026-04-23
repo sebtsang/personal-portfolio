@@ -11,22 +11,17 @@ import { PageChrome } from "./chrome/PageChrome";
 import { SpiralBinding } from "./chrome/SpiralBinding";
 import { CLOSE_JOURNAL_EVENT } from "./chrome/CoverBackButton";
 import { PageFlipTransition } from "./PageFlipTransition";
+import { PAGE_ORDER, type PageKey, orderOf } from "./pageOrder";
 import { LandingPage } from "./landing/LandingPage";
 import type { ChatMessage } from "./chat/ChatPage";
-import { SplitView } from "./split/SplitView";
+import { HomePage } from "./home/HomePage";
+import { ContentPage } from "./content/ContentPage";
 
 const WELCOME_BUBBLES = [
   "You've opened Seb's journal. I'm SebBot — handling the easy questions while he ships.",
   "Ask anything about him, or try the slash commands below.",
 ];
 
-/**
- * Default one-liner to inject when the LLM emits a tool call with no
- * preceding text. Per-tool because the blank-bubble UX is most jarring
- * when the page opens silently — a one-word acknowledgment keeps the
- * conversation readable. Kept short so it doesn't fight the model's
- * own text when the model actually does produce some.
- */
 const TOOL_FALLBACK_REPLY: Record<ToolName, string> = {
   showAbout: "Here's the about page.",
   showExperience: "Pulling up the timeline.",
@@ -34,12 +29,6 @@ const TOOL_FALLBACK_REPLY: Record<ToolName, string> = {
   showLinkedIn: "Flipping through the posts.",
 };
 
-/**
- * Detect a 429 from /api/chat (whose body is `{ error: "rate-limited",
- * retryAfter, which }`) and translate it into a journal-voice bot reply.
- * Returns null for any other failure so the caller falls back to a console
- * log instead of pretending the bot said something.
- */
 function rateLimitReply(err: unknown): string | null {
   const msg = err instanceof Error ? err.message : String(err);
   const jsonStart = msg.indexOf("{");
@@ -61,90 +50,116 @@ function rateLimitReply(err: unknown): string | null {
   }
 }
 
-const FLIP_OPEN_MS = 1200;
-const FLIP_CLOSE_MS = 1700;
-// Must match HandwrittenText defaults so seed 2 starts after seed 1 finishes.
-// Faster per-char pacing keeps the pen-writing feel but lands total welcome
-// time at ~3.6s instead of the previous ~7s.
+const COVER_OPEN_MS = 1200;
+const COVER_CLOSE_MS = 1700;
+// Navigation model: pages are non-sequential sections. Every nav EXCEPT
+// returning to home uses the "opening" flip (current page flips away,
+// destination revealed). Returning to home uses the "closing" flip
+// (home flips in from behind, covers current). 1500ms each — equally
+// deliberate.
+const FLIP_OPENING_MS = 1500;
+const FLIP_OPENING_EASE = "cubic-bezier(0.76, 0, 0.24, 1)";
+const FLIP_CLOSING_MS = 1500;
+const FLIP_CLOSING_EASE = "cubic-bezier(0.32, 0.72, 0.18, 1)";
+// Per-char welcome-seed pacing.
 const CHAR_DELAY_MS = 10;
 const CHAR_DURATION_MS = 180;
 const SEED_GAP_MS = 300;
+
+function kindToPageKey(kind: StageView["kind"]): PageKey {
+  return kind === "empty" ? "home" : (kind as PageKey);
+}
+
+// Z-index stack: home on top (closest to cover), contact at the bottom.
+// The stack order matches the journal metaphor — each forward nav flips
+// the currently-visible page away to reveal the next one.
+const Z_FOR_KIND: Record<PageKey, number> = {
+  home: 5,
+  about: 4,
+  experience: 3,
+  linkedin: 2,
+  contact: 1,
+};
 
 export function NotebookShell({
   initialView,
   skipLanding = false,
 }: {
-  /**
-   * If set to a non-empty view, skip the landing flip entirely and open
-   * straight into the chat + split with that view mounted. Used for
-   * deep-link routes like /about.
-   */
   initialView?: StageView;
-  /**
-   * Skip the landing flip and mount the chat directly (no split view).
-   * Seeds still stagger in — this is the "you opened the journal to the
-   * home page" entry used by the /home route and by the palette's
-   * "Home" item. Ignored when `initialView` is set (deep-link wins).
-   */
   skipLanding?: boolean;
 } = {}) {
   const view = useStageStore((s) => s.view);
   const setView = useStageStore((s) => s.setView);
   const dispatchTool = useStageStore((s) => s.dispatchTool);
-  const isSplit = view.kind !== "empty";
 
   const deepLink = !!initialView && initialView.kind !== "empty";
-  // Chat-only entry (/home): same "no landing flip" behavior as deep-link,
-  // but seeds still animate in since there's no split content competing
-  // for attention.
   const chatOnly = !deepLink && skipLanding;
   const entersWithChatMounted = deepLink || chatOnly;
 
+  // Cover-flip state (unchanged from before).
   const [showLanding, setShowLanding] = useState(!entersWithChatMounted);
-  const [flipping, setFlipping] = useState(false);
+  const [coverFlipping, setCoverFlipping] = useState(false);
   const [chatMounted, setChatMounted] = useState(entersWithChatMounted);
-  const [closing, setClosing] = useState(false);
+  const [coverClosing, setCoverClosing] = useState(false);
+  const coverClosingRef = useRef(false);
+
   const [seedPhase, setSeedPhase] = useState(
-    // Deep-link jumps seeds to completion (user came for the split, not
-    // to read the intro). /home animates them in.
     deepLink ? WELCOME_BUBBLES.length : 0,
   );
 
-  // Tracks a close animation in flight so rapid repeat clicks / stray
-  // scroll input during the flip don't re-trigger it or race it with
-  // the opening flow.
-  const closingRef = useRef(false);
+  // ── All-mounted page state ──────────────────────────────────────────
+  // `currentKind`: the page the user is viewing (committed).
+  // `mountedKinds`: every page ever visited in this session. Pages stay
+  //   mounted so their state + images + rendered reveals persist across
+  //   navigations — no remount means no re-animation.
+  // `rotations`: each mounted page's current rotateY value (0° face-on
+  //   or -180° flipped away). When a flip completes, the source page
+  //   ends up at -180° and the destination at 0°.
+  // `pendingKind`: non-null during a flip. The destination being navigated to.
+  // `flippingKind`: the specific page whose div has CSS transition
+  //   enabled during the flip (forward: source; backward: destination).
+  // `flipTransition`: the `transition` CSS value to apply to flippingKind's
+  //   div. Null means no transition. We toggle this in two rAF steps so
+  //   the browser paints at the start rotation before the end rotation
+  //   triggers the animation.
+  // `readyKinds`: pages whose reveal animations are allowed to play. A
+  //   page is "ready" once its flip-in has landed. Fresh mounts during a
+  //   flip start as NOT ready — reveal primitives (DrawnText,
+  //   RevealOnMount, Sticker, HandwrittenText) hold at their opening
+  //   frame via `PageAnimateContext`.
+  const initialKind: PageKey = deepLink
+    ? (initialView!.kind as PageKey)
+    : "home";
+  const [currentKind, setCurrentKind] = useState<PageKey>(initialKind);
+  const [pendingKind, setPendingKind] = useState<PageKey | null>(null);
+  const [mountedKinds, setMountedKinds] = useState<Set<PageKey>>(
+    () => new Set([initialKind]),
+  );
+  const [rotations, setRotations] = useState<Record<string, number>>({
+    [initialKind]: 0,
+  });
+  const [flippingKind, setFlippingKind] = useState<PageKey | null>(null);
+  const [flipTransition, setFlipTransition] = useState<string | null>(null);
+  const [readyKinds, setReadyKinds] = useState<Set<PageKey>>(
+    () => new Set([initialKind]),
+  );
 
-  // Align the Zustand view store with the route on every mount.
-  //
-  // Critical bug fixed here: the store persists across Next route
-  // changes (it's global), so navigating /contact → /home via
-  // router.push used to leave `view = { kind: "contact" }` in the
-  // store. The new /home-route NotebookShell mounted, but SplitView
-  // still rendered the Contact page because the store thought a
-  // split was open. URL changed, UI didn't.
-  //
-  // Now: always setView to match the route. Deep-links push their
-  // initialView; /home and /landing push empty. Runs once on mount.
+  // Align store with route on mount.
   useEffect(() => {
     setView(initialView ?? { kind: "empty" });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // /home entry: seeds animate in on mount (same timing as the normal
-  // post-landing flow, but without the flip). Deep-link skips this
-  // because seedPhase is pre-set to full, and normal landing skips it
-  // because advance() is the trigger there.
+  // /home fresh entry: seeds animate in from mount.
   useEffect(() => {
     if (!chatOnly) return;
     let cumulative = 80;
     const timers: number[] = [];
     WELCOME_BUBBLES.forEach((text, i) => {
-      const mountAt = cumulative;
       timers.push(
         window.setTimeout(
           () => setSeedPhase((p) => Math.max(p, i + 1)),
-          mountAt,
+          cumulative,
         ),
       );
       cumulative +=
@@ -153,30 +168,10 @@ export function NotebookShell({
     return () => {
       timers.forEach((t) => window.clearTimeout(t));
     };
-    // Run once on mount; constants above are module-level.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // URL ↔ view sync. Two directions:
-  //
-  //   (a) View → URL: whenever `view` or `showLanding` changes, pushState
-  //       the matching path. Uses window.history.pushState (not the Next
-  //       router) so the same NotebookShell instance stays mounted and
-  //       in-flight animations (page flip, split-to-split slide) don't
-  //       restart on URL updates.
-  //
-  //   (b) URL → view: listen for `popstate` (browser back/forward) and
-  //       update the store to match the new URL. Keeps the spread in
-  //       sync with browser history without the user noticing.
-  //
-  // The landing page (path "/") is intentionally NOT tracked by this
-  // effect — it has its own mounted state (showLanding=true) that would
-  // be lost if we just pushState'd. The palette's "Landing page" item
-  // uses router.push("/") for a full route change to get back there.
-  //
-  // Skip the very first effect run (urlSyncMounted ref) so deep-link
-  // mounts don't briefly push "/home" before the separate setView
-  // effect catches up to initialView on the next render.
+  // URL ↔ view sync.
   const urlSyncMounted = useRef(false);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -184,21 +179,17 @@ export function NotebookShell({
       urlSyncMounted.current = true;
       return;
     }
-    if (showLanding) return; // landing visible: don't touch URL
-    const targetPath =
-      view.kind === "empty" ? "/home" : `/${view.kind}`;
+    if (showLanding) return;
+    const targetPath = currentKind === "home" ? "/home" : `/${currentKind}`;
     if (window.location.pathname !== targetPath) {
       window.history.pushState({}, "", targetPath);
     }
-  }, [view, showLanding]);
+  }, [currentKind, showLanding]);
 
   useEffect(() => {
     const onPopState = () => {
       const path = window.location.pathname;
-      // "/" (landing) triggers a full Next route change — handled by
-      // the framework re-rendering app/page.tsx, not by us.
       if (path === "/") return;
-      // Map URL to view.
       const kind =
         path === "/home"
           ? ("empty" as const)
@@ -211,8 +202,6 @@ export function NotebookShell({
         "contact",
       ];
       if (!validKinds.includes(kind)) return;
-      // Make sure we're out of the landing state (popstate can arrive
-      // before the re-render if the user rapidly back/forwards).
       if (showLanding) setShowLanding(false);
       if (!chatMounted) setChatMounted(true);
       setSeedPhase(WELCOME_BUBBLES.length);
@@ -234,22 +223,15 @@ export function NotebookShell({
         toolCall.toolName as ToolName,
         toolCall.args as Record<string, unknown>,
       );
-      // Safety net: if the LLM called a tool with no preceding text,
-      // the user sees a blank SEBBOT bubble. voice.ts has a hard rule
-      // against this, but models occasionally skip it anyway. Inject a
-      // default one-liner onto the current assistant message so the
-      // transition reads naturally regardless.
       setMessages((prev) => {
         if (prev.length === 0) return prev;
         const last = prev[prev.length - 1];
         if (last.role !== "assistant") return prev;
         if (last.content && last.content.trim().length > 0) return prev;
-        const fallback = TOOL_FALLBACK_REPLY[toolCall.toolName as ToolName]
-          ?? "Pulling that up.";
-        return [
-          ...prev.slice(0, -1),
-          { ...last, content: fallback },
-        ];
+        const fallback =
+          TOOL_FALLBACK_REPLY[toolCall.toolName as ToolName] ??
+          "Pulling that up.";
+        return [...prev.slice(0, -1), { ...last, content: fallback }];
       });
     },
     onError: (err) => {
@@ -270,77 +252,70 @@ export function NotebookShell({
     },
   });
 
+  // Cover flip: unchanged.
   const advance = useCallback(() => {
-    if (!showLanding || flipping || closing) return;
+    if (!showLanding || coverFlipping || coverClosing) return;
     setChatMounted(true);
-    setFlipping(true);
+    setCoverFlipping(true);
     window.setTimeout(() => {
       setShowLanding(false);
-      setFlipping(false);
-    }, FLIP_OPEN_MS);
-    // Stagger seed mount so bubble 2 starts drawing only after bubble 1
-    // finishes. Each bubble's draw time = chars × CHAR_DELAY + CHAR_DURATION.
-    let cumulative = FLIP_OPEN_MS + 80;
+      setCoverFlipping(false);
+    }, COVER_OPEN_MS);
+    let cumulative = COVER_OPEN_MS + 80;
     WELCOME_BUBBLES.forEach((text, i) => {
-      const mountAt = cumulative;
       window.setTimeout(
         () => setSeedPhase((p) => Math.max(p, i + 1)),
-        mountAt,
+        cumulative,
       );
-      cumulative += text.length * CHAR_DELAY_MS + CHAR_DURATION_MS + SEED_GAP_MS;
+      cumulative +=
+        text.length * CHAR_DELAY_MS + CHAR_DURATION_MS + SEED_GAP_MS;
     });
-  }, [flipping, showLanding, closing]);
+  }, [coverFlipping, showLanding, coverClosing]);
 
-  // Closing flow — the reverse of `advance`. Mounts the landing at
-  // rotateY(-180°) over the still-visible chat (direction="closing" +
-  // flipping=false) then, one commit later, flips it back to 0° so the
-  // cover appears to fall closed over the chat. NotebookShell itself
-  // stays mounted so the animation runs without a route change — the
-  // URL update happens via pushState at the end, which is why
-  // CoverBackButton dispatches an event instead of navigating.
-  const handleClose = useCallback(() => {
-    if (closingRef.current) return;
-    closingRef.current = true;
+  const handleCoverClose = useCallback(() => {
+    if (coverClosingRef.current) return;
+    if (currentKind !== "home") return;
+    coverClosingRef.current = true;
     setShowLanding(true);
-    setFlipping(false);
-    setClosing(true);
-  }, []);
+    setCoverFlipping(false);
+    setCoverClosing(true);
+  }, [currentKind]);
 
   useEffect(() => {
-    const onClose = () => handleClose();
+    const onClose = () => handleCoverClose();
     window.addEventListener(CLOSE_JOURNAL_EVENT, onClose);
     return () => window.removeEventListener(CLOSE_JOURNAL_EVENT, onClose);
-  }, [handleClose]);
+  }, [handleCoverClose]);
 
-  // Drives the closing transition *after* React has committed the initial
-  // `closing=true, flipping=false` render. If we scheduled setFlipping(true)
-  // alongside the state updates in handleClose (via rAF or similar), React
-  // 18's automatic batching would coalesce both state updates into a single
-  // commit, and the landing would mount already at flipping=true with
-  // transform rotateY(0°) — skipping the -180° start frame entirely, so no
-  // CSS transition would fire. Splitting it into a useEffect guarantees at
-  // least one paint at -180° before the flip triggers.
   useEffect(() => {
-    if (!closing) return;
-    setFlipping(true);
+    if (!coverClosing) return;
+    setCoverFlipping(true);
     const id = window.setTimeout(() => {
-      setClosing(false);
-      setFlipping(false);
+      setCoverClosing(false);
+      setCoverFlipping(false);
       setChatMounted(false);
       setSeedPhase(0);
-      closingRef.current = false;
+      // Reset the session on cover close — next time the cover opens,
+      // the user gets a fresh chat, fresh page stack, no history of
+      // prior navigation.
+      setMessages([]);
+      setView({ kind: "empty" });
+      setCurrentKind("home");
+      setPendingKind(null);
+      setMountedKinds(new Set(["home"]));
+      setRotations({ home: 0 });
+      setFlippingKind(null);
+      setFlipTransition(null);
+      setReadyKinds(new Set(["home"]));
+      coverClosingRef.current = false;
       if (typeof window !== "undefined") {
         window.history.pushState({}, "", "/");
       }
-    }, FLIP_CLOSE_MS);
+    }, COVER_CLOSE_MS);
     return () => window.clearTimeout(id);
-  }, [closing]);
+  }, [coverClosing, setMessages, setView]);
 
-  // Landing-advance triggers: any non-trivial scroll (wheel or trackpad, any
-  // direction), any arrow key / Space / Enter / PageUp / PageDown, or any
-  // meaningful swipe. Intentionally direction-agnostic so mouse users
-  // without horizontal scroll and readers coming from any gesture habit
-  // can still flip forward. Escape remains reserved for closing the split.
+  // Landing-advance triggers: unchanged.
   useEffect(() => {
     const WHEEL_THRESHOLD = 30;
     const TOUCH_THRESHOLD = 50;
@@ -356,7 +331,7 @@ export function NotebookShell({
     ]);
 
     const onWheel = (e: WheelEvent) => {
-      if (!showLanding || flipping) return;
+      if (!showLanding || coverFlipping) return;
       const magnitude = Math.max(Math.abs(e.deltaX), Math.abs(e.deltaY));
       if (magnitude < WHEEL_THRESHOLD) return;
       advance();
@@ -372,11 +347,11 @@ export function NotebookShell({
       ) {
         return;
       }
-      if (e.key === "Escape" && isSplit) {
+      if (e.key === "Escape" && currentKind !== "home") {
         setView({ kind: "empty" });
         return;
       }
-      if (showLanding && !flipping && ADVANCE_KEYS.has(e.key)) {
+      if (showLanding && !coverFlipping && ADVANCE_KEYS.has(e.key)) {
         e.preventDefault();
         advance();
       }
@@ -390,7 +365,7 @@ export function NotebookShell({
       touchStartY = t?.clientY ?? 0;
     };
     const onTouchEnd = (e: TouchEvent) => {
-      if (!showLanding || flipping) return;
+      if (!showLanding || coverFlipping) return;
       const t = e.changedTouches[0];
       const dx = (t?.clientX ?? 0) - touchStartX;
       const dy = (t?.clientY ?? 0) - touchStartY;
@@ -407,15 +382,131 @@ export function NotebookShell({
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchend", onTouchEnd);
     };
-  }, [advance, flipping, isSplit, setView, showLanding]);
+  }, [advance, coverFlipping, currentKind, setView, showLanding]);
 
-  const closeSplit = useCallback(() => {
+  const closeContentPage = useCallback(() => {
     setView({ kind: "empty" });
   }, [setView]);
 
-  // One message stream: seeds first, then everything else in insertion
-  // order from useChat. Intent-matched slash commands and LLM-streamed
-  // exchanges live in the same list so they stay in chronological order.
+  // ── View-change → page flip trigger ────────────────────────────────
+  // When `view.kind` changes, compare to committed `currentKind`. If
+  // different and no flip is in flight, set up the flip:
+  //   1. Mark destination mounted if not already; set its initial rotation
+  //      (0° for forward nav = underneath source; -180° for backward =
+  //      will flip in).
+  //   2. Mark the flipping page (source on forward, destination on backward).
+  //   3. Double-rAF: first paint at start rotations with no transition;
+  //      second paint sets transition + end rotation so CSS animates.
+  //   4. transitionend handler commits currentKind = destination and
+  //      marks destination as ready (reveal animations can play).
+  useEffect(() => {
+    if (!chatMounted) return;
+    if (showLanding) return;
+    if (pendingKind !== null) return;
+    const targetKind = kindToPageKey(view.kind);
+    if (targetKind === currentKind) return;
+
+    // Flip direction rule (Option B — content pages are peers, not a
+    // sequence): the ONLY meaningful distinction is "am I returning to
+    // home?" Everything else uses the same opening flip.
+    //   - returningToHome (target === "home"): closing flip. Home flips
+    //     in from -180° → 0°, covering the current content page.
+    //   - else: opening flip. Current page flips 0° → -180° away,
+    //     destination revealed underneath. Same regardless of whether
+    //     the destination's canonical index is above or below the source.
+    const returningToHome = targetKind === "home";
+    const flipPage: PageKey = returningToHome ? targetKind : currentKind;
+    const destinationStart = returningToHome ? -180 : 0;
+
+    setPendingKind(targetKind);
+
+    // Ensure destination is mounted.
+    setMountedKinds((prev) => {
+      if (prev.has(targetKind)) return prev;
+      const next = new Set(prev);
+      next.add(targetKind);
+      return next;
+    });
+
+    // Snap rotations to flip-start state. Critical fix: previously we
+    // kept already-mounted pages at their last rotation, which caused
+    // two bugs:
+    //   1. Forward revisit to a page at -180° (flipped away previously):
+    //      destination stayed hidden; source flipped away to reveal…
+    //      whatever random page happened to be at 0°.
+    //   2. Forward skip-jump (e.g. home → contact) past pages left at
+    //      0° from earlier visits: those intermediate pages covered
+    //      the destination because they had higher z-index.
+    // The correct state for ANY flip:
+    //   - Source stays at 0° (visible, will animate).
+    //   - Destination at `destinationStart` (0° fwd / -180° bwd).
+    //   - Every OTHER mounted page snaps to -180° so nothing
+    //     interferes visually.
+    setRotations((prev) => {
+      const next: Record<string, number> = {};
+      const kinds = new Set<string>([
+        ...Object.keys(prev),
+        targetKind,
+        currentKind,
+      ]);
+      for (const kind of kinds) {
+        if (kind === currentKind) next[kind] = 0;
+        else if (kind === targetKind) next[kind] = destinationStart;
+        else next[kind] = -180;
+      }
+      return next;
+    });
+
+    // Set up the flip. First render: flippingKind set, transition NULL
+    // so React paints at start rotation with no animation. Second rAF:
+    // set transition + end rotation so the CSS transition fires.
+    setFlippingKind(flipPage);
+    setFlipTransition(null);
+
+    // No cleanup cancelling the rAF: the effect re-runs the moment we
+    // setPendingKind (pendingKind is in the dep array), and a cleanup
+    // would cancel raf1 before raf2 ever schedules, leaving the flip
+    // stuck at its start frame and pendingKind stuck non-null forever.
+    // Letting the rAFs run to completion is correct.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const ms = returningToHome ? FLIP_CLOSING_MS : FLIP_OPENING_MS;
+        const easing = returningToHome
+          ? FLIP_CLOSING_EASE
+          : FLIP_OPENING_EASE;
+        setFlipTransition(`transform ${ms}ms ${easing}`);
+        setRotations((prev) => ({
+          ...prev,
+          // Opening: source flips to -180°. Closing: destination flips to 0°.
+          [flipPage]: returningToHome ? 0 : -180,
+        }));
+      });
+    });
+  }, [view.kind, currentKind, pendingKind, chatMounted, showLanding]);
+
+  // transitionend on the flipping page — commits the new currentKind and
+  // marks the destination as ready so its reveal animations can play.
+  const handlePageFlipEnd = useCallback(
+    (e: React.TransitionEvent<HTMLDivElement>) => {
+      if (e.target !== e.currentTarget) return;
+      if (e.propertyName !== "transform") return;
+      if (pendingKind === null) return;
+      const dest = pendingKind;
+      setCurrentKind(dest);
+      setPendingKind(null);
+      setFlippingKind(null);
+      setFlipTransition(null);
+      setReadyKinds((prev) => {
+        if (prev.has(dest)) return prev;
+        const next = new Set(prev);
+        next.add(dest);
+        return next;
+      });
+    },
+    [pendingKind],
+  );
+
+  // One message stream: seeds + AI messages.
   const messages: ChatMessage[] = useMemo(() => {
     const seed: ChatMessage[] = WELCOME_BUBBLES.slice(0, seedPhase).map(
       (text, i) => ({
@@ -439,13 +530,16 @@ export function NotebookShell({
     return [...seed, ...ai];
   }, [aiMessages, seedPhase]);
 
+  const writingIndicator = useMemo(() => {
+    if (!isLoading) return false;
+    const last = messages[messages.length - 1];
+    return !last || last.role === "user" || !last.text;
+  }, [isLoading, messages]);
+
   const handleSubmit = useCallback(
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
-
-      // If the user sends before all seed bubbles have mounted, snap them
-      // all in so their message doesn't get inserted between seeds.
       setSeedPhase(WELCOME_BUBBLES.length);
 
       const intent = matchIntent(trimmed);
@@ -458,23 +552,19 @@ export function NotebookShell({
           typeof crypto !== "undefined" && "randomUUID" in crypto
             ? crypto.randomUUID()
             : `b-${Date.now()}`;
-        // Append intent-matched exchange to the same useChat message list
-        // as streamed responses, so chronological order is preserved when
-        // the user interleaves slash commands and free-text questions.
         setMessages((prev) => [
           ...prev,
           { id: userId, role: "user", content: trimmed },
           { id: botId, role: "assistant", content: intent.reply },
         ]);
-        // Delay the tool dispatch (= split view opening) so the user's
-        // message + SebBot's one-liner both have a moment to land
-        // visually before the page flip kicks in. 140ms was too fast —
-        // the user-message bubble didn't breathe before the content
-        // pane rotated in and competed for attention. 320ms lets the
-        // handwritten reply read as a beat, then the page turns.
+        // Delay the tool dispatch until the bot's reply finishes
+        // pen-writing so the in-flight animation doesn't get disrupted
+        // when the flip reshuffles state.
+        const penWriteMs =
+          intent.reply.length * CHAR_DELAY_MS + CHAR_DURATION_MS + 120;
         window.setTimeout(
           () => dispatchTool(intent.tool, intent.args),
-          320,
+          penWriteMs,
         );
         return;
       }
@@ -482,6 +572,45 @@ export function NotebookShell({
       append({ role: "user", content: trimmed });
     },
     [append, dispatchTool, setMessages],
+  );
+
+  // Render a page given its kind. `animate` controls whether reveal
+  // primitives inside fire their animations (passed down via
+  // PageAnimateContext inside each page component).
+  const renderPage = useCallback(
+    (kind: PageKey, animate: boolean) => {
+      if (kind === "home") {
+        return (
+          <HomePage
+            messages={messages}
+            onSubmit={handleSubmit}
+            isWriting={writingIndicator}
+            autoFocus={
+              animate && currentKind === "home" && !coverFlipping && !showLanding
+            }
+          />
+        );
+      }
+      return (
+        <ContentPage
+          kind={kind}
+          messages={messages}
+          onSubmit={handleSubmit}
+          isWriting={writingIndicator}
+          onClose={closeContentPage}
+          animate={animate}
+        />
+      );
+    },
+    [
+      messages,
+      handleSubmit,
+      writingIndicator,
+      closeContentPage,
+      currentKind,
+      coverFlipping,
+      showLanding,
+    ],
   );
 
   return (
@@ -495,7 +624,10 @@ export function NotebookShell({
         backgroundColor: "#e8e3d5",
       }}
     >
-      {/* Chat + split layer — mounts at start of flip, cross-fades in. */}
+      {/* Chat/content layer. Every visited page is mounted as a sibling
+          with its own rotateY. Navigation animates one page's rotation;
+          all other pages stay put at their current rotation and retain
+          all their state, images, and revealed content. */}
       <AnimatePresence initial={false}>
         {chatMounted && (
           <motion.div
@@ -503,49 +635,55 @@ export function NotebookShell({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            style={{
-              position: "absolute",
-              inset: 0,
-              zIndex: 10,
-            }}
+            style={{ position: "absolute", inset: 0, zIndex: 10 }}
           >
-            {/* SplitView renders Paper per-pane internally, so we don't
-                stack a shell-wide Paper here. */}
-            <SplitView
-              isSplit={isSplit}
-              messages={messages}
-              onSubmit={handleSubmit}
-              isWriting={
-                !!isLoading &&
-                (() => {
-                  const last = messages[messages.length - 1];
-                  // Show indicator while the request is in flight AND no
-                  // assistant tokens have streamed yet (i.e. the tail is
-                  // either nothing, a user message, or an empty bot bubble).
-                  return !last || last.role === "user" || !last.text;
-                })()
-              }
-              onClose={closeSplit}
-            />
+            {PAGE_ORDER.filter((kind) => mountedKinds.has(kind)).map((kind) => {
+              const rotation = rotations[kind] ?? 0;
+              const isFlipping = flippingKind === kind;
+              const animate = readyKinds.has(kind);
+              // Flipping page gets a high z-index during the animation
+              // so it sits on top regardless of canonical stack order.
+              // Opening flip: source needs to be on top (so it covers
+              //   destination at 0° before flipping away). Without the
+              //   bump, a content-to-content nav where destination has
+              //   higher canonical z (e.g., /contact → /about) would
+              //   have destination covering source at flip start.
+              // Closing flip: destination (home) needs to be on top as
+              //   it rotates in and lands covering source. Home's
+              //   canonical z=5 is already highest, but the bump is
+              //   harmless here.
+              const zIndex = isFlipping ? 50 : Z_FOR_KIND[kind];
+              return (
+                <div
+                  key={kind}
+                  onTransitionEnd={isFlipping ? handlePageFlipEnd : undefined}
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    zIndex,
+                    transformOrigin: "left center",
+                    transform: `rotateY(${rotation}deg)`,
+                    transition: isFlipping && flipTransition ? flipTransition : "none",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                    willChange: isFlipping ? "transform" : undefined,
+                  }}
+                >
+                  {renderPage(kind, animate)}
+                </div>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Landing — stays mounted until flip completes. Paper spans the full
-          viewport; the spiral binding sits on top at left 0. While `closing`
-          is true, PageFlipTransition runs in reverse so the cover appears
-          to fall back down over the chat. */}
+      {/* Landing / cover flip — unchanged. */}
       {showLanding && (
         <PageFlipTransition
-          flipping={flipping}
-          direction={closing ? "closing" : "opening"}
+          flipping={coverFlipping}
+          direction={coverClosing ? "closing" : "opening"}
         >
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-            }}
-          >
+          <div style={{ position: "absolute", inset: 0 }}>
             <Paper ruled={false} marginRule={false} />
             <PageChrome />
             <LandingPage onAdvance={advance} />
@@ -553,7 +691,6 @@ export function NotebookShell({
         </PageFlipTransition>
       )}
 
-      {/* Spiral binding — pinned, always above, never rotates. */}
       <SpiralBinding />
     </div>
   );

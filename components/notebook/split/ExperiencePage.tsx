@@ -4,7 +4,10 @@ import { useEffect, useState, type ReactNode } from "react";
 import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
-import { usePaneReady } from "../primitives/PaneReadyContext";
+import {
+  PageAnimateContext,
+  usePageAnimate,
+} from "../primitives/PageAnimateContext";
 
 type Role = {
   company: string;
@@ -176,8 +179,15 @@ const ROLES: Role[] = [
 const ROLE_STAGGER_MS = 380;
 const FIRST_ROLE_DELAY_MS = 400;
 
-export function ExperiencePage({ onClose }: { onClose: () => void }) {
+export function ExperiencePage({
+  onClose,
+  animate = true,
+}: {
+  onClose: () => void;
+  animate?: boolean;
+}) {
   return (
+    <PageAnimateContext.Provider value={animate}>
     <div style={{ position: "absolute", inset: 0 }}>
       <Paper ruled={false} marginRule={false} />
 
@@ -257,6 +267,7 @@ export function ExperiencePage({ onClose }: { onClose: () => void }) {
 
       <PageCorner pageNumber="02" />
     </div>
+    </PageAnimateContext.Provider>
   );
 }
 
@@ -285,14 +296,18 @@ function Spine() {
 // ── Role entry ────────────────────────────────────────────────────────
 
 function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
+  // Hold at opening frame (opacity 0, translated 12px down) until the
+  // host page is ready — i.e., the flip-in has landed. When pageAnimate
+  // flips to true, start the stagger delay and then reveal.
+  const pageAnimate = usePageAnimate();
   const [shown, setShown] = useState(false);
-  const ready = usePaneReady();
 
   useEffect(() => {
-    if (!ready) return;
+    if (!pageAnimate) return;
+    if (shown) return;
     const t = window.setTimeout(() => setShown(true), delayMs);
     return () => window.clearTimeout(t);
-  }, [delayMs, ready]);
+  }, [delayMs, shown, pageAnimate]);
 
   return (
     <div

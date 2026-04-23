@@ -1,10 +1,10 @@
 "use client";
 
-import { useDeferredValue, useEffect, useRef, useState } from "react";
-import { CoverBackButton } from "../chrome/CoverBackButton";
+import { useDeferredValue, useEffect, useRef, type ReactNode } from "react";
 import { NotebookInput } from "./NotebookInput";
 import { NotebookMessage, type ChatRole } from "./NotebookMessage";
 import { WritingIndicator } from "./WritingIndicator";
+import { hasSeenMessage, markMessagesSeen } from "./seenMessages";
 
 export type ChatMessage = {
   id: string;
@@ -12,48 +12,35 @@ export type ChatMessage = {
   text: string;
 };
 
+/**
+ * Scrollable chat body: messages list + writing indicator + input.
+ *
+ * Fully static layout — `compact` selects between the wide (home) and
+ * narrow (sidebar) visual modes and does not animate between them.
+ *
+ * `headerContent`: optional chrome rendered INSIDE the scroll content
+ * div at the top, so it scrolls with the messages. Used by HomePage for
+ * the cover-back button + "journal · home" label + corner doodle — they
+ * need to scroll away when the user scrolls down through chat history,
+ * just like content pages' back-button + meta label do.
+ */
 export function ChatPage({
   messages,
   onSubmit,
   isWriting = false,
   compact = false,
   autoFocus = true,
+  headerContent,
 }: {
   messages: ChatMessage[];
   onSubmit: (text: string) => void;
   isWriting?: boolean;
   compact?: boolean;
   autoFocus?: boolean;
+  headerContent?: ReactNode;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
-
-  // `compact` flips instantly when isSplit flips. We pass a *delayed*
-  // version down to label/chip/label components so their motion syncs
-  // with the chat column rather than racing it:
-  //   - Open: fire immediately (0ms) so the chat column's spring retract
-  //     and the label/chip reflow move together as one motion.
-  //   - Close: hold at compact=true for 750ms so labels stay stacked
-  //     while the right page flips out; flip to false right as the chat
-  //     column begins expanding, so labels slide back to inline-left in
-  //     sync with the expansion. Mirrors the open sequence.
-  //
-  // We drop the old CSS transitions on padding/font-size (the `MORPH`
-  // constant) entirely. Those fought Framer's layout animation —
-  // re-rasterizing text at intermediate font sizes every frame while
-  // Framer applied scale transforms on top. Result was per-character
-  // jitter. Now Framer's `layout` alone drives the motion via transform,
-  // and text renders at its final size throughout — pure GPU-composited
-  // smoothness.
-  const [delayedCompact, setDelayedCompact] = useState(compact);
-  useEffect(() => {
-    if (compact) {
-      setDelayedCompact(true);
-      return;
-    }
-    const t = window.setTimeout(() => setDelayedCompact(false), 750);
-    return () => window.clearTimeout(t);
-  }, [compact]);
 
   // Deferred render for the messages list. When useChat streams in
   // tokens (arriving 20-100/s), React would normally re-render the
@@ -61,40 +48,34 @@ export function ChatPage({
   // animations to stutter. useDeferredValue lets React keep the old
   // list painted while higher-priority work (animations, input
   // handling) is pending; the new list catches up during idle time.
-  // Perceived chat latency is unchanged; smoothness of concurrent
-  // animations improves meaningfully.
   const deferredMessages = useDeferredValue(messages);
 
-  // Follow-to-bottom auto-scroll. Three events need to pin the
-  // viewport on the newest content:
-  //   1. user sends a message        (messages.length grows)
-  //   2. writing indicator appears   (isWriting flips true)
-  //   3. bot streams tokens          (last message text grows; same length)
-  // The old implementation only covered #1. A ResizeObserver on the
-  // content container catches all three (and the indicator's removal
-  // when the stream ends too), because every one of them changes the
-  // inner div's height.
-  //
-  // We only auto-follow if the user is *already* near the bottom — a
-  // `pinned` flag tracks their scroll position so manual scroll-up to
-  // read history isn't hijacked by a fresh streaming reply. Compact
-  // mode (split-view chat) shows a small slice of the log, so the
-  // follow behavior matters most there; home mode benefits too but
-  // with a taller viewport, users are more likely to scroll up.
+  // Snapshot which message IDs have been seen *before* this render so we
+  // know which to animate. After the render commits, add all IDs to the
+  // seen set so the next render (and future mounts on other pages) skip
+  // re-animation.
+  const seenSnapshot = new Set<string>(
+    deferredMessages.filter((m) => hasSeenMessage(m.id)).map((m) => m.id),
+  );
+  useEffect(() => {
+    markMessagesSeen(deferredMessages.map((m) => m.id));
+  }, [deferredMessages]);
+
+  // Follow-to-bottom auto-scroll. Pins the viewport on newest content
+  // when the user is already near the bottom; honors manual scroll-up
+  // to read history. ResizeObserver catches message additions AND
+  // streaming token growth AND writing-indicator toggles uniformly.
   useEffect(() => {
     const outer = scrollRef.current;
     const inner = contentRef.current;
     if (!outer || !inner) return;
 
-    const NEAR_BOTTOM_PX = 120; // within this of the floor = "follow me"
+    const NEAR_BOTTOM_PX = 120;
     const isNearBottom = () =>
       outer.scrollHeight - outer.scrollTop - outer.clientHeight <
       NEAR_BOTTOM_PX;
 
     let pinned = true;
-    // Ignore one scroll event immediately after we programmatically
-    // set scrollTop — otherwise the self-triggered scroll would be
-    // read as user intent and flip `pinned` erroneously.
     let ignoreNextScroll = false;
     const onScroll = () => {
       if (ignoreNextScroll) {
@@ -111,7 +92,6 @@ export function ChatPage({
       outer.scrollTop = outer.scrollHeight;
     };
 
-    // Initial state: user hasn't scrolled yet → pinned to bottom.
     snap();
 
     const obs = new ResizeObserver(snap);
@@ -130,10 +110,6 @@ export function ChatPage({
         overflow: "hidden",
       }}
     >
-      {/* Scrolling paper interior. The ruled lines live on the inner
-          content div (not the Paper chrome), so when the user scrolls,
-          paper + lines + text all move together — text stays on a rule
-          instead of drifting between rules. */}
       <div
         ref={scrollRef}
         style={{
@@ -148,74 +124,19 @@ export function ChatPage({
           style={{
             position: "relative",
             minHeight: "100%",
-            // Full mode needs space for two stacked chrome rows (back
-            // button at line 1.25, meta label at line 2.5) plus a
-            // one-line breathing gap before messages begin. Compact
-            // mode has no chrome here (split view owns its back
-            // button), so a tighter top padding is fine.
-            paddingTop: delayedCompact
+            // Home's extra top padding reserves space for the chrome
+            // row (back button + journal label + breathing gap). Compact
+            // has no such chrome so uses a tighter value.
+            paddingTop: compact
               ? "calc(var(--line) * 3)"
               : "calc(var(--line) * 5)",
-            paddingBottom: delayedCompact ? 240 : 280,
+            paddingBottom: compact ? 240 : 280,
             // Ruled lines tile across the full scroll height so they
-            // travel with the content. Formula from globals.css so every
-            // ruled surface shares one baseline-anchored offset.
+            // travel with the content on scroll.
             backgroundImage: "var(--rule-background)",
           }}
         >
-          {/* Chat home chrome — matches the content-page pattern:
-              back button on its own row at the top, meta label below.
-              Only shows in full mode; compact (split view) has its own
-              PageBackButton inside SplitView. */}
-          {!delayedCompact &&<CoverBackButton />}
-          {!delayedCompact &&(
-            <div
-              style={{
-                position: "absolute",
-                // Baseline floats 0.19 × --line above rule 2 —
-                // matches the sender-label offset in chat home.
-                top: "calc(var(--line) * 2.57 - var(--fs-meta) * 0.86)",
-                // Aligned with CoverBackButton above; same reasoning
-                // as in CoverBackButton — 12% lands just inside the
-                // red margin on the full-viewport chat home.
-                left: "calc(12% + var(--pad-content-lg))",
-                fontFamily: "var(--font-mono)",
-                fontSize: "var(--fs-meta)",
-                letterSpacing: "0.25em",
-                textTransform: "uppercase",
-                color: "color-mix(in srgb, var(--color-ink-soft) 55%, transparent)",
-                lineHeight: 1,
-              }}
-            >
-              journal · home
-            </div>
-          )}
-
-          {/* Corner doodle — a small curve in the top right */}
-          {!delayedCompact &&(
-            <svg
-              aria-hidden
-              style={{
-                position: "absolute",
-                top: "calc(var(--line) * 0.6)",
-                right: 40,
-                width: 80,
-                height: 60,
-                opacity: 0.3,
-              }}
-              viewBox="0 0 80 60"
-            >
-              <path
-                d="M 10 30 Q 25 10, 40 30 T 70 30"
-                stroke="var(--color-ink-soft)"
-                strokeWidth="1.2"
-                fill="none"
-                strokeLinecap="round"
-              />
-              <circle cx="70" cy="30" r="2" fill="var(--color-ink-soft)" />
-            </svg>
-          )}
-
+          {headerContent}
           {deferredMessages.map((m, i) => (
             <div key={m.id}>
               {i > 0 && <div style={{ height: "var(--line)" }} />}
@@ -223,7 +144,8 @@ export function ChatPage({
                 text={m.text}
                 role={m.role}
                 idx={i}
-                compact={delayedCompact}
+                compact={compact}
+                animated={!seenSnapshot.has(m.id)}
               />
             </div>
           ))}
@@ -233,7 +155,7 @@ export function ChatPage({
               {messages.length > 0 && (
                 <div style={{ height: "var(--line)" }} />
               )}
-              <WritingIndicator compact={delayedCompact} />
+              <WritingIndicator compact={compact} />
             </>
           )}
         </div>
@@ -241,11 +163,9 @@ export function ChatPage({
 
       <NotebookInput
         onSubmit={onSubmit}
-        compact={delayedCompact}
+        compact={compact}
         autoFocus={autoFocus}
-        // Show the prompt chips only on the empty-chat state
-        // (before any user message). After that, they'd compete with
-        // the conversation for attention.
+        // Prompt chips only on the empty-chat state.
         showSuggestions={!messages.some((m) => m.role === "user")}
       />
     </div>

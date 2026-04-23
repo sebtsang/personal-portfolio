@@ -1,25 +1,16 @@
 "use client";
 
 import { memo, useEffect, useState } from "react";
-import { motion } from "framer-motion";
 
 const CYCLE_MS = 450;
-
-const LABEL_SPRING = {
-  type: "spring" as const,
-  stiffness: 140,
-  damping: 24,
-  mass: 0.8,
-};
 
 /**
  * Pseudo-message rendered while SebBot is streaming. Matches the
  * NotebookMessage layout: inline label + text in home mode, stacked in
  * compact mode, with the label sitting just inside the red margin.
  *
- * memo'd so parent re-renders (which happen on every streamed token
- * because the messages array grows) don't also re-render this — its
- * internal tick interval handles the dot animation locally.
+ * Static layouts — compact/full selected by prop, no animation between
+ * them (whole-page flips handle navigation via FlipStage).
  */
 export const WritingIndicator = memo(function WritingIndicator({
   compact = false,
@@ -35,7 +26,9 @@ export const WritingIndicator = memo(function WritingIndicator({
 
   const fontSize = compact ? "var(--fs-script)" : "var(--fs-body)";
   const lineHeight = "var(--line)";
-  const paddingLeft = compact ? "calc(12% + var(--pad-content-sm))" : "calc(12% + var(--pad-content))";
+  const paddingLeft = compact
+    ? "calc(12% + var(--pad-content-sm))"
+    : "calc(12% + var(--pad-content))";
   const paddingRight = compact ? "6%" : "8%";
 
   const labelStyle: React.CSSProperties = {
@@ -72,50 +65,37 @@ export const WritingIndicator = memo(function WritingIndicator({
     </>
   );
 
-  // Unified structure — see NotebookMessage for the same pattern + full
-  // rationale on the translateY / lineHeight tweaks in inline mode.
+  if (compact) {
+    return (
+      <div style={{ paddingLeft, paddingRight }}>
+        <div style={labelStyle}>sebbot</div>
+        <div style={textStyle}>{body}</div>
+      </div>
+    );
+  }
+
   return (
-    <motion.div
-      layout
-      transition={LABEL_SPRING}
+    <div
       style={{
         paddingLeft,
         paddingRight,
         display: "flex",
-        flexDirection: compact ? "column" : "row",
-        alignItems: compact ? "flex-start" : "baseline",
-        gap: compact ? 0 : 12,
-        willChange: "transform",
+        alignItems: "baseline",
+        gap: 12,
       }}
     >
-      <motion.div
-        layout
-        transition={LABEL_SPRING}
+      <div
         style={{
           ...labelStyle,
-          lineHeight: compact ? "var(--line)" : 1,
+          lineHeight: 1,
           flexShrink: 0,
-          width: compact ? "auto" : 64,
+          width: 64,
+          transform: "translateY(calc(var(--line) * -0.19))",
         }}
       >
-        <div
-          style={{
-            transform: compact
-              ? "none"
-              : "translateY(calc(var(--line) * -0.19))",
-            transition: "transform 400ms cubic-bezier(0.16, 1, 0.3, 1)",
-          }}
-        >
-          sebbot
-        </div>
-      </motion.div>
-      <motion.div
-        layout
-        transition={LABEL_SPRING}
-        style={{ ...textStyle, flex: compact ? undefined : 1, minWidth: 0 }}
-      >
-        {body}
-      </motion.div>
-    </motion.div>
+        sebbot
+      </div>
+      <div style={{ ...textStyle, flex: 1, minWidth: 0 }}>{body}</div>
+    </div>
   );
 });

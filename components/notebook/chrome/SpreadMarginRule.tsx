@@ -1,18 +1,17 @@
 "use client";
 
 /**
- * Vertical red margin rule at the chat/content seam in split view.
- * Double-rule styling (pair of thin red lines) matches the classic
- * notebook margin treatment used by the standalone Paper component.
- * Spans the full viewport height; pointer-events: none.
+ * Vertical red margin rule at the chat-sidebar / content seam on content
+ * pages. Double-rule styling (pair of thin red lines) matches the classic
+ * notebook margin treatment on Paper. Spans the full viewport height.
+ * Always visible — each content page is a static composition (no
+ * sidebar-shrink animation to coordinate with), so no fade needed.
  */
 export function SpreadMarginRule({
   leftPct,
-  visible,
 }: {
   /** Horizontal position as a viewport percentage, e.g. 28. */
   leftPct: number;
-  visible: boolean;
 }) {
   return (
     <div
@@ -25,15 +24,6 @@ export function SpreadMarginRule({
         width: 4,
         pointerEvents: "none",
         zIndex: 3,
-        opacity: visible ? 1 : 0,
-        // Open: hold until chat has finished its spring retraction
-        // (~700ms) so the rule settles in at the seam right as chat
-        // lands — not floating in over a still-shrinking column.
-        // Close: fade out first thing — rule needs to be gone before
-        // the page starts swinging through its space during flip-out.
-        transition: visible
-          ? "opacity 250ms cubic-bezier(0.16, 1, 0.3, 1) 700ms"
-          : "opacity 250ms cubic-bezier(0.16, 1, 0.3, 1)",
         backgroundImage: `linear-gradient(to right,
           rgba(220, 38, 38, 0.16) 0,
           rgba(220, 38, 38, 0.16) 1px,
