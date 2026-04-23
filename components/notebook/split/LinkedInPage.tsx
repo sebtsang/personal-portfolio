@@ -35,24 +35,25 @@ const POSTS: Post[] = [
   {
     url: "https://www.linkedin.com/posts/sebtsang_ai-is-gonna-take-your-job-so-i-spent-700-activity-7450181201467904000-oedN",
     heroSrc: "/linkedin/post3.png",
-    caption: "$700 Mac mini vs AI",
+    caption: "I spent $700 on a Mac Mini",
     rotation: -2,
   },
   {
     url: "https://www.linkedin.com/posts/sebtsang_i-went-from-0-interviews-to-30-in-3-months-activity-7443285695604887552-x8in",
     heroSrc: "/linkedin/post4.png",
-    caption: "0 → 30 interviews",
+    caption: "lessons from 30 interviews",
     rotation: 3,
   },
   {
     url: "https://www.linkedin.com/posts/sebtsang_i-stood-in-the-corner-of-a-networking-event-activity-7440751557433802752-UDCV",
     heroSrc: "/linkedin/post5.png",
-    caption: "networking in the corner",
+    caption: "stood in the corner of a networking event",
     rotation: -4,
   },
 ];
 
-const CARD_WIDTH = 380;
+const CARD_WIDTH = 475;
+const CARD_HEIGHT = 550;
 
 export function LinkedInPage({ onClose }: { onClose: () => void }) {
   const [index, setIndex] = useState(0);
@@ -168,11 +169,11 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
           style={{
             position: "relative",
             flex: 1,
-            minHeight: 480,
+            minHeight: 600,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 24,
+            gap: 60,
           }}
         >
           <NavArrow direction="prev" onClick={prev} />
@@ -181,7 +182,7 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
             style={{
               position: "relative",
               width: CARD_WIDTH,
-              height: 440,
+              height: CARD_HEIGHT,
               perspective: "1800px",
             }}
           >
