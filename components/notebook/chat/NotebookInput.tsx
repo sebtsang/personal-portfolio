@@ -63,8 +63,13 @@ export function NotebookInput({
     >
       <div
         style={{
-          paddingLeft: compact ? "calc(12% + var(--pad-content-sm))" : "calc(12% + var(--pad-content))",
-          paddingRight: compact ? "6%" : "8%",
+          // vw (viewport-relative) rather than % (container-relative)
+          // so the values stay stable through the chat column's Framer
+          // layout FLIP — see NotebookMessage for the full rationale.
+          paddingLeft: compact
+            ? "calc(3.36vw + var(--pad-content-sm))"
+            : "calc(12vw + var(--pad-content))",
+          paddingRight: compact ? "1.68vw" : "8vw",
           pointerEvents: "auto",
         }}
       >

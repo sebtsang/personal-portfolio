@@ -38,12 +38,15 @@ const PAGE_CLOSE_SPRING = {
 };
 const PAGE_CLOSE_OPACITY_MS = 500;
 const PAGE_CLOSE_OPACITY_DELAY_S = 0.15;
+// Chat expand delay overlaps ~300ms with the end of the page flip-out
+// (which settles ~700ms). Chat starts expanding while page is still at
+// ~rotateY(80°), both phases running together for 300ms → total ~1050ms.
 const CHAT_CLOSE_SPRING = {
   type: "spring" as const,
   stiffness: 140,
   damping: 24,
   mass: 0.8,
-  delay: 0.75,
+  delay: 0.4,
 };
 
 const SWITCH_MS = 300;
@@ -67,8 +70,9 @@ type NonEmptyKind = Exclude<StageView["kind"], "empty">;
  *   settle, no visible overshoot. Total ~1.3s.
  * - Switching between open pages: horizontal slide (300ms) — new page
  *   slides in from the right, old slides out to the left.
- * - Closing: reversed ceremony — right page springs out first (~900ms),
- *   then chat column expands (delay 750ms, spring ~650ms). Total ~1.4s.
+ * - Closing: reversed ceremony — right page springs out (~700ms),
+ *   chat column expansion overlaps starting at 400ms (~300ms overlap).
+ *   Total ~1.05s.
  */
 export function SplitView({
   isSplit,
@@ -123,19 +127,26 @@ export function SplitView({
         perspectiveOrigin: `${SEAM_PCT}% 50%`,
       }}
     >
-      {/* Chat — left page. Spring both directions; close is delayed
-          so the right page flips out first (reversed open ceremony). */}
+      {/* Chat — left page. Uses Framer `layout` (FLIP) instead of
+          `animate={{ width }}`. Why: animating `width` per-frame forced
+          text inside to re-wrap every frame as line-width changed (900px
+          → 400px), producing the "up then down" reflow hitch. With
+          `layout`, DOM width snaps to final at t=0, so text wraps at its
+          final width throughout; Framer bridges the visual size change
+          via GPU-composited scale transform. Text positions are stable,
+          motion is pure transform, and the spring timing still controls
+          the animation via `transition`. */}
       <motion.div
-        initial={false}
-        animate={{ width: isSplit ? `${SEAM_PCT}%` : "100%" }}
+        layout
         transition={isSplit ? CHAT_OPEN_SPRING : CHAT_CLOSE_SPRING}
         style={{
           position: "absolute",
           top: 0,
           bottom: 0,
           left: 0,
+          width: isSplit ? `${SEAM_PCT}%` : "100%",
           overflow: "hidden",
-          willChange: "width",
+          willChange: "transform",
           zIndex: 2,
         }}
       >

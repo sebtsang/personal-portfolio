@@ -35,8 +35,14 @@ export const WritingIndicator = memo(function WritingIndicator({
 
   const fontSize = compact ? "var(--fs-script)" : "var(--fs-body)";
   const lineHeight = "var(--line)";
-  const paddingLeft = compact ? "calc(12% + var(--pad-content-sm))" : "calc(12% + var(--pad-content))";
-  const paddingRight = compact ? "6%" : "8%";
+  // vw rather than container-% so Framer's `layout` FLIP (which snaps
+  // chat column DOM width at t=0) doesn't shift padding values and
+  // trigger a phantom pre-motion on labels. See NotebookMessage for
+  // the full rationale.
+  const paddingLeft = compact
+    ? "calc(3.36vw + var(--pad-content-sm))"
+    : "calc(12vw + var(--pad-content))";
+  const paddingRight = compact ? "1.68vw" : "8vw";
 
   const labelStyle: React.CSSProperties = {
     fontFamily: "var(--font-mono)",
@@ -72,12 +78,11 @@ export const WritingIndicator = memo(function WritingIndicator({
     </>
   );
 
-  // Unified structure — see NotebookMessage for the same pattern + full
-  // rationale on the translateY / lineHeight tweaks in inline mode.
+  // Only label has `layout`; outer + text ride the chat column's
+  // transform. See NotebookMessage for the nested-FLIP-conflict
+  // rationale.
   return (
-    <motion.div
-      layout
-      transition={LABEL_SPRING}
+    <div
       style={{
         paddingLeft,
         paddingRight,
@@ -85,7 +90,6 @@ export const WritingIndicator = memo(function WritingIndicator({
         flexDirection: compact ? "column" : "row",
         alignItems: compact ? "flex-start" : "baseline",
         gap: compact ? 0 : 12,
-        willChange: "transform",
       }}
     >
       <motion.div
@@ -96,6 +100,7 @@ export const WritingIndicator = memo(function WritingIndicator({
           lineHeight: compact ? "var(--line)" : 1,
           flexShrink: 0,
           width: compact ? "auto" : 64,
+          willChange: "transform",
         }}
       >
         <div
@@ -109,13 +114,9 @@ export const WritingIndicator = memo(function WritingIndicator({
           sebbot
         </div>
       </motion.div>
-      <motion.div
-        layout
-        transition={LABEL_SPRING}
-        style={{ ...textStyle, flex: compact ? undefined : 1, minWidth: 0 }}
-      >
+      <div style={{ ...textStyle, flex: compact ? undefined : 1, minWidth: 0 }}>
         {body}
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 });

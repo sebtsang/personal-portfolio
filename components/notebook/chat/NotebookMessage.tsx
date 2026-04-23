@@ -78,10 +78,17 @@ export const NotebookMessage = memo(function NotebookMessage({
     maxWidth: "min(900px, 100%)",
   };
 
-  // Both modes share this padding so the label + text column starts just
-  // inside the red spread margin line.
-  const paddingLeft = compact ? "calc(12% + var(--pad-content-sm))" : "calc(12% + var(--pad-content))";
-  const paddingRight = compact ? "6%" : "8%";
+  // Both modes place content just inside the red margin rule at 12%
+  // of the chat column. Expressed in viewport units (vw) rather than
+  // container %-units so the values are stable when Framer's `layout`
+  // on the chat column snaps the DOM width at the start of a transition.
+  //   compact column = 28vw → 12% of that = 3.36vw
+  //   full column    = 100vw → 12% of that = 12vw
+  // Same for paddingRight (6% / 8% of the column).
+  const paddingLeft = compact
+    ? "calc(3.36vw + var(--pad-content-sm))"
+    : "calc(12vw + var(--pad-content))";
+  const paddingRight = compact ? "1.68vw" : "8vw";
 
   // Unified single-JSX structure: `flexDirection` drives the inline-vs-stacked
   // layout. Framer's `layout` prop measures old/new positions on each child
@@ -102,10 +109,19 @@ export const NotebookMessage = memo(function NotebookMessage({
   //   translateY(-0.19 × --line) — pushes the label off the rule so it has
   //   the same ~6px breathing room compact mode gets naturally from being
   //   on its own line-box.
+  // Only the label div gets `layout` — that's the one element that
+  // actually needs to *slide* between the inline-left slot (full) and
+  // the stacked-above slot (compact). The outer container and the text
+  // div do not use `layout`: they would each run their own independent
+  // FLIP animation that fights the chat column's parent FLIP and causes
+  // the text to visually overflow the column during the spring (the
+  // "text extends past the margin" hitch). Without `layout`, the outer
+  // and the text just ride the parent chat column's transform — their
+  // DOM sizes snap at t=400ms when `compact` flips, but at that moment
+  // the parent scale is still ~0.28, so the snapped DOM width visually
+  // stays inside the chat column throughout the spring.
   return (
-    <motion.div
-      layout
-      transition={LABEL_SPRING}
+    <div
       style={{
         paddingLeft,
         paddingRight,
@@ -113,7 +129,6 @@ export const NotebookMessage = memo(function NotebookMessage({
         flexDirection: compact ? "column" : "row",
         alignItems: compact ? "flex-start" : "baseline",
         gap: compact ? 0 : 12,
-        willChange: "transform",
       }}
     >
       <motion.div
@@ -124,6 +139,7 @@ export const NotebookMessage = memo(function NotebookMessage({
           lineHeight: compact ? "var(--line)" : 1,
           flexShrink: 0,
           width: compact ? "auto" : 64,
+          willChange: "transform",
         }}
       >
         <div
@@ -137,9 +153,7 @@ export const NotebookMessage = memo(function NotebookMessage({
           {isUser ? "you" : "sebbot"}
         </div>
       </motion.div>
-      <motion.div
-        layout
-        transition={LABEL_SPRING}
+      <div
         style={{
           ...textStyle,
           flex: compact ? undefined : 1,
@@ -147,7 +161,7 @@ export const NotebookMessage = memo(function NotebookMessage({
         }}
       >
         <HandwrittenText text={text} />
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 });

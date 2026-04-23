@@ -29,14 +29,16 @@ export function ChatPage({
   const contentRef = useRef<HTMLDivElement | null>(null);
 
   // `compact` flips instantly when isSplit flips. We pass a *delayed*
-  // version down to label/chip/label components so their motion syncs
-  // with the chat column rather than racing it:
-  //   - Open: fire immediately (0ms) so the chat column's spring retract
-  //     and the label/chip reflow move together as one motion.
-  //   - Close: hold at compact=true for 750ms so labels stay stacked
-  //     while the right page flips out; flip to false right as the chat
-  //     column begins expanding, so labels slide back to inline-left in
-  //     sync with the expansion. Mirrors the open sequence.
+  // version down to label/chip components so their motion syncs exactly
+  // with the chat column's spring rather than racing it:
+  //   - Open: fire immediately (0ms) — chat column has no delay, so both
+  //     starts fire together at t=0.
+  //   - Close: hold at compact=true for 400ms to match the chat column's
+  //     CHAT_CLOSE_SPRING delay. At t=400ms, chat column begins expanding
+  //     AND delayedCompact flips to false, so the label/chip reflow fires
+  //     at the SAME instant as the chat scale spring. With identical spring
+  //     params (stiffness 140, damping 24, mass 0.8) on both, everything
+  //     settles together around t=1050ms — no late-stage "second phase".
   //
   // We drop the old CSS transitions on padding/font-size (the `MORPH`
   // constant) entirely. Those fought Framer's layout animation —
@@ -51,7 +53,7 @@ export function ChatPage({
       setDelayedCompact(true);
       return;
     }
-    const t = window.setTimeout(() => setDelayedCompact(false), 750);
+    const t = window.setTimeout(() => setDelayedCompact(false), 400);
     return () => window.clearTimeout(t);
   }, [compact]);
 
@@ -148,15 +150,16 @@ export function ChatPage({
           style={{
             position: "relative",
             minHeight: "100%",
-            // Full mode needs space for two stacked chrome rows (back
-            // button at line 1.25, meta label at line 2.5) plus a
-            // one-line breathing gap before messages begin. Compact
-            // mode has no chrome here (split view owns its back
-            // button), so a tighter top padding is fine.
-            paddingTop: delayedCompact
-              ? "calc(var(--line) * 3)"
-              : "calc(var(--line) * 5)",
-            paddingBottom: delayedCompact ? 240 : 280,
+            // Fixed across both modes to avoid an abrupt padding snap
+            // when delayedCompact flips — that snap pushed every message
+            // up or down by 2 lines (64px), competing with the Framer
+            // layout animations on each message and producing a
+            // perceived "up-then-down" hitch. Full mode needs 5 lines
+            // for the back button + meta label + breathing gap; compact
+            // inherits the same and just has extra top breathing room,
+            // which is cosmetically neutral.
+            paddingTop: "calc(var(--line) * 5)",
+            paddingBottom: 280,
             // Ruled lines tile across the full scroll height so they
             // travel with the content. Formula from globals.css so every
             // ruled surface shares one baseline-anchored offset.
