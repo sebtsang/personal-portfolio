@@ -1,6 +1,6 @@
 "use client";
 
-import { useDeferredValue, useEffect, useRef } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { CoverBackButton } from "../chrome/CoverBackButton";
 import { NotebookInput } from "./NotebookInput";
 import { NotebookMessage, type ChatRole } from "./NotebookMessage";
@@ -27,6 +27,33 @@ export function ChatPage({
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
+
+  // `compact` flips instantly when isSplit flips. We pass a *delayed*
+  // version down to label/chip/label components so their motion syncs
+  // with the chat column rather than racing it:
+  //   - Open: fire immediately (0ms) so the chat column's spring retract
+  //     and the label/chip reflow move together as one motion.
+  //   - Close: hold at compact=true for 750ms so labels stay stacked
+  //     while the right page flips out; flip to false right as the chat
+  //     column begins expanding, so labels slide back to inline-left in
+  //     sync with the expansion. Mirrors the open sequence.
+  //
+  // We drop the old CSS transitions on padding/font-size (the `MORPH`
+  // constant) entirely. Those fought Framer's layout animation —
+  // re-rasterizing text at intermediate font sizes every frame while
+  // Framer applied scale transforms on top. Result was per-character
+  // jitter. Now Framer's `layout` alone drives the motion via transform,
+  // and text renders at its final size throughout — pure GPU-composited
+  // smoothness.
+  const [delayedCompact, setDelayedCompact] = useState(compact);
+  useEffect(() => {
+    if (compact) {
+      setDelayedCompact(true);
+      return;
+    }
+    const t = window.setTimeout(() => setDelayedCompact(false), 750);
+    return () => window.clearTimeout(t);
+  }, [compact]);
 
   // Deferred render for the messages list. When useChat streams in
   // tokens (arriving 20-100/s), React would normally re-render the
@@ -126,10 +153,10 @@ export function ChatPage({
             // one-line breathing gap before messages begin. Compact
             // mode has no chrome here (split view owns its back
             // button), so a tighter top padding is fine.
-            paddingTop: compact
+            paddingTop: delayedCompact
               ? "calc(var(--line) * 3)"
               : "calc(var(--line) * 5)",
-            paddingBottom: compact ? 240 : 280,
+            paddingBottom: delayedCompact ? 240 : 280,
             // Ruled lines tile across the full scroll height so they
             // travel with the content. Formula from globals.css so every
             // ruled surface shares one baseline-anchored offset.
@@ -140,8 +167,8 @@ export function ChatPage({
               back button on its own row at the top, meta label below.
               Only shows in full mode; compact (split view) has its own
               PageBackButton inside SplitView. */}
-          {!compact && <CoverBackButton />}
-          {!compact && (
+          {!delayedCompact &&<CoverBackButton />}
+          {!delayedCompact &&(
             <div
               style={{
                 position: "absolute",
@@ -165,7 +192,7 @@ export function ChatPage({
           )}
 
           {/* Corner doodle — a small curve in the top right */}
-          {!compact && (
+          {!delayedCompact &&(
             <svg
               aria-hidden
               style={{
@@ -196,7 +223,7 @@ export function ChatPage({
                 text={m.text}
                 role={m.role}
                 idx={i}
-                compact={compact}
+                compact={delayedCompact}
               />
             </div>
           ))}
@@ -206,7 +233,7 @@ export function ChatPage({
               {messages.length > 0 && (
                 <div style={{ height: "var(--line)" }} />
               )}
-              <WritingIndicator compact={compact} />
+              <WritingIndicator compact={delayedCompact} />
             </>
           )}
         </div>
@@ -214,7 +241,7 @@ export function ChatPage({
 
       <NotebookInput
         onSubmit={onSubmit}
-        compact={compact}
+        compact={delayedCompact}
         autoFocus={autoFocus}
         // Show the prompt chips only on the empty-chat state
         // (before any user message). After that, they'd compete with

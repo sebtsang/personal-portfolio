@@ -1,7 +1,17 @@
 "use client";
 
 import { memo } from "react";
+import { motion } from "framer-motion";
 import { HandwrittenText } from "../primitives/HandwrittenText";
+
+// Shared spring so sender labels glide between inline-left and
+// stacked-above with the same physics as the chat retract.
+const LABEL_SPRING = {
+  type: "spring" as const,
+  stiffness: 140,
+  damping: 24,
+  mass: 0.8,
+};
 
 export type ChatRole = "user" | "assistant";
 
@@ -62,7 +72,10 @@ export const NotebookMessage = memo(function NotebookMessage({
     // Wrap at word boundaries only — never split a word mid-line.
     wordBreak: "normal",
     overflowWrap: "normal",
-    maxWidth: compact ? "100%" : "clamp(560px, 50vw, 900px)",
+    // Single expression that naturally adapts to container width: caps
+    // at 900px when there's room (home), shrinks to 100% of column in
+    // split. No compact branching = no reflow snap at t=0.
+    maxWidth: "min(900px, 100%)",
   };
 
   // Both modes share this padding so the label + text column starts just
@@ -70,60 +83,71 @@ export const NotebookMessage = memo(function NotebookMessage({
   const paddingLeft = compact ? "calc(12% + var(--pad-content-sm))" : "calc(12% + var(--pad-content))";
   const paddingRight = compact ? "6%" : "8%";
 
-  if (compact) {
-    return (
-      <div style={{ paddingLeft, paddingRight }}>
-        <div style={{ ...labelStyle, marginBottom: 0 }}>
-          {isUser ? "you" : "sebbot"}
-        </div>
-        <div style={textStyle}>
-          <HandwrittenText text={text} />
-        </div>
-      </div>
-    );
-  }
-
-  // Home mode: label inline, fixed-width column; text fills the rest.
+  // Unified single-JSX structure: `flexDirection` drives the inline-vs-stacked
+  // layout. Framer's `layout` prop measures old/new positions on each child
+  // div and animates the delta via transform (FLIP) — the sender label
+  // visibly slides between its inline-left slot and the stacked-above slot,
+  // matching the chat-retract spring for one cohesive motion.
   //
-  // lineHeight:1 on the label: flex baseline alignment measures each
-  // item's line-box ascent+descent. A mono label with lineHeight:var(--line)
-  // has more leading below its baseline than Caveat body does, which
-  // inflates the row ~6px past --line and drifts every subsequent
-  // message off the ruled grid. Collapsing the label's line-box to its
-  // text lets Caveat's descent win and the row stays exactly --line tall.
+  // translateY on the label in full mode: see rationale below. In compact
+  // mode it's cleared so the label sits naturally above the text. The
+  // transform lives on an inner `<div>` (not the motion.div) because
+  // Framer manages transform on the outer layer during layout animation.
   //
-  // translateY on the label: without it, the label's baseline sits flush
-  // on the rule (shared with body baseline via flex), which reads as
-  // "label glued to the rule". Compact mode gets ~6px of breathing
-  // room for free because the label lives on its own line-box and its
-  // baseline (mono, ~0.57 of --line) is above the rule (at 0.76). We
-  // mimic that here by translating the label up by 0.19 × --line, the
-  // same fractional offset. Body position is untouched; transform is
-  // purely visual.
+  // Full-mode label details:
+  //   lineHeight:1 — flex baseline alignment measures each item's line-box
+  //   ascent+descent; a mono label with lineHeight:var(--line) inflates the
+  //   row ~6px and drifts messages off the ruled grid. lineHeight:1 keeps
+  //   the row exactly --line tall.
+  //   translateY(-0.19 × --line) — pushes the label off the rule so it has
+  //   the same ~6px breathing room compact mode gets naturally from being
+  //   on its own line-box.
   return (
-    <div
+    <motion.div
+      layout
+      transition={LABEL_SPRING}
       style={{
         paddingLeft,
         paddingRight,
         display: "flex",
-        alignItems: "baseline",
-        gap: 12,
+        flexDirection: compact ? "column" : "row",
+        alignItems: compact ? "flex-start" : "baseline",
+        gap: compact ? 0 : 12,
+        willChange: "transform",
       }}
     >
-      <div
+      <motion.div
+        layout
+        transition={LABEL_SPRING}
         style={{
           ...labelStyle,
-          lineHeight: 1,
+          lineHeight: compact ? "var(--line)" : 1,
           flexShrink: 0,
-          width: 64,
-          transform: "translateY(calc(var(--line) * -0.19))",
+          width: compact ? "auto" : 64,
         }}
       >
-        {isUser ? "you" : "sebbot"}
-      </div>
-      <div style={{ ...textStyle, flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            transform: compact
+              ? "none"
+              : "translateY(calc(var(--line) * -0.19))",
+            transition: "transform 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        >
+          {isUser ? "you" : "sebbot"}
+        </div>
+      </motion.div>
+      <motion.div
+        layout
+        transition={LABEL_SPRING}
+        style={{
+          ...textStyle,
+          flex: compact ? undefined : 1,
+          minWidth: 0,
+        }}
+      >
         <HandwrittenText text={text} />
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 });

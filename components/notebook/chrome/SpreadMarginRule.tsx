@@ -26,7 +26,14 @@ export function SpreadMarginRule({
         pointerEvents: "none",
         zIndex: 3,
         opacity: visible ? 1 : 0,
-        transition: "opacity 700ms cubic-bezier(0.16, 1, 0.3, 1)",
+        // Open: hold until chat has finished its spring retraction
+        // (~700ms) so the rule settles in at the seam right as chat
+        // lands — not floating in over a still-shrinking column.
+        // Close: fade out first thing — rule needs to be gone before
+        // the page starts swinging through its space during flip-out.
+        transition: visible
+          ? "opacity 250ms cubic-bezier(0.16, 1, 0.3, 1) 700ms"
+          : "opacity 250ms cubic-bezier(0.16, 1, 0.3, 1)",
         backgroundImage: `linear-gradient(to right,
           rgba(220, 38, 38, 0.16) 0,
           rgba(220, 38, 38, 0.16) 1px,

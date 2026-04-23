@@ -1,8 +1,16 @@
 "use client";
 
 import { memo, useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 const CYCLE_MS = 450;
+
+const LABEL_SPRING = {
+  type: "spring" as const,
+  stiffness: 140,
+  damping: 24,
+  mass: 0.8,
+};
 
 /**
  * Pseudo-message rendered while SebBot is streaming. Matches the
@@ -64,41 +72,50 @@ export const WritingIndicator = memo(function WritingIndicator({
     </>
   );
 
-  if (compact) {
-    return (
-      <div style={{ paddingLeft, paddingRight }}>
-        <div style={labelStyle}>sebbot</div>
-        <div style={textStyle}>{body}</div>
-      </div>
-    );
-  }
-
+  // Unified structure — see NotebookMessage for the same pattern + full
+  // rationale on the translateY / lineHeight tweaks in inline mode.
   return (
-    <div
+    <motion.div
+      layout
+      transition={LABEL_SPRING}
       style={{
         paddingLeft,
         paddingRight,
         display: "flex",
-        alignItems: "baseline",
-        gap: 12,
+        flexDirection: compact ? "column" : "row",
+        alignItems: compact ? "flex-start" : "baseline",
+        gap: compact ? 0 : 12,
+        willChange: "transform",
       }}
     >
-      {/* lineHeight + translateY: see NotebookMessage home-mode for the
-          full rationale. lineHeight:1 keeps the row exactly --line tall;
-          translateY(-0.19 × --line) pushes the label off the rule so it
-          has the same visual breathing room compact mode gets naturally. */}
-      <div
+      <motion.div
+        layout
+        transition={LABEL_SPRING}
         style={{
           ...labelStyle,
-          lineHeight: 1,
+          lineHeight: compact ? "var(--line)" : 1,
           flexShrink: 0,
-          width: 64,
-          transform: "translateY(calc(var(--line) * -0.19))",
+          width: compact ? "auto" : 64,
         }}
       >
-        sebbot
-      </div>
-      <div style={{ ...textStyle, flex: 1, minWidth: 0 }}>{body}</div>
-    </div>
+        <div
+          style={{
+            transform: compact
+              ? "none"
+              : "translateY(calc(var(--line) * -0.19))",
+            transition: "transform 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        >
+          sebbot
+        </div>
+      </motion.div>
+      <motion.div
+        layout
+        transition={LABEL_SPRING}
+        style={{ ...textStyle, flex: compact ? undefined : 1, minWidth: 0 }}
+      >
+        {body}
+      </motion.div>
+    </motion.div>
   );
 });
