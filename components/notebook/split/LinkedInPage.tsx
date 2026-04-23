@@ -52,8 +52,8 @@ const POSTS: Post[] = [
   },
 ];
 
-const CARD_WIDTH = 475;
-const CARD_HEIGHT = 550;
+const CARD_WIDTH = 400;
+const CARD_HEIGHT = 460;
 
 export function LinkedInPage({ onClose }: { onClose: () => void }) {
   const [index, setIndex] = useState(0);
@@ -168,8 +168,13 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
         <div
           style={{
             position: "relative",
-            flex: 1,
-            minHeight: 600,
+            // Snap to baseline grid so the indicator below lands on a
+            // rule. 17 × --line ≈ 476–680px across the fluid range,
+            // which comfortably contains the 460px card. flexShrink: 0
+            // keeps the carousel at its specified height inside the
+            // flex column.
+            height: "calc(var(--line) * 17)",
+            flexShrink: 0,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -210,19 +215,17 @@ export function LinkedInPage({ onClose }: { onClose: () => void }) {
         {/* Position indicator */}
         <div
           style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "var(--fs-hint)",
-            letterSpacing: "0.25em",
-            textTransform: "uppercase",
-            color:
-              "color-mix(in srgb, var(--color-ink-soft) 55%, transparent)",
+            fontFamily: "var(--font-script)",
+            fontSize: "var(--fs-script)",
+            color: "var(--color-ink-soft)",
+            opacity: 0.75,
             textAlign: "center",
             marginTop: "var(--line)",
             lineHeight: "var(--line)",
           }}
         >
-          {String(index + 1).padStart(2, "0")} / {String(POSTS.length).padStart(2, "0")}
-          <span style={{ marginLeft: 16, opacity: 0.7 }}>
+          {index + 1} / {POSTS.length}
+          <span style={{ marginLeft: 16, opacity: 0.75 }}>
             ← → to flip
           </span>
         </div>
