@@ -253,37 +253,16 @@
   }
 }
 
-/* LinkedIn dealt-deck — each card first fades in at its above-the-stack
-   starting position (0–20%, easing-out so the appearance feels soft) and
-   then drops into place over the remaining 80%. The fade + fall split
-   produces the "appear, then fall" sequence — the card is literally not
-   visible on the page until its turn in the stagger comes up. */
+/* LinkedIn dealt-deck — each card fades in at its final stacked position,
+   one at a time in back-to-front order. Pure opacity animation — no drop
+   motion, no tape-pop ceremony. The tape strip is a static child of the
+   card, so its opacity inherits from this wrapper's fade. */
 @keyframes linkedinCardDrop {
-  0% {
-    opacity: 0;
-    transform: translateY(-280px);
-  }
-  20% {
-    opacity: 1;
-    transform: translateY(-280px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* LinkedIn tape strip pops on after its card lands. The final
-   translateX(-50%) rotate(-4deg) is preserved so the scale happens
-   around the tape's settled position. */
-@keyframes linkedinTapePop {
   from {
     opacity: 0;
-    transform: translateX(-50%) rotate(-4deg) scale(0.7);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) rotate(-4deg) scale(1);
   }
 }
 

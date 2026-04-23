@@ -59,18 +59,22 @@ const POSTS: Post[] = [
 const CARD_WIDTH = 400;
 const CARD_HEIGHT = 460;
 
-// Drop-animation timing. Deepest cards (absOff=2) land first, active
-// card last. Each drop is 500ms; staggered by 200ms per step. Tape
-// strip on each card pops on 40ms AFTER its card lands so the "tape
-// affixes" beat reads visibly.
-const CARD_DROP_MS = 500;
-const CARD_STAGGER_MS = 200;
-const TAPE_POP_MS = 180;
-const TAPE_AFTER_LAND_MS = 40;
+// Fade-in choreography: each card appears in place, strictly one at a
+// time, back-to-front with a left-then-right tiebreak within each depth.
+// 5 slots × 250ms stagger + 500ms fade = ~1.5s total timeline.
+const CARD_FADE_MS = 500;
+const CARD_STAGGER_MS = 250;
 
-function cardDropDelay(absOffset: number): number {
-  // absOffset 2 → 0ms, 1 → 200ms, 0 (active) → 400ms.
-  return (2 - Math.min(absOffset, 2)) * CARD_STAGGER_MS;
+function cardFadeDelay(offset: number): number {
+  // Slot by depth (deepest first), with left (negative offset) before
+  // right (positive offset) within the same depth:
+  //   offset=-2 → 0ms      offset=+2 → 250ms
+  //   offset=-1 → 500ms    offset=+1 → 750ms
+  //   offset= 0 → 1000ms
+  const absOff = Math.abs(offset);
+  const base = (2 - Math.min(absOff, 2)) * CARD_STAGGER_MS * 2;
+  const sideBump = absOff > 0 && offset > 0 ? CARD_STAGGER_MS : 0;
+  return base + sideBump;
 }
 
 export function LinkedInPage({
@@ -221,22 +225,21 @@ export function LinkedInPage({
             {POSTS.map((post, i) => {
               const offset = computeOffset(i, index, POSTS.length);
               const absOff = Math.abs(offset);
-              const dropDelay = cardDropDelay(absOff);
-              const tapeDelay = dropDelay + CARD_DROP_MS + TAPE_AFTER_LAND_MS;
-              // z-index lives on the wrapper (not on PostCard), because
-              // the wrapper's drop animation gives it a transform → new
-              // stacking context. Without this, PostCard's z-index is
-              // trapped inside that context and siblings can't compete.
+              const fadeDelay = cardFadeDelay(offset);
+              // z-index lives on the wrapper (not on PostCard). The
+              // wrapper's opacity animation creates a stacking context
+              // while playing (opacity < 1), so without this the
+              // PostCard's own z-index would be trapped inside and
+              // siblings couldn't compete for stacking order.
               return (
-                <CardDropWrapper
+                <CardFadeWrapper
                   key={`${sessionKey}-${post.url}`}
-                  delayMs={dropDelay}
+                  delayMs={fadeDelay}
                   zIndex={10 - absOff}
                 >
                   <PostCard
                     post={post}
                     offset={offset}
-                    tapeDelayMs={tapeDelay}
                     onClick={() => {
                       // If clicking a non-top card, bring it to front
                       // rather than opening immediately — feels like
@@ -248,7 +251,7 @@ export function LinkedInPage({
                       return true;
                     }}
                   />
-                </CardDropWrapper>
+                </CardFadeWrapper>
               );
             })}
           </div>
@@ -281,20 +284,19 @@ export function LinkedInPage({
   );
 }
 
-// ── Card drop wrapper ─────────────────────────────────────────────────
+// ── Card fade wrapper ─────────────────────────────────────────────────
 
-/** Absolute-positioned wrapper that plays the drop keyframe (fade in at
- *  translateY(-280px), then fall to translateY(0) with slight overshoot)
- *  on mount. Pauses while the host page is held via PageAnimateContext;
- *  resumes once the flip-in lands so the dealt-deck stagger begins from
- *  a visible starting frame.
+/** Absolute-positioned wrapper that fades a card in at its final stacked
+ *  position on mount. Pauses while the host page is held via
+ *  PageAnimateContext; resumes once the flip-in lands so the
+ *  back-to-front stagger begins from a visible starting frame.
  *
  *  Animation properties are set as longhand (animationName, -Duration,
  *  etc.) rather than the `animation` shorthand, because mixing the
  *  shorthand with `animationPlayState` makes React warn about style
  *  conflicts — the shorthand resets animation-play-state on every
  *  render, which races with the longhand. */
-function CardDropWrapper({
+function CardFadeWrapper({
   delayMs,
   zIndex,
   children,
@@ -311,8 +313,8 @@ function CardDropWrapper({
         inset: 0,
         zIndex,
         animationName: "linkedinCardDrop",
-        animationDuration: `${CARD_DROP_MS}ms`,
-        animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+        animationDuration: `${CARD_FADE_MS}ms`,
+        animationTimingFunction: "ease-out",
         animationDelay: `${delayMs}ms`,
         animationFillMode: "both",
         animationPlayState: pageAnimate ? "running" : "paused",
@@ -342,18 +344,13 @@ function computeOffset(i: number, current: number, total: number): number {
 function PostCard({
   post,
   offset,
-  tapeDelayMs,
   onClick,
 }: {
   post: Post;
   offset: number;
-  /** When the tape strip on this card should pop on — delay relative to
-   *  the page's PageAnimate=true moment. */
-  tapeDelayMs: number;
   /** Returns true to allow the link navigation, false to intercept. */
   onClick: () => boolean;
 }) {
-  const pageAnimate = usePageAnimate();
   const isActive = offset === 0;
   const absOff = Math.abs(offset);
 
@@ -470,8 +467,8 @@ function PostCard({
         </div>
       </div>
 
-      {/* Tape strip along the top — pops on after the card lands
-          (scales 0.7 → 1 with a slight overshoot, opacity 0 → 1). */}
+      {/* Tape strip along the top — static; opacity is inherited from the
+          CardFadeWrapper's fade so it appears together with its card. */}
       <div
         aria-hidden
         style={{
@@ -483,12 +480,7 @@ function PostCard({
           background: "rgba(200, 230, 240, 0.55)",
           border: "1px solid rgba(0, 80, 120, 0.08)",
           backdropFilter: "blur(1px)",
-          animationName: "linkedinTapePop",
-          animationDuration: `${TAPE_POP_MS}ms`,
-          animationTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-          animationDelay: `${tapeDelayMs}ms`,
-          animationFillMode: "both",
-          animationPlayState: pageAnimate ? "running" : "paused",
+          transform: "translateX(-50%) rotate(-4deg)",
         }}
       />
     </a>
