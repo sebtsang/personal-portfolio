@@ -428,6 +428,23 @@ export function NotebookShell({
 
     setPendingKind(targetKind);
 
+    // Bump the destination's session counter NOW (before the flip paints),
+    // not at flip-end. The destination is already mounted with its
+    // polaroids/stickers at the opacity-1 end-state of its previous visit.
+    // Once we snap it to 0° for the forward flip, those stale elements
+    // would show through — the user sees them appear, then disappear when
+    // the (previously flip-end) remount resets them to opacity 0, then
+    // fade back in. Bumping here makes the remount happen before paint:
+    // destination becomes visible at opacity 0 already, no leak-through.
+    // Combined with animate=false until readyKinds updates at flip-end,
+    // gated reveal primitives (Sticker, HandwrittenText, DrawnText, plus
+    // PolaroidFrame / MarginNote with the same gating) stay held at the
+    // opening frame throughout the flip, then cascade in at flip-end.
+    setSessionKeys((prev) => ({
+      ...prev,
+      [targetKind]: (prev[targetKind] ?? 0) + 1,
+    }));
+
     // Ensure destination is mounted.
     setMountedKinds((prev) => {
       if (prev.has(targetKind)) return prev;
@@ -510,14 +527,11 @@ export function NotebookShell({
         next.add(dest);
         return next;
       });
-      // Bump the destination's session counter so its reveal primitives
-      // remount via their React keys and replay the CSS animations.
-      // Every navigation to a page — first visit or revisit — fires its
-      // animations fresh.
-      setSessionKeys((prev) => ({
-        ...prev,
-        [dest]: (prev[dest] ?? 0) + 1,
-      }));
+      // Session counter is bumped at flip-start (in the view-change
+      // effect), not here. Bumping at flip-end left a visible frame of
+      // stale (opacity 1) polaroids / stickers from the previous visit
+      // while the flip was in progress, which would then "disappear"
+      // at flip-end and fade back in.
     },
     [pendingKind],
   );

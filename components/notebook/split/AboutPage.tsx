@@ -572,6 +572,7 @@ function PolaroidFrame({
   polaroid: Polaroid;
   delayMs: number;
 }) {
+  const pageAnimate = usePageAnimate();
   const [hover, setHover] = useState(false);
   const [dragging, setDragging] = useState(false);
   // Null until the user drags → then absolute (x, y) in the content
@@ -641,7 +642,14 @@ function PolaroidFrame({
           hover || dragging
             ? "drop-shadow(8px 14px 22px rgba(0,0,0,0.28))"
             : "drop-shadow(3px 6px 10px rgba(0,0,0,0.18))",
-        animation: `fadeIn 0.8s ease ${delayMs}ms both`,
+        // Longhand props so animationPlayState can gate the fade on
+        // pageAnimate without mixing with the `animation` shorthand.
+        animationName: "fadeIn",
+        animationDuration: "0.8s",
+        animationTimingFunction: "ease",
+        animationDelay: `${delayMs}ms`,
+        animationFillMode: "both",
+        animationPlayState: pageAnimate ? "running" : "paused",
         cursor: dragging ? "grabbing" : "grab",
         zIndex: dragging ? 10 : 3,
         userSelect: "none",
@@ -740,6 +748,7 @@ function MarginNote({
   rotate: number;
   delayMs: number;
 }) {
+  const pageAnimate = usePageAnimate();
   return (
     <div
       aria-hidden
@@ -757,7 +766,12 @@ function MarginNote({
         whiteSpace: "pre-line",
         pointerEvents: "none",
         maxWidth: 120,
-        animation: `fadeIn 0.9s ease ${delayMs}ms both`,
+        animationName: "fadeIn",
+        animationDuration: "0.9s",
+        animationTimingFunction: "ease",
+        animationDelay: `${delayMs}ms`,
+        animationFillMode: "both",
+        animationPlayState: pageAnimate ? "running" : "paused",
         zIndex: 2,
       }}
     >
