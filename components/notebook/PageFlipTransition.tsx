@@ -4,7 +4,9 @@ import type { ReactNode } from "react";
 
 /**
  * Right-bound book-page flip: the landing page rotates around the left spine
- * (rotateY, transform-origin at left-center). 1.1s, cubic-bezier(0.76, 0, 0.24, 1).
+ * (rotateY, transform-origin at left-center). Asymmetric timing:
+ *   opening: 1200ms, cubic-bezier(0.76, 0, 0.24, 1)   — eager reveal
+ *   closing: 1700ms, cubic-bezier(0.32, 0.72, 0.18, 1) — hand-lowered, settles flat
  *
  * Uses plain CSS transitions (not framer-motion) so that onTransitionEnd
  * fires reliably — the shell uses it to drop the landing layer.
@@ -57,7 +59,10 @@ export function PageFlipTransition({
         transformStyle: "preserve-3d",
         transformOrigin: "left center",
         transform: `rotateY(${angleDeg}deg)`,
-        transition: "transform 1100ms cubic-bezier(0.76, 0, 0.24, 1)",
+        transition:
+          direction === "closing"
+            ? "transform 1700ms cubic-bezier(0.32, 0.72, 0.18, 1)"
+            : "transform 1200ms cubic-bezier(0.76, 0, 0.24, 1)",
         willChange: "transform",
         zIndex: 20,
       }}

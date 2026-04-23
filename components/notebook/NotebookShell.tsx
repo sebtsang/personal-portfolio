@@ -61,7 +61,8 @@ function rateLimitReply(err: unknown): string | null {
   }
 }
 
-const FLIP_MS = 1100;
+const FLIP_OPEN_MS = 1200;
+const FLIP_CLOSE_MS = 1700;
 // Must match HandwrittenText defaults so seed 2 starts after seed 1 finishes.
 // Faster per-char pacing keeps the pen-writing feel but lands total welcome
 // time at ~3.6s instead of the previous ~7s.
@@ -276,10 +277,10 @@ export function NotebookShell({
     window.setTimeout(() => {
       setShowLanding(false);
       setFlipping(false);
-    }, FLIP_MS);
+    }, FLIP_OPEN_MS);
     // Stagger seed mount so bubble 2 starts drawing only after bubble 1
     // finishes. Each bubble's draw time = chars × CHAR_DELAY + CHAR_DURATION.
-    let cumulative = FLIP_MS + 80;
+    let cumulative = FLIP_OPEN_MS + 80;
     WELCOME_BUBBLES.forEach((text, i) => {
       const mountAt = cumulative;
       window.setTimeout(
@@ -331,7 +332,7 @@ export function NotebookShell({
       if (typeof window !== "undefined") {
         window.history.pushState({}, "", "/");
       }
-    }, FLIP_MS);
+    }, FLIP_CLOSE_MS);
     return () => window.clearTimeout(id);
   }, [closing]);
 
