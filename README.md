@@ -56,9 +56,12 @@ Full dep list in [package.json](package.json).
 Caveat body, JetBrains Mono for small meta labels, Fraunces + Instrument
 Serif loaded for future display text. Every chat message reveals
 per-character with a staggered opacity fade (`HandwrittenText`
-primitive). Sizes lock to a shared 32px ruler grid, and the ruled
-lines travel with the scroll content so text never drifts between
-rules.
+primitive). Every size is fluid — the baseline grid (`--line`) and the
+full type scale (`--fs-kbd` through `--fs-display`) are `clamp()`
+tokens in [app/globals.css](app/globals.css) that interpolate between
+1280–2560px viewports, anchored so 1440p preserves the original look.
+The ruled lines travel with the scroll content so text never drifts
+between rules at any viewport size.
 
 ### Hybrid engine
 Intent-matched slash commands (`/about`, `/experience`, `/linkedin`,
@@ -211,8 +214,13 @@ Each content page is a single file under
 [components/notebook/split/](components/notebook/split/):
 
 - **About** — [AboutPage.tsx](components/notebook/split/AboutPage.tsx)
-  owns the copy (`BODY_PARAGRAPHS`), polaroid data (`POLAROIDS`),
-  margin notes, and sticker placements. Images live in
+  owns the copy (`BODY_PARAGRAPHS`), polaroid photos (`PHOTOS`) and
+  their on-page slots (`POLAROID_SLOTS`), sticker data (`STICKERS`)
+  and their slots (`STICKER_SLOTS`), plus margin notes. Polaroid and
+  sticker assignments shuffle on every mount (Fisher-Yates,
+  `shuffleIndexes()`) so each visit looks slightly different; once
+  placed, users can drag individual pieces around
+  (`PolaroidFrame` / `Sticker` own their drag state). Images live in
   `public/photos/` and `public/logos/`.
 - **Experience** —
   [ExperiencePage.tsx](components/notebook/split/ExperiencePage.tsx).
