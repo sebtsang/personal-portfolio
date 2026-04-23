@@ -9,50 +9,91 @@ import { HandwrittenText } from "../primitives/HandwrittenText";
 import { Sticker } from "../primitives/Sticker";
 
 const BODY_PARAGRAPHS = [
-  "4th-year CS at the University of Guelph, Toronto-based. I spend way too much time building AI workflows that actually ship — the kind where you replace a manual process with something you only have to fix twice a year.",
-  "Career path so far: data analyst → data engineer → AI developer → incoming AI consultant at EY. I kept picking the hardest piece of each role I could get away with, and somewhere along the way I stopped being the person writing the SQL and started being the person designing the thing that writes the SQL.",
-  "Outside of that: basketball (90% chance I smoke you), too much coffee, and an unfortunate hobby of building overengineered side projects because they're \"fun.\" This site is the latest one. Claude Code, two evenings, aggressively overengineered. That's the feature.",
+  "Obsessed with AI. In love with tech. Chronically online in the Claude and GPT corners of the internet. If I'm not building something I'm probably thinking about building it. 4th-year CS at the University of Guelph, Toronto-based.",
+  "Career path so far:\n→ data analyst\n→ data engineer\n→ AI & data developer\n→ incoming AI consultant at EY\n\nI kept trying different things until one clicked. AI was the one.",
+  "Outside of that: basketball (90% chance I smoke you), too much coffee, snowboarding, fantasy novels (The Name of the Wind is my favorite), and a cologne collection that's gotten out of hand. This site is also a side project. Claude Code, two evenings, aggressively overengineered.",
 ];
 
-type Polaroid = {
-  src: string;
-  caption: string;
-  rotation: number; // degrees
-  top: number; // px from top of content
-  right: number | string; // px or percentage from right of content area
+// Photos + slot positions split into two lists so the site can randomly
+// assign any photo to any slot on page open — same layout each time,
+// fresh placement every mount. After that, the user can drag them
+// anywhere (PolaroidFrame owns drag state).
+type Photo = { src: string; caption: string };
+type PolaroidSlot = {
+  top: number;
+  right?: number | string;
+  rotation: number;
   width: number;
 };
 
-// Polaroids spread around the page — top-right next to the greeting,
-// middle-right between paragraphs, bottom-center below all text. Varies
-// enough to feel scattered while staying clear of the body text column.
-const POLAROIDS: Polaroid[] = [
-  {
-    src: "/photos/seb-1.jpg",
-    caption: "garry point park",
-    rotation: 4.5,
-    top: 180,
-    right: 40,
-    width: 205,
-  },
-  {
-    src: "/photos/seb-2.jpg",
-    caption: "pool",
-    rotation: -7,
-    top: 640,
-    right: 180,
-    width: 190,
-  },
-  {
-    src: "/photos/seb-3.jpg",
-    caption: "cleveland dam",
-    rotation: 3,
-    top: 1200,
-    right: "30%",
-    width: 215,
-  },
+const PHOTOS: Photo[] = [
+  { src: "/photos/seb-1.jpg", caption: "garry point park" },
+  { src: "/photos/seb-2.jpg", caption: "pool" },
+  { src: "/photos/seb-3.jpg", caption: "cleveland dam" },
 ];
 
+// Slots packed closer together than before so all three are visible on
+// desktops ≥1000px tall; at smaller heights the bottom slot tucks just
+// below the fold (user said that's fine). Right column only — body text
+// flows to the left via max-width.
+const POLAROID_SLOTS: PolaroidSlot[] = [
+  { top: 130, right: 40, rotation: 4.5, width: 205 },
+  { top: 430, right: 50, rotation: -7, width: 195 },
+  { top: 740, right: 130, rotation: 3, width: 210 },
+];
+
+// Polaroid (Photo × Slot) combined shape used by PolaroidFrame. We
+// keep it structurally compatible with the pre-refactor POLAROID
+// shape so PolaroidFrame didn't need to change.
+type Polaroid = Photo & PolaroidSlot;
+
+// Stickers + slot positions, same split as polaroids: any sticker can
+// land in any slot on mount. Each sticker keeps its own visual identity
+// (size, rotation, background, icon) — the slot only provides position
+// and animation delay.
+type StickerData = {
+  size: number;
+  rotation: number;
+  background?: string;
+  icon: "coffee" | "basketball" | "lobster" | "monster";
+};
+type StickerSlot = {
+  top: number;
+  left?: number | string;
+  right?: number | string;
+  delayMs: number;
+};
+
+const STICKERS: StickerData[] = [
+  { size: 54, rotation: -10, icon: "coffee" },
+  { size: 56, rotation: 8, background: "#ffefd5", icon: "basketball" },
+  { size: 58, rotation: -6, background: "#ffe1d4", icon: "lobster" },
+  { size: 54, rotation: 12, background: "#0a0a0a", icon: "monster" },
+];
+
+const STICKER_SLOTS: StickerSlot[] = [
+  { top: 120, right: 285, delayMs: 2200 }, // top-right, near first polaroid
+  { top: 140, left: 30, delayMs: 2400 }, // top-left, above coffee margin note
+  { top: 380, right: 10, delayMs: 2600 }, // mid-right, between polaroids 1 and 2
+  { top: 540, left: 25, delayMs: 2800 }, // mid-left, below top-left
+];
+
+// Fisher-Yates over [0..n-1]. Used to randomize photo/sticker assignment
+// on mount. Runs client-side only (via useEffect) so SSR and the first
+// client paint agree on the deterministic identity order.
+function shuffleIndexes(n: number): number[] {
+  const arr = Array.from({ length: n }, (_, i) => i);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// Margin notes positioned in --line units (not viewport %) so the gap
+// between them stays consistent across viewport heights. Previously at
+// 44% / 68% of the scroll div height — at narrower windows those two
+// percentages compressed and the notes overlapped.
 const MARGIN_NOTES: Array<{
   text: string;
   top: string;
@@ -62,15 +103,15 @@ const MARGIN_NOTES: Array<{
   delayMs: number;
 }> = [
   {
-    text: "coffee ratio:\n3 : 1 on a good day",
-    top: "44%",
+    text: "coffee:\nminimum 3 cups per day",
+    top: "calc(var(--line) * 7)",
     left: "3.5%",
     rotate: -7,
     delayMs: 1800,
   },
   {
     text: "basketball:\n80-90% smoke rate",
-    top: "68%",
+    top: "calc(var(--line) * 18)",
     left: "4%",
     rotate: 5,
     delayMs: 2400,
@@ -78,6 +119,22 @@ const MARGIN_NOTES: Array<{
 ];
 
 export function AboutPage({ onClose }: { onClose: () => void }) {
+  // Randomize photo → slot and sticker → slot assignment per page open.
+  // SSR + initial client paint render the deterministic identity order
+  // (photo i in slot i, sticker i in slot i) so hydration matches;
+  // useEffect swaps in a Fisher-Yates shuffle post-mount. User drag
+  // takes over after that (PolaroidFrame / Sticker own drag state).
+  const [photoOrder, setPhotoOrder] = useState<number[]>(() =>
+    PHOTOS.map((_, i) => i),
+  );
+  const [stickerOrder, setStickerOrder] = useState<number[]>(() =>
+    STICKERS.map((_, i) => i),
+  );
+  useEffect(() => {
+    setPhotoOrder(shuffleIndexes(PHOTOS.length));
+    setStickerOrder(shuffleIndexes(STICKERS.length));
+  }, []);
+
   return (
     <div style={{ position: "absolute", inset: 0 }}>
       <Paper ruled={false} marginRule={false} />
@@ -139,10 +196,18 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
           about
         </h1>
 
-        {/* Polaroids anchored to the right, body text flows on the left */}
-        {POLAROIDS.map((p, i) => (
-          <PolaroidFrame key={p.src} polaroid={p} delayMs={1200 + i * 200} />
-        ))}
+        {/* Polaroids anchored to the right, body text flows on the left.
+            Each slot gets a photo via photoOrder (shuffled per mount). */}
+        {POLAROID_SLOTS.map((slot, slotIdx) => {
+          const photo = PHOTOS[photoOrder[slotIdx]];
+          return (
+            <PolaroidFrame
+              key={slotIdx}
+              polaroid={{ ...photo, ...slot }}
+              delayMs={1200 + slotIdx * 200}
+            />
+          );
+        })}
 
         {/* Drawn-in greeting. Height locked to 3× the ruler pitch (96px)
             + bottom margin = 32px so the grid stays clean. */}
@@ -201,51 +266,29 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
           <MarginNote key={i} {...note} />
         ))}
 
-        {/* Stickers — all draggable, placed in page whitespace so the
-            initial positions never cover body text. Visitors can peel
-            them up and stick them wherever. */}
-        <Sticker
-          size={54}
-          rotation={-10}
-          top={70}
-          right={300}
-          delayMs={2200}
-        >
-          <CoffeeCupIcon />
-        </Sticker>
-
-        <Sticker
-          size={56}
-          rotation={8}
-          top={460}
-          right={20}
-          background="#ffefd5"
-          delayMs={2400}
-        >
-          <BasketballIcon />
-        </Sticker>
-
-        <Sticker
-          size={58}
-          rotation={-6}
-          top={880}
-          right={280}
-          background="#ffe1d4"
-          delayMs={2600}
-        >
-          <LobsterIcon />
-        </Sticker>
-
-        <Sticker
-          size={54}
-          rotation={12}
-          top={1380}
-          left="2%"
-          background="#0a0a0a"
-          delayMs={2800}
-        >
-          <MonsterIcon />
-        </Sticker>
+        {/* Stickers — all draggable, placed in whitespace so the initial
+            positions never cover body text. Each slot gets a sticker via
+            stickerOrder (shuffled per mount). */}
+        {STICKER_SLOTS.map((slot, slotIdx) => {
+          const sticker = STICKERS[stickerOrder[slotIdx]];
+          return (
+            <Sticker
+              key={slotIdx}
+              size={sticker.size}
+              rotation={sticker.rotation}
+              background={sticker.background}
+              top={slot.top}
+              left={slot.left}
+              right={slot.right}
+              delayMs={slot.delayMs}
+            >
+              {sticker.icon === "coffee" && <CoffeeCupIcon />}
+              {sticker.icon === "basketball" && <BasketballIcon />}
+              {sticker.icon === "lobster" && <LobsterIcon />}
+              {sticker.icon === "monster" && <MonsterIcon />}
+            </Sticker>
+          );
+        })}
       </div>
 
       {/* Dog-eared bottom-right corner — sits outside the scroll area so
