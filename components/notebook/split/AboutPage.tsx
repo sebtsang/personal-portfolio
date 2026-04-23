@@ -10,7 +10,7 @@ import { Sticker } from "../primitives/Sticker";
 
 const BODY_PARAGRAPHS = [
   "Obsessed with AI. In love with tech. Chronically online in the Claude and GPT corners of the internet. If I'm not building something I'm probably thinking about building it. 4th-year CS at the University of Guelph, Toronto-based.",
-  "Career path so far:\n→ data analyst\n→ data engineer\n→ AI & data developer\n→ incoming AI consultant at EY\n\nI kept trying different things until one clicked. AI was the one.",
+  "Career path so far:\n→ data analyst\n→ data engineer\n→ AI & data developer\n→ incoming AI consultant at EY\nI kept trying different things until one clicked. AI was the one.",
   "Outside of that: basketball (90% chance I smoke you), too much coffee, snowboarding, fantasy novels (The Name of the Wind is my favorite), and a cologne collection that's gotten out of hand. This site is also a side project. Claude Code, two evenings, aggressively overengineered.",
 ];
 
@@ -32,14 +32,19 @@ const PHOTOS: Photo[] = [
   { src: "/photos/seb-3.jpg", caption: "cleveland dam" },
 ];
 
-// Slots packed closer together than before so all three are visible on
-// desktops ≥1000px tall; at smaller heights the bottom slot tucks just
-// below the fold (user said that's fine). Right column only — body text
-// flows to the left via max-width.
+// Slots staggered horizontally (right values 325 / 120 / 220) so the
+// polaroids don't align on a single vertical line — gives the "someone
+// stuck these on the page by hand" feel rather than a neat column.
+// Slot 0 is intentionally inset deep (right: 325) so the upper-right
+// sticker slot sits at the page edge instead; body text reserves
+// matching space on the right to keep clear of slot 0's width.
+// Rotations alternate direction for the same reason.
+// Vertical spacing ~400px between slots: first two visible on most
+// desktops, third tucks below the fold and scrolls into view.
 const POLAROID_SLOTS: PolaroidSlot[] = [
-  { top: 130, right: 40, rotation: 4.5, width: 205 },
-  { top: 430, right: 50, rotation: -7, width: 195 },
-  { top: 740, right: 130, rotation: 3, width: 210 },
+  { top: 30, right: 325, rotation: 3, width: 205 },
+  { top: 500, right: 120, rotation: -6, width: 195 },
+  { top: 900, right: 220, rotation: 4, width: 215 },
 ];
 
 // Polaroid (Photo × Slot) combined shape used by PolaroidFrame. We
@@ -71,11 +76,20 @@ const STICKERS: StickerData[] = [
   { size: 54, rotation: 12, background: "#0a0a0a", icon: "monster" },
 ];
 
+// Sticker slots are positioned explicitly OUTSIDE every polaroid slot's
+// bounding box — no overlap possible regardless of which photo lands
+// where or which sticker lands where:
+//   slot 0: top-left gutter (x=20-74) — left of body text column
+//   slot 1: upper-right, to the LEFT of polaroid-slot-0 (right=290 vs
+//           polaroid right=60+205=265 left edge)
+//   slot 2: between polaroid-slot-1 (ends y=745) and polaroid-slot-2
+//           (starts y=900), on the far right edge
+//   slot 3: mid-left gutter, below the coffee margin note
 const STICKER_SLOTS: StickerSlot[] = [
-  { top: 120, right: 285, delayMs: 2200 }, // top-right, near first polaroid
-  { top: 140, left: 30, delayMs: 2400 }, // top-left, above coffee margin note
-  { top: 380, right: 10, delayMs: 2600 }, // mid-right, between polaroids 1 and 2
-  { top: 540, left: 25, delayMs: 2800 }, // mid-left, below top-left
+  { top: 130, left: 20, delayMs: 2200 },
+  { top: 100, right: 80, delayMs: 2400 }, // far-right corner (swap target of polaroid slot 0's old position)
+  { top: 790, right: 60, delayMs: 2600 },
+  { top: 800, left: 40, delayMs: 2800 }, // mid-left, clears the basketball margin note
 ];
 
 // Fisher-Yates over [0..n-1]. Used to randomize photo/sticker assignment
@@ -210,14 +224,16 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
         })}
 
         {/* Drawn-in greeting. Height locked to 3× the ruler pitch (96px)
-            + bottom margin = 32px so the grid stays clean. */}
+            + bottom margin = 32px so the grid stays clean. maxWidth
+            reserves space for polaroid slot 0 (right: 325 + width: 205
+            = 530 from right). */}
         <div
           style={{
             height: "calc(var(--line) * 3)",
             marginBottom: "var(--line)",
             display: "flex",
             alignItems: "center",
-            maxWidth: "calc(100% - 260px)",
+            maxWidth: "calc(100% - 440px)",
           }}
         >
           <DrawnText
@@ -237,8 +253,12 @@ export function AboutPage({ onClose }: { onClose: () => void }) {
             via max-width. Each paragraph stays on the 32px ruler grid. */}
         <div
           style={{
-            // Leave ~360px on the right so the scattered polaroids (up to
-            // right: 130 + width 200 = 330) never overlap body text.
+            // Reserve sized for the most-inset polaroid that shares a
+            // vertical range with body text. Polaroid slot 0 sits at
+            // top=30 (entirely above body text y=334), so it's ignored
+            // here. Polaroid slot 2 at right=220 + width=215 = 435 from
+            // right is the binding constraint — reserve 360 leaves a
+            // small gap (rounded up).
             maxWidth: "calc(100% - 360px)",
             fontFamily: "var(--font-script)",
             fontSize: "var(--fs-body)",
