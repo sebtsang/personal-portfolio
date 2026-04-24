@@ -599,10 +599,18 @@ function PolaroidFrame({
     const onMove = (e: PointerEvent) => {
       const parent = elRef.current?.offsetParent as HTMLElement | null;
       if (!parent) return;
+      // e.clientX/Y are viewport coords; parentRect.left/top are the
+      // scroll container's viewport position. Subtracting gives pointer
+      // position inside the VISIBLE area of the container — but we're
+      // about to write pos into CSS left/top, which is interpreted in
+      // CONTENT coords (scroll-offset-aware). Add scrollLeft/scrollTop
+      // to convert visible coords → content coords. Without this, a
+      // polaroid picked up while the page is scrolled jumps up by
+      // `scrollTop` pixels.
       const parentRect = parent.getBoundingClientRect();
       setPos({
-        x: e.clientX - parentRect.left - offsetRef.current.x,
-        y: e.clientY - parentRect.top - offsetRef.current.y,
+        x: e.clientX - parentRect.left + parent.scrollLeft - offsetRef.current.x,
+        y: e.clientY - parentRect.top + parent.scrollTop - offsetRef.current.y,
       });
     };
     const onUp = () => setDragging(false);
