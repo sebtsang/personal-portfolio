@@ -245,18 +245,15 @@ export function ExperiencePage({
           experience
         </h1>
 
-        {/* Vertical-spine timeline */}
+        {/* Role list — small left indent keeps entries off the margin
+            rule without the old timeline gutter. */}
         <div
           style={{
             position: "relative",
             marginTop: "var(--line)",
-            paddingLeft: 56,
+            paddingLeft: 24,
           }}
         >
-          {/* Hand-drawn spine — a slightly wavy ink line down the left.
-              Using SVG so it feels drawn rather than machined. */}
-          <Spine />
-
           {ROLES.map((role, i) => (
             <RoleEntry
               key={`${role.company}-${role.title}`}
@@ -270,28 +267,6 @@ export function ExperiencePage({
       <PageCorner pageNumber="02" />
     </div>
     </PageAnimateContext.Provider>
-  );
-}
-
-// ── Spine ─────────────────────────────────────────────────────────────
-
-function Spine() {
-  // A thin vertical line at x=20 with a subtle wobble so it reads as
-  // hand-drawn rather than CSS. Uses CSS repeating-linear-gradient for
-  // a pen-ink texture + a tiny horizontal wobble via clip-path curves.
-  return (
-    <div
-      aria-hidden
-      style={{
-        position: "absolute",
-        left: 20,
-        top: 0,
-        bottom: 0,
-        width: 2,
-        background:
-          "linear-gradient(to bottom, rgba(26,26,46,0) 0, rgba(26,26,46,0.28) 8px, rgba(26,26,46,0.28) calc(100% - 8px), rgba(26,26,46,0) 100%)",
-      }}
-    />
   );
 }
 
@@ -328,22 +303,6 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
           "opacity 520ms cubic-bezier(0.22, 1, 0.36, 1), transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
-      {/* Node dot on the spine */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          left: -43,
-          top: "calc(var(--line) * 0.55)",
-          width: 11,
-          height: 11,
-          borderRadius: "50%",
-          background: "var(--color-ink)",
-          border: "2.5px solid var(--color-paper)",
-          boxShadow: "0 0 0 1px rgba(26,26,46,0.25)",
-        }}
-      />
-
       {/* Header row: dates + company + logo sticker */}
       <div
         style={{
