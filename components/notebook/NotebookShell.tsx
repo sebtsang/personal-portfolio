@@ -88,11 +88,35 @@ export function NotebookShell({
   initialView?: StageView;
   skipLanding?: boolean;
 } = {}) {
+  // Sync the zustand store to `initialView` SYNCHRONOUSLY during render,
+  // before anyone reads `view` below. Previously this sync lived in a
+  // useEffect, which ran after first paint — that left a window where
+  // `view.kind` was still the default {kind:"empty"} while `currentKind`
+  // had already been initialized from `initialView`. The view-change
+  // effect's first pass saw the mismatch and triggered a spurious flip
+  // (e.g., /about → home → /about). Doing the sync in render — gated by
+  // a ref so it only runs once per mount — makes the store match the
+  // route's intended state by the time the view-change effect first
+  // evaluates.
+  const storeSyncedRef = useRef(false);
+  if (!storeSyncedRef.current) {
+    storeSyncedRef.current = true;
+    const boot = initialView ?? { kind: "empty" };
+    if (useStageStore.getState().view.kind !== boot.kind) {
+      useStageStore.setState({ view: boot });
+    }
+  }
+
   const view = useStageStore((s) => s.view);
   const setView = useStageStore((s) => s.setView);
   const dispatchTool = useStageStore((s) => s.dispatchTool);
 
   const deepLink = !!initialView && initialView.kind !== "empty";
+  // Layer 2 safety net — belt for Layer 1's in-render store sync. Consumed
+  // on the view-change effect's first invocation; prevents a spurious
+  // flip if Layer 1 somehow doesn't land before the effect fires. See
+  // the effect body for the guard that reads this.
+  const firstRunRef = useRef(true);
   const chatOnly = !deepLink && skipLanding;
   const entersWithChatMounted = deepLink || chatOnly;
 
@@ -151,12 +175,6 @@ export function NotebookShell({
   const [sessionKeys, setSessionKeys] = useState<Record<string, number>>({
     [initialKind]: 0,
   });
-
-  // Align store with route on mount.
-  useEffect(() => {
-    setView(initialView ?? { kind: "empty" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // /home fresh entry: seeds animate in from mount.
   useEffect(() => {
@@ -408,11 +426,28 @@ export function NotebookShell({
   //   4. transitionend handler commits currentKind = destination and
   //      marks destination as ready (reveal animations can play).
   useEffect(() => {
+    const firstRun = firstRunRef.current;
+    firstRunRef.current = false;
+
     if (!chatMounted) return;
     if (showLanding) return;
     if (pendingKind !== null) return;
     const targetKind = kindToPageKey(view.kind);
     if (targetKind === currentKind) return;
+
+    // Deep-link bootstrap guard. On a deep-link mount, the zustand store
+    // may still hold its default {kind:"empty"} on the very first pass of
+    // this effect — even with Layer 1's in-render sync, subtle React
+    // timing (strict-mode double-render, concurrent tearing, a future
+    // refactor that moves the sync) could leave a stale view.kind in
+    // this effect's closure for one tick. In that tick, view.kind would
+    // read as "empty" while currentKind is already the destination page,
+    // and a spurious flip would fire. The guard skips exactly that one
+    // pass — Layer 1's setView (or the removed Effect 1 analogue, now
+    // covered by setView in popstate / dispatchTool) triggers a re-run
+    // of this effect with correct state a tick later, which will hit
+    // the targetKind === currentKind match above and return cleanly.
+    if (firstRun && deepLink) return;
 
     // Flip direction rule (Option B — content pages are peers, not a
     // sequence): the ONLY meaningful distinction is "am I returning to
