@@ -65,13 +65,17 @@ export const NotebookMessage = memo(function NotebookMessage({
     lineHeight,
     wordBreak: "normal",
     overflowWrap: "normal",
-    maxWidth: compact ? "100%" : "clamp(560px, 50vw, 900px)",
   };
 
   const paddingLeft = compact
     ? "calc(12% + var(--pad-content-sm))"
     : "calc(12% + var(--pad-content))";
-  const paddingRight = compact ? "6%" : "8%";
+  // Home (non-compact) right gutter is sized to be ~40px larger than
+  // the left gutter (which is 12% − 48px wide between bindings and
+  // margin), so the page reads as visually balanced with a slight bias
+  // for breathing room on the right. Constant +40px offset at every
+  // viewport. Sidebar (compact) keeps its tighter 6%.
+  const paddingRight = compact ? "6%" : "calc(12% - 8px)";
 
   if (compact) {
     return (
