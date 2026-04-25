@@ -68,6 +68,7 @@ export function HomePage({
         />
         <circle cx="70" cy="30" r="2" fill="var(--color-ink-soft)" />
       </svg>
+
     </>
   );
 
@@ -85,3 +86,4 @@ export function HomePage({
     </div>
   );
 }
+
