@@ -382,7 +382,7 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
 // ── Logo sticker ──────────────────────────────────────────────────────
 
 function LogoSticker({ role }: { role: Role }) {
-  const size = 64;
+  const size = 70;
   const bg = role.stickerBg ?? "#fbfaf4";
 
   const inner = (
