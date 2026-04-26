@@ -245,20 +245,17 @@ export function NotebookShell({
   } = useChat({
     api: "/api/chat",
     onToolCall: ({ toolCall }) => {
+      // Just dispatch the navigation. The empty-content fallback used to
+      // be patched into the last assistant message here, but in streaming
+      // useChat the assistant message often hasn't been appended yet at
+      // this point — so the patch silently no-op'd and the user saw an
+      // empty SEBBOT bubble next to the navigated page. The display-text
+      // computation in the `messages` useMemo below now handles the
+      // fallback deterministically based on toolInvocations.
       dispatchTool(
         toolCall.toolName as ToolName,
         toolCall.args as Record<string, unknown>,
       );
-      setMessages((prev) => {
-        if (prev.length === 0) return prev;
-        const last = prev[prev.length - 1];
-        if (last.role !== "assistant") return prev;
-        if (last.content && last.content.trim().length > 0) return prev;
-        const fallback =
-          TOOL_FALLBACK_REPLY[toolCall.toolName as ToolName] ??
-          "Pulling that up.";
-        return [...prev.slice(0, -1), { ...last, content: fallback }];
-      });
     },
     onError: (err) => {
       console.error("[chat] request failed:", err);
@@ -587,11 +584,30 @@ export function NotebookShell({
           (m.content && m.content.length > 0) ||
           (m.toolInvocations && m.toolInvocations.length > 0),
       )
-      .map((m) => ({
-        id: m.id,
-        role: m.role === "user" ? "user" : "assistant",
-        text: m.content || "",
-      }));
+      .map((m) => {
+        // Display-text resolution for assistant messages:
+        //   1. If the assistant streamed text, use that as-is.
+        //   2. Otherwise, if the message has a tool invocation, substitute
+        //      the matching fallback reply so the navigation isn't paired
+        //      with an empty bubble.
+        //   3. Final fallback: empty string (kept for type safety; the
+        //      filter above prevents this branch from rendering).
+        let text = m.content || "";
+        if (
+          m.role === "assistant" &&
+          text.trim().length === 0 &&
+          m.toolInvocations &&
+          m.toolInvocations.length > 0
+        ) {
+          const toolName = m.toolInvocations[0].toolName as ToolName;
+          text = TOOL_FALLBACK_REPLY[toolName] ?? "Pulling that up.";
+        }
+        return {
+          id: m.id,
+          role: m.role === "user" ? ("user" as const) : ("assistant" as const),
+          text,
+        };
+      });
     return [...seed, ...ai];
   }, [aiMessages, seedPhase]);
 
