@@ -54,12 +54,39 @@ flip and cascade in only after the destination lands. Bumping the key
 *before* the flip (rather than at flip-end) prevents stale full-opacity
 elements from leaking through. Every revisit replays the cascade.
 
-### Chat sidebar on content pages
+### Chat sidebar on content pages (desktop)
 Every content page renders a 28%-viewport chat column on the left
 ([components/notebook/content/ChatSidebar.tsx](components/notebook/content/ChatSidebar.tsx))
 with a red margin rule at the seam. Home is the same chat, full
 viewport. Same `<ChatPage>` component in both — `compact` toggles the
 visual mode. No animated morph between widths.
+
+### Mobile (≤768px)
+Single breakpoint at `max-width: 768px`, detected via
+[lib/hooks/useIsMobile.ts](lib/hooks/useIsMobile.ts) (a thin
+`matchMedia` wrapper that initializes to `false` server-side to keep
+SSR + hydration consistent). Below the breakpoint:
+- The 28% chat sidebar is replaced by a **bottom-sheet drawer**
+  ([components/notebook/content/MobileChatDrawer.tsx](components/notebook/content/MobileChatDrawer.tsx))
+  — floating chat button at bottom-left (clears the spiral-binding
+  rail), tap to slide up an 85vh sheet that contains the same
+  `<ChatPage compact>`. Backdrop tap or swipe-down dismisses.
+  Auto-closes when navigation triggers a view change so the freshly-
+  flipped page isn't covered.
+- Each content page switches to a single-column layout. About's
+  polaroids + stickers move into a stacked strip below the body text
+  (still draggable via the same Pointer Events code). Margin notes
+  are hidden — the wide left gutter doesn't exist on mobile.
+- LinkedIn cards shrink to 240×300 with touch swipe to flip between
+  posts; arrow buttons are tightened.
+- Spiral binding narrows from 48px → 36px to give content more room.
+- Page-flip perspective tightens from `2400px` → `1400px` so the
+  rotateY reads as 3D on a portrait viewport instead of a flat
+  squeeze.
+- A render-time fallback in `NotebookShell` commits the flip-end
+  state via setTimeout if `transitionend` doesn't reach React (can
+  happen when framer-motion's `AnimatePresence` for the drawer is
+  mid-exit during a flip).
 
 ### Handwriting, not type
 Caveat body, JetBrains Mono for small meta labels, Fraunces +
@@ -68,8 +95,10 @@ with a staggered opacity fade (`HandwrittenText`). Every size is
 fluid — the baseline grid (`--line`) and the full type scale
 (`--fs-kbd` through `--fs-display`) are `clamp()` tokens in
 [app/globals.css](app/globals.css) interpolating between 1280–2560px,
-anchored so 1440p preserves the original look. Ruled lines travel
-with the scroll content so text never drifts between rules.
+anchored so 1440p preserves the original look. Below 768px the
+clamp() tokens are overridden with fixed mobile-tuned values so the
+`vw`-based formulas don't bottom out below their floors. Ruled lines
+travel with the scroll content so text never drifts between rules.
 
 ### Hybrid engine
 Intent-matched slash commands (`/about`, `/experience`, `/linkedin`,
@@ -329,10 +358,14 @@ components/notebook/
     HomePage.tsx           → full-viewport chat + cover-back button
                              + "journal · home" label + corner doodle
   content/
-    ContentPage.tsx        → chat sidebar + page-specific body, with
-                             SpreadMarginRule at the seam
+    ContentPage.tsx        → branches on useIsMobile: desktop renders
+                             ChatSidebar + body; mobile renders body
+                             full-width + MobileChatDrawer
     ChatSidebar.tsx        → 28%-viewport ChatPage wrapper
-                             (SIDEBAR_PCT exported)
+                             (SIDEBAR_PCT exported) — desktop only
+    MobileChatDrawer.tsx   → bottom-left floating chat button + 85vh
+                             bottom-sheet (framer-motion AnimatePresence
+                             + drag-to-dismiss). Mobile only.
   split/                   → page bodies:
     AboutPage.tsx          → drawn greeting, body paragraphs,
                              draggable polaroids + stickers
@@ -368,6 +401,10 @@ lib/
                              tool registry (deferred — see comment)
   intents.ts               → function-based matcher: exact patterns +
                              nav-phrase + per-tool topic keyword combo
+  hooks/
+    useIsMobile.ts         → matchMedia(max-width: 768px) wrapper;
+                             SSR-safe, swaps the entire chat layout
+                             between desktop sidebar and mobile drawer
   store.ts                 → Zustand view store + dispatchTool
   validation.ts            → Zod request schema + budget check
                              (discriminated union allows empty

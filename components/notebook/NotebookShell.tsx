@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useChat } from "@ai-sdk/react";
 import { matchIntent } from "@/lib/intents";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { useStageStore, type StageView } from "@/lib/store";
 import type { ToolName } from "@/lib/tools";
 import { Paper } from "./chrome/Paper";
@@ -110,6 +111,7 @@ export function NotebookShell({
   const view = useStageStore((s) => s.view);
   const setView = useStageStore((s) => s.setView);
   const dispatchTool = useStageStore((s) => s.dispatchTool);
+  const isMobile = useIsMobile();
 
   const deepLink = !!initialView && initialView.kind !== "empty";
   // Layer 2 safety net — belt for Layer 1's in-render store sync. Consumed
@@ -543,30 +545,46 @@ export function NotebookShell({
 
   // transitionend on the flipping page — commits the new currentKind and
   // marks the destination as ready so its reveal animations can play.
+  const commitFlipEnd = useCallback(() => {
+    if (pendingKind === null) return;
+    const dest = pendingKind;
+    setCurrentKind(dest);
+    setPendingKind(null);
+    setFlippingKind(null);
+    setFlipTransition(null);
+    setReadyKinds((prev) => {
+      if (prev.has(dest)) return prev;
+      const next = new Set(prev);
+      next.add(dest);
+      return next;
+    });
+    // Session counter is bumped at flip-start (in the view-change
+    // effect), not here. Bumping at flip-end left a visible frame of
+    // stale (opacity 1) polaroids / stickers from the previous visit
+    // while the flip was in progress, which would then "disappear"
+    // at flip-end and fade back in.
+  }, [pendingKind]);
+
   const handlePageFlipEnd = useCallback(
     (e: React.TransitionEvent<HTMLDivElement>) => {
       if (e.target !== e.currentTarget) return;
       if (e.propertyName !== "transform") return;
-      if (pendingKind === null) return;
-      const dest = pendingKind;
-      setCurrentKind(dest);
-      setPendingKind(null);
-      setFlippingKind(null);
-      setFlipTransition(null);
-      setReadyKinds((prev) => {
-        if (prev.has(dest)) return prev;
-        const next = new Set(prev);
-        next.add(dest);
-        return next;
-      });
-      // Session counter is bumped at flip-start (in the view-change
-      // effect), not here. Bumping at flip-end left a visible frame of
-      // stale (opacity 1) polaroids / stickers from the previous visit
-      // while the flip was in progress, which would then "disappear"
-      // at flip-end and fade back in.
+      commitFlipEnd();
     },
-    [pendingKind],
+    [commitFlipEnd],
   );
+
+  // Fallback: if the transitionend event doesn't reach React (observed on
+  // mobile when the chat drawer's framer-motion AnimatePresence is mid-
+  // exit during a flip — events get filtered or interrupted somewhere
+  // upstream), commit the flip-end state at the expected animation end
+  // time. Slightly longer than the longest flip duration to avoid racing
+  // a real transitionend.
+  useEffect(() => {
+    if (pendingKind === null) return;
+    const id = window.setTimeout(commitFlipEnd, FLIP_OPENING_MS + 200);
+    return () => window.clearTimeout(id);
+  }, [pendingKind, commitFlipEnd]);
 
   // One message stream: seeds + AI messages.
   const messages: ChatMessage[] = useMemo(() => {
@@ -676,6 +694,7 @@ export function NotebookShell({
       return (
         <ContentPage
           kind={kind}
+          activeViewKind={view.kind}
           messages={messages}
           onSubmit={handleSubmit}
           isWriting={writingIndicator}
@@ -694,6 +713,7 @@ export function NotebookShell({
       sessionKeys,
       coverFlipping,
       showLanding,
+      view.kind,
     ],
   );
 
@@ -703,7 +723,12 @@ export function NotebookShell({
         position: "fixed",
         inset: 0,
         overflow: "hidden",
-        perspective: "2400px",
+        // Tighter perspective on mobile so the rotateY page-flip reads
+        // as a 3D flip on a portrait viewport instead of a flat squeeze.
+        // 2400px on a 375px-wide screen makes the rotation barely visible
+        // because the camera is too far back relative to the page width;
+        // 1400px gives the flip the depth it needs.
+        perspective: isMobile ? "1400px" : "2400px",
         perspectiveOrigin: "50% 50%",
         backgroundColor: "#e8e3d5",
       }}

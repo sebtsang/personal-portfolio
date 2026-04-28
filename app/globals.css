@@ -81,14 +81,48 @@
      a hardcoded `26px` offset, which only matched the baseline near
      1440 and drifted ~4.5px either way at 1280/2560. Keeping the
      formula in one place means future type-scale tweaks only need one
-     edit. The navy opacity (0.12) and soft ±1px feather match the
-     original visual weight. */
+     edit. Uses var(--line), which the mobile media query below
+     re-anchors to 28px — the formula automatically tracks. The navy
+     opacity (0.12) and soft ±1px feather match the original visual
+     weight. */
   --rule-background: repeating-linear-gradient(to bottom,
     transparent 0,
     transparent calc(var(--line) * 0.76 - 1px),
     rgba(61, 52, 139, 0.12) calc(var(--line) * 0.76),
     transparent calc(var(--line) * 0.76 + 1px),
     transparent var(--line));
+}
+
+/* Mobile token re-anchor (≤768px). The vw-based clamp() formulas above
+   target 1280–2560px viewports and produce broken sizing on phones —
+   e.g. 0.625vw on a 375px viewport = 2.3px, well under the 8px floor.
+   Switch to fixed mobile-tuned values for fonts + paddings; --line is
+   pinned to 28px so the ruled-paper math still lines up.
+   --rule-background lives on :root above and references var(--line),
+   so it automatically picks up these mobile values via the cascade. */
+@media (max-width: 768px) {
+  :root {
+    --line: 28px;
+
+    --fs-kbd: 9px;
+    --fs-meta: 10px;
+    --fs-hint: 11px;
+    --fs-input: 14px;
+    --fs-chip: 14px;
+    --fs-script: 18px;
+    --fs-body: 19px;
+    --fs-md: 22px;
+    --fs-lg: 28px;
+    --fs-xl: 32px;
+    --fs-display: 44px;
+
+    --pad-content: 10px;
+    --pad-content-lg: 14px;
+    --pad-content-sm: 6px;
+    --pad-chrome: 12px;
+    --pad-chip: 10px;
+    --pad-chip-wide: 12px;
+  }
 }
 
 @layer base {
