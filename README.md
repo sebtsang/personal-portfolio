@@ -6,7 +6,7 @@ home page; every section (`/about`, `/experience`, `/linkedin`,
 inside the chat — or matching free-form questions — flip the journal
 to the relevant page. Everything else streams from the LLM.
 
-Live at [seb.tsang.io](https://sebastiantsang.com) (or wherever the latest
+Live at [sebastiantsang.com](https://sebastiantsang.com) (or wherever the latest
 deploy is).
 
 Stack: Next.js 15 (App Router) · React 19 · TypeScript 5 · Tailwind v4 ·
