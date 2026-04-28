@@ -3,9 +3,11 @@
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
   type CSSProperties,
 } from "react";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
@@ -58,6 +60,11 @@ const POSTS: Post[] = [
 
 const CARD_WIDTH = 400;
 const CARD_HEIGHT = 460;
+// Mobile: card sized to leave room for prev/next arrows + breathing room.
+// 4:5-ish aspect mirrors desktop.
+const MOBILE_CARD_WIDTH = 240;
+const MOBILE_CARD_HEIGHT = 300;
+const SWIPE_THRESHOLD_PX = 60;
 
 // Fade-in choreography: each card appears in place, strictly one at a
 // time, back-to-front with a left-then-right tiebreak within each depth.
@@ -86,7 +93,10 @@ export function LinkedInPage({
   animate?: boolean;
   sessionKey?: number;
 }) {
+  const isMobile = useIsMobile();
   const [index, setIndex] = useState(0);
+  const cardWidth = isMobile ? MOBILE_CARD_WIDTH : CARD_WIDTH;
+  const cardHeight = isMobile ? MOBILE_CARD_HEIGHT : CARD_HEIGHT;
 
   const next = useCallback(
     () => setIndex((i) => (i + 1) % POSTS.length),
@@ -120,6 +130,29 @@ export function LinkedInPage({
     return () => window.removeEventListener("keydown", onKey);
   }, [next, prev]);
 
+  // Touch swipe — horizontal swipe past SWIPE_THRESHOLD_PX advances the
+  // carousel. Mirrors the landing page's swipe pattern in NotebookShell.
+  // Bound to the carousel container only so swipes outside don't trigger.
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const t = e.touches[0];
+    if (!t) return;
+    swipeStartRef.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    if (!t) return;
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < SWIPE_THRESHOLD_PX) return;
+    if (Math.abs(dy) > Math.abs(dx)) return;
+    if (dx < 0) next();
+    else prev();
+  };
+
   return (
     <PageAnimateContext.Provider value={{ animate, sessionKey }}>
     <div style={{ position: "absolute", inset: 0 }}>
@@ -131,8 +164,10 @@ export function LinkedInPage({
           inset: 0,
           paddingTop: "calc(var(--line) * 3)",
           paddingBottom: "calc(var(--line) * 3)",
-          paddingLeft: "calc(12% + var(--pad-content))",
-          paddingRight: "8%",
+          paddingLeft: isMobile
+            ? "calc(var(--pad-content) + 44px)"
+            : "calc(12% + var(--pad-content))",
+          paddingRight: isMobile ? "var(--pad-content)" : "8%",
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
@@ -152,7 +187,9 @@ export function LinkedInPage({
             position: "absolute",
             // Baseline floats 0.19 × --line above rule 2.
             top: "calc(var(--line) * 2.57 - var(--fs-meta) * 0.86)",
-            left: "calc(3% + var(--pad-chrome))",
+            left: isMobile
+              ? "calc(44px + var(--pad-content))"
+              : "calc(3% + var(--pad-chrome))",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",
@@ -197,29 +234,29 @@ export function LinkedInPage({
 
         {/* Stacked card carousel */}
         <div
+          onTouchStart={isMobile ? onTouchStart : undefined}
+          onTouchEnd={isMobile ? onTouchEnd : undefined}
           style={{
             position: "relative",
             // Snap to baseline grid so the indicator below lands on a
-            // rule. 17 × --line ≈ 476–680px across the fluid range,
-            // which comfortably contains the 460px card. flexShrink: 0
-            // keeps the carousel at its specified height inside the
-            // flex column.
-            height: "calc(var(--line) * 17)",
+            // rule. Mobile: shorter container scaled to the 300px card.
+            height: isMobile ? "calc(var(--line) * 13)" : "calc(var(--line) * 17)",
             flexShrink: 0,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 60,
+            gap: isMobile ? 8 : 60,
           }}
         >
-          <NavArrow direction="prev" onClick={prev} />
+          <NavArrow direction="prev" onClick={prev} compact={isMobile} />
 
           <div
             style={{
               position: "relative",
-              width: CARD_WIDTH,
-              height: CARD_HEIGHT,
+              width: cardWidth,
+              height: cardHeight,
               perspective: "1800px",
+              flexShrink: 0,
             }}
           >
             {POSTS.map((post, i) => {
@@ -240,6 +277,7 @@ export function LinkedInPage({
                   <PostCard
                     post={post}
                     offset={offset}
+                    compact={isMobile}
                     onClick={() => {
                       // If clicking a non-top card, bring it to front
                       // rather than opening immediately — feels like
@@ -256,7 +294,7 @@ export function LinkedInPage({
             })}
           </div>
 
-          <NavArrow direction="next" onClick={next} />
+          <NavArrow direction="next" onClick={next} compact={isMobile} />
         </div>
 
         {/* Position indicator */}
@@ -273,7 +311,7 @@ export function LinkedInPage({
         >
           {index + 1} / {POSTS.length}
           <span style={{ marginLeft: 16, opacity: 0.75 }}>
-            ← → to flip
+            {isMobile ? "swipe to flip" : "← → to flip"}
           </span>
         </div>
       </div>
@@ -344,10 +382,13 @@ function computeOffset(i: number, current: number, total: number): number {
 function PostCard({
   post,
   offset,
+  compact = false,
   onClick,
 }: {
   post: Post;
   offset: number;
+  /** Tighter sibling-card offsets when the card itself is small (mobile). */
+  compact?: boolean;
   /** Returns true to allow the link navigation, false to intercept. */
   onClick: () => boolean;
 }) {
@@ -356,9 +397,10 @@ function PostCard({
 
   // Cards behind the active one peek out from underneath, rotated and
   // shifted. Anything more than 2 away hides (opacity 0) so the stack
-  // doesn't feel bottomless.
-  const translateX = offset * 28;
-  const translateY = absOff * 8;
+  // doesn't feel bottomless. Mobile uses smaller offsets to stay inside
+  // the narrower card container.
+  const translateX = offset * (compact ? 18 : 28);
+  const translateY = absOff * (compact ? 6 : 8);
   const scale = 1 - absOff * 0.04;
   const rotation = isActive ? post.rotation : post.rotation + offset * 2;
   const opacity = absOff > 2 ? 0 : 1 - absOff * 0.18;
@@ -492,9 +534,11 @@ function PostCard({
 function NavArrow({
   direction,
   onClick,
+  compact = false,
 }: {
   direction: "prev" | "next";
   onClick: () => void;
+  compact?: boolean;
 }) {
   return (
     <button
@@ -505,10 +549,10 @@ function NavArrow({
         flexShrink: 0,
         background: "transparent",
         border: "none",
-        padding: 12,
+        padding: compact ? 6 : 12,
         cursor: "pointer",
         fontFamily: "var(--font-script)",
-        fontSize: "var(--fs-lg)",
+        fontSize: compact ? "var(--fs-md)" : "var(--fs-lg)",
         color: "var(--color-ink-soft)",
         opacity: 0.55,
         lineHeight: 1,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
@@ -188,6 +189,7 @@ export function ExperiencePage({
   animate?: boolean;
   sessionKey?: number;
 }) {
+  const isMobile = useIsMobile();
   return (
     <PageAnimateContext.Provider value={{ animate, sessionKey }}>
     <div style={{ position: "absolute", inset: 0 }}>
@@ -199,8 +201,10 @@ export function ExperiencePage({
           inset: 0,
           paddingTop: "calc(var(--line) * 3)",
           paddingBottom: "calc(var(--line) * 3)",
-          paddingLeft: "calc(12% + var(--pad-content))",
-          paddingRight: "8%",
+          paddingLeft: isMobile
+            ? "calc(var(--pad-content) + 44px)"
+            : "calc(12% + var(--pad-content))",
+          paddingRight: isMobile ? "var(--pad-content)" : "8%",
           overflowY: "auto",
           // Ruled lines travel with the content on scroll. background-
           // attachment: local binds the bg to the content so the rules
@@ -218,7 +222,9 @@ export function ExperiencePage({
             position: "absolute",
             // Baseline floats 0.19 × --line above rule 2.
             top: "calc(var(--line) * 2.57 - var(--fs-meta) * 0.86)",
-            left: "calc(3% + var(--pad-chrome))",
+            left: isMobile
+              ? "calc(44px + var(--pad-content))"
+              : "calc(3% + var(--pad-chrome))",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",
@@ -251,7 +257,7 @@ export function ExperiencePage({
           style={{
             position: "relative",
             marginTop: "var(--line)",
-            paddingLeft: 24,
+            paddingLeft: isMobile ? 0 : 24,
           }}
         >
           {ROLES.map((role, i) => (

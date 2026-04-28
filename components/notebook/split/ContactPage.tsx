@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
@@ -69,6 +70,7 @@ export function ContactPage({
   animate?: boolean;
   sessionKey?: number;
 }) {
+  const isMobile = useIsMobile();
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
@@ -100,8 +102,10 @@ export function ContactPage({
           inset: 0,
           paddingTop: "calc(var(--line) * 3)",
           paddingBottom: "calc(var(--line) * 3)",
-          paddingLeft: "calc(12% + var(--pad-content))",
-          paddingRight: "8%",
+          paddingLeft: isMobile
+            ? "calc(var(--pad-content) + 44px)"
+            : "calc(12% + var(--pad-content))",
+          paddingRight: isMobile ? "var(--pad-content)" : "8%",
           overflowY: "auto",
           // Ruled lines travel with the content on scroll. background-
           // attachment: local binds the bg to the content so the rules
@@ -119,7 +123,9 @@ export function ContactPage({
             position: "absolute",
             // Baseline floats 0.19 × --line above rule 2.
             top: "calc(var(--line) * 2.57 - var(--fs-meta) * 0.86)",
-            left: "calc(3% + var(--pad-chrome))",
+            left: isMobile
+              ? "calc(44px + var(--pad-content))"
+              : "calc(3% + var(--pad-chrome))",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",
@@ -206,6 +212,7 @@ function ContactCard({
   onEmailCopy: (e: React.MouseEvent) => void;
   copied: string | null;
 }) {
+  const isMobile = useIsMobile();
   const [hover, setHover] = useState(false);
   const pageAnimate = usePageAnimate();
 
@@ -244,7 +251,7 @@ function ContactCard({
         <div
           style={{
             background: "#fbf7e9",
-            padding: "28px 32px",
+            padding: isMobile ? "20px 16px" : "28px 32px",
             border: "1px solid rgba(0,0,0,0.06)",
             position: "relative",
             // Faint index-card lines on the card itself
@@ -312,6 +319,7 @@ function FieldRow({
   copyFeedback: string | null;
   onClick?: (e: React.MouseEvent) => void;
 }) {
+  const isMobile = useIsMobile();
   const [hover, setHover] = useState(false);
 
   return (
@@ -327,9 +335,9 @@ function FieldRow({
       style={{
         display: "flex",
         alignItems: "baseline",
-        gap: 16,
-        padding: "6px 8px",
-        margin: "-6px -8px",
+        gap: isMobile ? 10 : 16,
+        padding: isMobile ? "4px 4px" : "6px 8px",
+        margin: isMobile ? "-4px -4px" : "-6px -8px",
         borderRadius: 4,
         textDecoration: "none",
         color: "inherit",
@@ -342,8 +350,8 @@ function FieldRow({
       <div
         style={{
           flexShrink: 0,
-          width: 22,
-          height: 22,
+          width: isMobile ? 18 : 22,
+          height: isMobile ? 18 : 22,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -355,26 +363,31 @@ function FieldRow({
         {field.icon}
       </div>
 
-      {/* Label */}
+      {/* Label — narrower on mobile so the value column has room for
+          longer strings like the email address without breaking mid-word. */}
       <div
         style={{
           fontFamily: "var(--font-mono)",
           fontSize: "var(--fs-meta)",
-          letterSpacing: "0.22em",
+          letterSpacing: isMobile ? "0.18em" : "0.22em",
           textTransform: "uppercase",
           color:
             "color-mix(in srgb, var(--color-ink-soft) 55%, transparent)",
-          minWidth: 90,
+          minWidth: isMobile ? 56 : 90,
           transform: "translateY(-1px)",
         }}
       >
         {field.label}
       </div>
 
-      {/* Value — handwritten */}
+      {/* Value — handwritten. overflowWrap: anywhere on mobile lets long
+          values (the email) break at any point if they truly don't fit,
+          but only as a last resort — break-all was forcing breaks even
+          when the string would fit on one line. */}
       <div
         style={{
           flex: 1,
+          minWidth: 0,
           fontFamily: "var(--font-script)",
           fontSize: "var(--fs-body)",
           fontWeight: 500,
@@ -387,7 +400,7 @@ function FieldRow({
           }`,
           paddingBottom: 2,
           transition: "border-color 180ms ease",
-          wordBreak: "break-all",
+          overflowWrap: "anywhere",
         }}
       >
         <HandwrittenText text={field.display} delayMs={valueDelayMs} />

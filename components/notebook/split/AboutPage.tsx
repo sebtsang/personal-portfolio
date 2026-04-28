@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
 import { Paper } from "../chrome/Paper";
@@ -136,6 +137,21 @@ const MARGIN_NOTES: Array<{
   },
 ];
 
+// Mobile sticker positions — % offsets relative to the polaroid strip
+// container. Calibrated so they cluster around the photo strip without
+// covering polaroid faces.
+const MOBILE_STICKER_OFFSETS: Array<{
+  top: string;
+  left?: string;
+  right?: string;
+  delayMs: number;
+}> = [
+  { top: "0", right: "8%", delayMs: 2200 },
+  { top: "32%", left: "4%", delayMs: 2400 },
+  { top: "62%", right: "12%", delayMs: 2600 },
+  { top: "88%", left: "8%", delayMs: 2800 },
+];
+
 export function AboutPage({
   onClose,
   animate = true,
@@ -145,6 +161,7 @@ export function AboutPage({
   animate?: boolean;
   sessionKey?: number;
 }) {
+  const isMobile = useIsMobile();
   // Randomize photo → slot and sticker → slot assignment per page open.
   // SSR + initial client paint render the deterministic identity order
   // (photo i in slot i, sticker i in slot i) so hydration matches;
@@ -173,8 +190,10 @@ export function AboutPage({
           inset: 0,
           paddingTop: "calc(var(--line) * 3)",
           paddingBottom: "calc(var(--line) * 3)",
-          paddingLeft: "calc(12% + var(--pad-content))",
-          paddingRight: "8%",
+          paddingLeft: isMobile
+            ? "calc(var(--pad-content) + 44px)"
+            : "calc(12% + var(--pad-content))",
+          paddingRight: isMobile ? "var(--pad-content)" : "8%",
           overflowY: "auto",
           // Ruled lines travel with the content as the user scrolls.
           // background-attachment: local binds the bg to the content, not
@@ -196,7 +215,9 @@ export function AboutPage({
             // Baseline floats 0.19 × --line above rule 2 — matches the
             // sender-label offset in chat home.
             top: "calc(var(--line) * 2.57 - var(--fs-meta) * 0.86)",
-            left: "calc(3% + var(--pad-chrome))",
+            left: isMobile
+              ? "calc(44px + var(--pad-content))"
+              : "calc(3% + var(--pad-chrome))",
             fontFamily: "var(--font-mono)",
             fontSize: "var(--fs-meta)",
             letterSpacing: "0.25em",
@@ -223,36 +244,38 @@ export function AboutPage({
           about
         </h1>
 
-        {/* Polaroids anchored to the right, body text flows on the left.
-            Each slot gets a photo via photoOrder (shuffled per mount). */}
-        {POLAROID_SLOTS.map((slot, slotIdx) => {
-          const photo = PHOTOS[photoOrder[slotIdx]];
-          return (
-            <PolaroidFrame
-              key={`${sessionKey}-${slotIdx}`}
-              polaroid={{ ...photo, ...slot }}
-              delayMs={1200 + slotIdx * 200}
-            />
-          );
-        })}
+        {/* Polaroids anchored to the right (desktop only). On mobile, they
+            move into a stacked strip below the body text. */}
+        {!isMobile &&
+          POLAROID_SLOTS.map((slot, slotIdx) => {
+            const photo = PHOTOS[photoOrder[slotIdx]];
+            return (
+              <PolaroidFrame
+                key={`${sessionKey}-${slotIdx}`}
+                polaroid={{ ...photo, ...slot }}
+                delayMs={1200 + slotIdx * 200}
+              />
+            );
+          })}
 
         {/* Drawn-in greeting. Height locked to 3× the ruler pitch (96px)
             + bottom margin = 32px so the grid stays clean. maxWidth
             reserves space for polaroid slot 0 (right: 325 + width: 205
-            = 530 from right). */}
+            = 530 from right) — dropped on mobile where polaroids stack
+            below the body. */}
         <div
           style={{
             height: "calc(var(--line) * 3)",
             marginBottom: "var(--line)",
             display: "flex",
             alignItems: "center",
-            maxWidth: "calc(100% - 440px)",
+            maxWidth: isMobile ? "100%" : "calc(100% - 440px)",
           }}
         >
           <DrawnText
             text="hi — I'm Seb"
             fontFamily="Caveat"
-            fontSize={56}
+            fontSize={isMobile ? 38 : 56}
             fontWeight={500}
             color="var(--color-ink)"
             duration={1.4}
@@ -263,7 +286,8 @@ export function AboutPage({
         </div>
 
         {/* Body paragraphs — text wraps to the left of the absolute polaroids
-            via max-width. Each paragraph stays on the 32px ruler grid. */}
+            via max-width on desktop; full-width on mobile. Each paragraph
+            stays on the ruler grid. */}
         <div
           style={{
             // Reserve sized for the most-inset polaroid that shares a
@@ -271,8 +295,9 @@ export function AboutPage({
             // top=30 (entirely above body text y=334), so it's ignored
             // here. Polaroid slot 2 at right=220 + width=215 = 435 from
             // right is the binding constraint — reserve 360 leaves a
-            // small gap (rounded up).
-            maxWidth: "calc(100% - 360px)",
+            // small gap (rounded up). Mobile drops the reservation since
+            // polaroids stack below.
+            maxWidth: isMobile ? "100%" : "calc(100% - 360px)",
             fontFamily: "var(--font-script)",
             fontSize: "var(--fs-body)",
             fontWeight: 400,
@@ -294,37 +319,96 @@ export function AboutPage({
           ))}
         </div>
 
-        {/* Margin notes — handwritten asides sitting in the left gutter */}
-        {MARGIN_NOTES.map((note, i) => (
-          <MarginNote key={`${sessionKey}-${i}`} {...note} />
-        ))}
-
-        {/* Stickers — all draggable, placed in whitespace so the initial
-            positions never cover body text. Each slot gets a sticker via
-            stickerOrder (shuffled per mount). */}
-        {STICKER_SLOTS.map((slot, slotIdx) => {
-          const sticker = STICKERS[stickerOrder[slotIdx]];
-          return (
-            <Sticker
-              // sessionKey in the key forces a fresh Sticker mount on
-              // every revisit so its fade-in plays again (drag position
-              // resets too — acceptable for a decorative element).
-              key={`${sessionKey}-${slotIdx}`}
-              size={sticker.size}
-              rotation={sticker.rotation}
-              background={sticker.background}
-              top={slot.top}
-              left={slot.left}
-              right={slot.right}
-              delayMs={slot.delayMs}
+        {/* Mobile-only: polaroid strip below the body, stickers scattered
+            around it. Both stay draggable — PolaroidFrame's pointer-event
+            drag works on touch as-is. */}
+        {isMobile && (
+          <div
+            style={{
+              position: "relative",
+              marginTop: "calc(var(--line) * 1.5)",
+              marginBottom: "calc(var(--line) * 2)",
+              minHeight: 540,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 32,
+              }}
             >
-              {sticker.icon === "coffee" && <CoffeeCupIcon />}
-              {sticker.icon === "basketball" && <BasketballIcon />}
-              {sticker.icon === "lobster" && <LobsterIcon />}
-              {sticker.icon === "monster" && <MonsterIcon />}
-            </Sticker>
-          );
-        })}
+              {POLAROID_SLOTS.map((slot, slotIdx) => {
+                const photo = PHOTOS[photoOrder[slotIdx]];
+                return (
+                  <MobilePolaroidFrame
+                    key={`${sessionKey}-mob-${slotIdx}`}
+                    photo={photo}
+                    rotation={slot.rotation}
+                    delayMs={1200 + slotIdx * 200}
+                  />
+                );
+              })}
+            </div>
+
+            {STICKER_SLOTS.map((_, slotIdx) => {
+              const sticker = STICKERS[stickerOrder[slotIdx]];
+              const offset = MOBILE_STICKER_OFFSETS[slotIdx];
+              return (
+                <Sticker
+                  key={`${sessionKey}-mob-stk-${slotIdx}`}
+                  size={sticker.size}
+                  rotation={sticker.rotation}
+                  background={sticker.background}
+                  top={offset.top}
+                  left={offset.left}
+                  right={offset.right}
+                  delayMs={offset.delayMs}
+                >
+                  {sticker.icon === "coffee" && <CoffeeCupIcon />}
+                  {sticker.icon === "basketball" && <BasketballIcon />}
+                  {sticker.icon === "lobster" && <LobsterIcon />}
+                  {sticker.icon === "monster" && <MonsterIcon />}
+                </Sticker>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Margin notes — handwritten asides sitting in the left gutter.
+            Hidden on mobile since the gutter doesn't exist. */}
+        {!isMobile &&
+          MARGIN_NOTES.map((note, i) => (
+            <MarginNote key={`${sessionKey}-${i}`} {...note} />
+          ))}
+
+        {/* Desktop stickers — all draggable, placed in whitespace so the
+            initial positions never cover body text. */}
+        {!isMobile &&
+          STICKER_SLOTS.map((slot, slotIdx) => {
+            const sticker = STICKERS[stickerOrder[slotIdx]];
+            return (
+              <Sticker
+                // sessionKey in the key forces a fresh Sticker mount on
+                // every revisit so its fade-in plays again (drag position
+                // resets too — acceptable for a decorative element).
+                key={`${sessionKey}-${slotIdx}`}
+                size={sticker.size}
+                rotation={sticker.rotation}
+                background={sticker.background}
+                top={slot.top}
+                left={slot.left}
+                right={slot.right}
+                delayMs={slot.delayMs}
+              >
+                {sticker.icon === "coffee" && <CoffeeCupIcon />}
+                {sticker.icon === "basketball" && <BasketballIcon />}
+                {sticker.icon === "lobster" && <LobsterIcon />}
+                {sticker.icon === "monster" && <MonsterIcon />}
+              </Sticker>
+            );
+          })}
       </div>
 
       {/* Dog-eared bottom-right corner — sits outside the scroll area so
@@ -333,6 +417,144 @@ export function AboutPage({
       <PageCorner pageNumber="01" />
     </div>
     </PageAnimateContext.Provider>
+  );
+}
+
+// ── Mobile polaroid ──────────────────────────────────────────────────
+// Same visual + drag behavior as the desktop PolaroidFrame, but flow-
+// positioned (block) inside the mobile strip instead of absolutely
+// pinned. Drag still teleports to absolute on first move so users can
+// scatter them around the strip.
+function MobilePolaroidFrame({
+  photo,
+  rotation,
+  delayMs,
+}: {
+  photo: Photo;
+  rotation: number;
+  delayMs: number;
+}) {
+  const pageAnimate = usePageAnimate();
+  const [dragging, setDragging] = useState(false);
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const elRef = useRef<HTMLDivElement | null>(null);
+  const offsetRef = useRef({ x: 0, y: 0 });
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0 && e.pointerType === "mouse") return;
+    if (!elRef.current) return;
+    e.preventDefault();
+    const rect = elRef.current.getBoundingClientRect();
+    offsetRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+    setDragging(true);
+  };
+
+  useEffect(() => {
+    if (!dragging) return;
+    const onMove = (e: PointerEvent) => {
+      const parent = elRef.current?.offsetParent as HTMLElement | null;
+      if (!parent) return;
+      const parentRect = parent.getBoundingClientRect();
+      setPos({
+        x: e.clientX - parentRect.left + parent.scrollLeft - offsetRef.current.x,
+        y: e.clientY - parentRect.top + parent.scrollTop - offsetRef.current.y,
+      });
+    };
+    const onUp = () => setDragging(false);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+    };
+  }, [dragging]);
+
+  const positionStyle: CSSProperties = pos
+    ? { position: "absolute", left: pos.x, top: pos.y }
+    : { position: "relative" };
+
+  return (
+    <div
+      ref={elRef}
+      onPointerDown={onPointerDown}
+      style={{
+        ...positionStyle,
+        width: 200,
+        transform: `rotate(${rotation}deg) scale(${dragging ? 1.03 : 1})`,
+        transition: dragging
+          ? "filter 300ms ease"
+          : "transform 340ms cubic-bezier(0.22, 1, 0.36, 1), filter 300ms ease",
+        filter: dragging
+          ? "drop-shadow(8px 14px 22px rgba(0,0,0,0.28))"
+          : "drop-shadow(3px 6px 10px rgba(0,0,0,0.18))",
+        animationName: "fadeIn",
+        animationDuration: "0.8s",
+        animationTimingFunction: "ease",
+        animationDelay: `${delayMs}ms`,
+        animationFillMode: "both",
+        animationPlayState: pageAnimate ? "running" : "paused",
+        cursor: dragging ? "grabbing" : "grab",
+        zIndex: dragging ? 10 : 3,
+        userSelect: "none",
+        touchAction: "none",
+      }}
+    >
+      <div
+        style={{
+          background: "#fbfaf4",
+          padding: "var(--pad-chip) var(--pad-chip) 36px var(--pad-chip)",
+          border: "1px solid rgba(0,0,0,0.06)",
+        }}
+      >
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            aspectRatio: "4 / 5",
+            overflow: "hidden",
+            background: "#e8e3d5",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photo.src}
+            alt={photo.caption}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              display: "block",
+            }}
+            draggable={false}
+          />
+        </div>
+        <div
+          style={{
+            fontFamily: "var(--font-script)",
+            fontSize: "var(--fs-script)",
+            color: "var(--color-ink)",
+            opacity: 0.75,
+            textAlign: "center",
+            marginTop: 6,
+            lineHeight: 1.1,
+          }}
+        >
+          {photo.caption}
+        </div>
+      </div>
+      <TapeStrip
+        style={{
+          top: -10,
+          left: "50%",
+          transform: "translateX(-50%) rotate(-5deg)",
+        }}
+      />
+    </div>
   );
 }
 

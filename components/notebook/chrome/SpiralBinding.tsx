@@ -1,10 +1,21 @@
 "use client";
 
+import { useIsMobile } from "@/lib/hooks/useIsMobile";
+
 /**
  * Metal spiral coils down the left edge of the viewport.
  * Pinned (fixed) so it never animates with page turns.
+ *
+ * On mobile (≤768px), the binding is narrower (36px) so it doesn't eat
+ * usable horizontal space on a 375px phone — the coils still read as
+ * spiral binding without the desktop-tier width.
  */
 export function SpiralBinding({ coils = 22 }: { coils?: number }) {
+  const isMobile = useIsMobile();
+  const railWidth = isMobile ? 36 : 48;
+  const coilWidth = isMobile ? 30 : 38;
+  const coilHeight = isMobile ? 22 : 26;
+  const coilLeftOffset = isMobile ? -6 : -8;
   return (
     <div
       aria-hidden
@@ -13,7 +24,7 @@ export function SpiralBinding({ coils = 22 }: { coils?: number }) {
         left: 0,
         top: 0,
         bottom: 0,
-        width: 48,
+        width: railWidth,
         pointerEvents: "none",
         zIndex: 60,
       }}
@@ -25,14 +36,18 @@ export function SpiralBinding({ coils = 22 }: { coils?: number }) {
             key={i}
             style={{
               position: "absolute",
-              left: -8,
+              left: coilLeftOffset,
               top: `${t * 100}%`,
-              width: 38,
-              height: 26,
+              width: coilWidth,
+              height: coilHeight,
               transform: "translateY(-50%)",
             }}
           >
-            <svg width="38" height="26" viewBox="0 0 38 26">
+            <svg
+              width={coilWidth}
+              height={coilHeight}
+              viewBox="0 0 38 26"
+            >
               <defs>
                 <linearGradient id={`coil-${i}`} x1="0" x2="0" y1="0" y2="1">
                   <stop offset="0%" stopColor="#d4d4d8" />
