@@ -62,6 +62,10 @@ const FLIP_OPENING_MS = 1500;
 const FLIP_OPENING_EASE = "cubic-bezier(0.76, 0, 0.24, 1)";
 const FLIP_CLOSING_MS = 1500;
 const FLIP_CLOSING_EASE = "cubic-bezier(0.32, 0.72, 0.18, 1)";
+// Backstop for the transitionend fallback below. Keyed off the LONGER of
+// the two flips so a future change to either duration can't leave the
+// timer firing mid-animation and cutting the flip short.
+const FLIP_FALLBACK_MS = Math.max(FLIP_OPENING_MS, FLIP_CLOSING_MS) + 200;
 // Per-char welcome-seed pacing.
 const CHAR_DELAY_MS = 10;
 const CHAR_DURATION_MS = 180;
@@ -582,7 +586,7 @@ export function NotebookShell({
   // a real transitionend.
   useEffect(() => {
     if (pendingKind === null) return;
-    const id = window.setTimeout(commitFlipEnd, FLIP_OPENING_MS + 200);
+    const id = window.setTimeout(commitFlipEnd, FLIP_FALLBACK_MS);
     return () => window.clearTimeout(id);
   }, [pendingKind, commitFlipEnd]);
 
