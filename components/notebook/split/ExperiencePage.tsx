@@ -51,13 +51,18 @@ function Metric({ children }: { children: ReactNode }) {
 const ROLES: Role[] = [
   {
     company: "EY",
-    title: "Incoming AI & Data Consultant",
-    dates: "May 2026 – Sep 2026",
+    title: "AI & Data Consultant",
+    dates: "May 2026 – Present",
     location: "Toronto",
     logoSrc: "/logos/ey.jpeg",
     companyUrl: "https://www.ey.com/en_ca",
     logoRotation: -4,
-    blurb: <>Incoming on the AI &amp; Data team.</>,
+    blurb: (
+      <>
+        Consulting on enterprise-scale AI &amp; Data delivery in financial
+        services.
+      </>
+    ),
   },
   {
     company: "Polarity",

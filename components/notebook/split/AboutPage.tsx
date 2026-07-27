@@ -15,7 +15,7 @@ import { Sticker } from "../primitives/Sticker";
 
 const BODY_PARAGRAPHS = [
   "Obsessed with AI. In love with tech. Chronically online in the Claude and GPT corners of the internet. If I'm not building something I'm probably thinking about building it. 4th-year CS at the University of Guelph, Toronto-based.",
-  "Career path so far:\n→ data analyst\n→ data engineer\n→ AI & data developer\n→ incoming AI consultant at EY\nI kept trying different things until one clicked. AI was the one.",
+  "Career path so far:\n→ data analyst\n→ data engineer\n→ AI & data developer\n→ AI & data consultant at EY\nI kept trying different things until one clicked. AI was the one.",
   "Outside of that: basketball (90% chance I smoke you), too much coffee, snowboarding, fantasy novels (The Name of the Wind is my favorite), and a cologne collection that's gotten out of hand. This site is also a side project. Claude Code, two evenings, aggressively overengineered.",
 ];
 
