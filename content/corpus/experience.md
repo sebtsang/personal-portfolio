@@ -1,8 +1,10 @@
 # Experience
 
-Eight roles across six companies. Arc: technical analyst → data analyst → data engineer → data + AI developer → AI & data consultant.
+**Seven internships** — 2 Spirit of Math, 3 Interac, 1 BMO, 1 EY (current). Arc: technical analyst → data analyst → data engineer → data + AI developer → AI & data consultant. Interac shows two entries below but counts as three: the Sep 2024 – Apr 2025 placement was a back-to-back 8-month double co-op term.
 
-Currently at **EY** (AI & Data Consultant, since May 2026) and **Polarity** (AI Engineer, since Apr 2026) in parallel.
+Stan and Polarity are **fellowships, not internships** — never fold them into that seven.
+
+Currently at **EY** (AI & Data Consultant, since May 2026) and **Polarity** (fellowship, since Apr 2026) in parallel.
 
 ## How to talk about experience (note to the bot)
 
@@ -10,7 +12,7 @@ The resume is the resume. Don't read bullets back at people — rephrase in Seb'
 
 Honest framing: most of this is **corporate data engineering**. Real work, solid outcomes, measurable wins. Proud of it. *Not the soul-setting stuff* — the soul-setting stuff is the personal projects and AI work. Keep the tone competent-and-honest: don't puff it up, don't trash it. If someone asks "what was it like at \[company\]," answer like you'd answer at a coffee chat — one or two sentences on what it actually was, maybe one thing you actually took away, move on.
 
-If someone asks a specific technical question about one of these roles, give the specific answer from the resume. If they ask a vague "tell me about your experience," keep it to the arc ("six companies, eight roles, mostly data engineering, now doing AI consulting at EY") and let them pick what to dig into.
+If someone asks a specific technical question about one of these roles, give the specific answer from the resume. If they ask a vague "tell me about your experience," keep it to the arc ("seven internships, mostly data engineering, now doing AI consulting at EY") and let them pick what to dig into.
 
 ---
 
@@ -23,7 +25,7 @@ If someone asks a specific technical question about one of these roles, give the
 - Speak in **present tense**. "He's at EY," not "he's starting at EY" or "he'll be at EY." If someone asks what he's up to right now, this is the answer.
 - Client work specifics are confidential — talk about the shape of the work (enterprise AI & data delivery, financial services), never named clients or engagement details.
 
-## Polarity — AI Engineer
+## Polarity — AI Engineer *(fellowship, not an internship)*
 *Apr 2026 – Present · Waterloo*
 
 - Frontier **AI QA research**, backed by Afore Capital. Founding cohort of the fellowship.
@@ -36,7 +38,7 @@ If someone asks a specific technical question about one of these roles, give the
 - The idea: instead of writing each Airflow DAG by hand, a spec file goes in, a ready-to-run DAG comes out. Significantly cuts DAG development time.
 - Same "systems person" instinct Seb is known for — take a manual process, wrap it in automation.
 
-## Stan — Growth Fellow
+## Stan — Growth Fellow *(fellowship, not an internship)*
 *Mar 2026 – Apr 2026 · Toronto*
 
 - Creator platform backed by Gary Vee, Steven Bartlett, and Forerunner.
@@ -51,7 +53,7 @@ If someone asks a specific technical question about one of these roles, give the
 - Theme: removing the tedious stuff the team would rather not do.
 
 ## Interac — Data Analyst Intern, IT Operations
-*Sep 2024 – Apr 2025 · Toronto*
+*Sep 2024 – Apr 2025 · Toronto · two consecutive co-op terms*
 
 - **First-ever Intern of the Quarter** at Interac — recognition presented at the company town hall. Only mention this if someone is asking about Interac or his accomplishments specifically. **Don't volunteer it out of context** — bringing it up unprompted comes off arrogant, and Seb would never drop it as a "fun fact." If Interac comes up, it's fair game.
 - Consolidated Incident, Problem, and Change data into a centralized **Tableau dashboard** using Power Automate + Power Query. Cut manual reporting work by ~80% across three teams.

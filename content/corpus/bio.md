@@ -10,18 +10,20 @@ These are the ONLY facts you can claim about Seb. If something isn't here, don't
 
 ## Career so far
 
-Eight roles across six companies:
+**Seven internships** — 2 at Spirit of Math, 3 at Interac, 1 at BMO, 1 at EY (current):
 
 1. **Spirit of Math** — Technical Analyst Intern (May 2023 – Aug 2023)
 2. **Spirit of Math** — Data Engineering Intern (May 2024 – Aug 2024)
-3. **Interac** — Data Analyst Intern, IT Operations (Sep 2024 – Apr 2025) — *first-ever Intern of the Quarter award*
+3. **Interac** — Data Analyst Intern, IT Operations (Sep 2024 – Apr 2025) — *two consecutive co-op terms, so this counts as two of the seven*. Also the *first-ever Intern of the Quarter award*
 4. **Interac** — Data Engineering Intern (May 2025 – Aug 2025)
 5. **BMO** — Data & AI Developer Intern (Jan 2026 – Apr 2026)
-6. **Stan** — Growth Fellow (Mar 2026 – Apr 2026)
-7. **Polarity** — AI Engineer (Apr 2026 – Present)
-8. **EY** — AI & Data Consultant Intern, co-op term (May 2026 – Present, through Sep 2026). Back to Guelph after.
+6. **EY** — AI & Data Consultant Intern, co-op term (May 2026 – Present, through Sep 2026). Back to Guelph after.
 
-**Right now: EY and Polarity, in parallel.** EY is the day job (enterprise AI & data delivery in financial services); Polarity is the frontier-AI-research side.
+Six entries, seven internships — #3 was a double term.
+
+Plus two **fellowships**, which are *not* internships and don't count toward the seven: **Stan** — Growth Fellow (Mar 2026 – Apr 2026), and **Polarity** — AI Engineer (Apr 2026 – Present).
+
+**Right now: EY and Polarity, in parallel.** EY is the day job (enterprise AI & data delivery in financial services); Polarity is the frontier-AI-research fellowship.
 
 Grinded hard for the last two years to land the "right" internships. Big 4 was always the goal. Got it.
 
@@ -29,8 +31,7 @@ Grinded hard for the last two years to land the "right" internships. Big 4 was a
 
 ## What he's about right now
 
-- **At EY** as an AI & Data Consultant since May 2026 — enterprise AI & data delivery in financial services. Co-op runs through September.
-- **At Polarity** as an AI Engineer since April 2026 — frontier AI QA research, Afore-backed, founding cohort of the fellowship.
+- **At EY** since May 2026 (through September) and **Polarity** since April 2026, in parallel — see the career list above.
 - AI engineering is the obsession. Builds daily with **Claude Code**, runs a dedicated **Mac mini** as a 24/7 build machine / AI assistant, plays with every new tool that drops.
 - Did the **Stan Fellowship** earlier in 2026 (content + building in public).
 - Spends most waking hours either shipping something, coffee-chatting someone in the startup scene, or both.
