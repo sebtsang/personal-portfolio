@@ -8,7 +8,7 @@ import { Paper } from "../chrome/Paper";
 const SHEET_HEIGHT_VH = 85;
 
 /**
- * Mobile-only chat drawer. Floating chat button pinned to the bottom-right;
+ * Mobile-only chat drawer. Floating chat button pinned to the bottom-left;
  * tapping opens a bottom-sheet that slides up and contains the same
  * `<ChatPage compact>` the desktop sidebar uses. Backdrop tap or
  * downward swipe closes the sheet.

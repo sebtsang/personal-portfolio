@@ -63,6 +63,7 @@ export function ContentPage({
         >
           <ContentBody
             kind={kind}
+            active={activeViewKind === kind}
             onClose={onClose}
             animate={animate}
             sessionKey={sessionKey}
@@ -103,6 +104,7 @@ export function ContentPage({
       >
         <ContentBody
           kind={kind}
+          active={activeViewKind === kind}
           onClose={onClose}
           animate={animate}
           sessionKey={sessionKey}
@@ -114,11 +116,17 @@ export function ContentPage({
 
 function ContentBody({
   kind,
+  active,
   onClose,
   animate,
   sessionKey,
 }: {
   kind: NonEmptyKind;
+  /** True when this page is the view the user is currently on. Pages stay
+   *  mounted after a visit, so anything that binds a WINDOW-level listener
+   *  has to gate on this or it keeps reacting while the user is looking at
+   *  a different page. */
+  active: boolean;
   onClose: () => void;
   animate: boolean;
   sessionKey: number;
@@ -130,7 +138,14 @@ function ContentBody({
       <ExperiencePage onClose={onClose} animate={animate} sessionKey={sessionKey} />
     );
   if (kind === "linkedin")
-    return <LinkedInPage onClose={onClose} animate={animate} sessionKey={sessionKey} />;
+    return (
+      <LinkedInPage
+        onClose={onClose}
+        active={active}
+        animate={animate}
+        sessionKey={sessionKey}
+      />
+    );
   if (kind === "contact")
     return <ContactPage onClose={onClose} animate={animate} sessionKey={sessionKey} />;
   return <ContentPagePlaceholder onClose={onClose} />;

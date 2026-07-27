@@ -352,9 +352,12 @@ export function AboutPage({
               })}
             </div>
 
-            {STICKER_SLOTS.map((_, slotIdx) => {
+            {MOBILE_STICKER_OFFSETS.map((offset, slotIdx) => {
+              // Driven by the offsets array (not STICKER_SLOTS, whose
+              // positions are desktop-only) and guarded, so the two
+              // arrays can drift in length without crashing the page.
               const sticker = STICKERS[stickerOrder[slotIdx]];
-              const offset = MOBILE_STICKER_OFFSETS[slotIdx];
+              if (!sticker) return null;
               return (
                 <Sticker
                   key={`${sessionKey}-mob-stk-${slotIdx}`}
@@ -421,10 +424,27 @@ export function AboutPage({
 }
 
 // ── Mobile polaroid ──────────────────────────────────────────────────
-// Same visual + drag behavior as the desktop PolaroidFrame, but flow-
-// positioned (block) inside the mobile strip instead of absolutely
-// pinned. Drag still teleports to absolute on first move so users can
-// scatter them around the strip.
+// Same visuals as the desktop PolaroidFrame, but flow-positioned (block)
+// inside the mobile strip instead of absolutely pinned. Drag teleports to
+// absolute on commit so users can scatter them around the strip.
+//
+// Drag has to share the gesture space with page scrolling here, which the
+// desktop frame never had to: the strip is ~60% of the viewport width and
+// runs ~1000px down the page, so swallowing every touch (touch-action:
+// none, what the desktop frame does) turned most of /about into a scroll
+// dead zone. Two changes buy scrolling back:
+//   1. touch-action: pan-y — the browser keeps vertical panning.
+//   2. the drag only COMMITS once the gesture proves horizontal-dominant
+//      (see DRAG_INTENT_PX). Committing on pointerdown like the desktop
+//      frame does isn't enough to fix on its own — the first ambiguous
+//      pointermoves of a vertical swipe would still write `pos` and rip
+//      the polaroid out of the flow before the browser claimed the
+//      gesture for scrolling.
+// A vertical swipe therefore abandons the candidate drag and scrolls; the
+// polaroid never moves. Mouse has no scroll conflict, so it commits on
+// movement in any direction.
+const DRAG_INTENT_PX = 8;
+
 function MobilePolaroidFrame({
   photo,
   rotation,
@@ -435,26 +455,76 @@ function MobilePolaroidFrame({
   delayMs: number;
 }) {
   const pageAnimate = usePageAnimate();
+  // `tracking`: a pointer is down and the gesture may become a drag.
+  // `dragging`: the gesture committed — drives every visual (scale,
+  // shadow, cursor, z-index) and gates writes to `pos`.
+  const [tracking, setTracking] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const elRef = useRef<HTMLDivElement | null>(null);
   const offsetRef = useRef({ x: 0, y: 0 });
+  // Mirrors `dragging` for the move listener, which can't re-subscribe
+  // mid-gesture to see fresh state.
+  const committedRef = useRef(false);
+  const startRef = useRef<{ x: number; y: number; touch: boolean } | null>(
+    null,
+  );
 
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0 && e.pointerType === "mouse") return;
     if (!elRef.current) return;
-    e.preventDefault();
+    // Mouse only: suppresses text selection and the native image drag.
+    // On touch it would buy nothing (touch-action governs scrolling) and
+    // we want the browser's panning intact until the gesture commits.
+    if (e.pointerType === "mouse") e.preventDefault();
     const rect = elRef.current.getBoundingClientRect();
     offsetRef.current = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
     };
-    setDragging(true);
+    startRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      touch: e.pointerType !== "mouse",
+    };
+    committedRef.current = false;
+    setTracking(true);
   };
 
   useEffect(() => {
-    if (!dragging) return;
+    if (!tracking) return;
+
+    const stop = () => {
+      committedRef.current = false;
+      startRef.current = null;
+      setTracking(false);
+      setDragging(false);
+    };
+
     const onMove = (e: PointerEvent) => {
+      const start = startRef.current;
+      if (!start) return;
+
+      if (!committedRef.current) {
+        const dx = Math.abs(e.clientX - start.x);
+        const dy = Math.abs(e.clientY - start.y);
+        if (start.touch) {
+          // Vertical intent — the browser owns this gesture. Stand down
+          // so pan-y scrolls the page and the polaroid stays in flow.
+          if (dy > dx && dy > DRAG_INTENT_PX) {
+            stop();
+            return;
+          }
+          // Not yet horizontal enough to call it: wait for more movement
+          // rather than guessing.
+          if (dx <= DRAG_INTENT_PX || dx < dy) return;
+        } else if (Math.max(dx, dy) <= DRAG_INTENT_PX) {
+          return;
+        }
+        committedRef.current = true;
+        setDragging(true);
+      }
+
       const parent = elRef.current?.offsetParent as HTMLElement | null;
       if (!parent) return;
       const parentRect = parent.getBoundingClientRect();
@@ -463,16 +533,16 @@ function MobilePolaroidFrame({
         y: e.clientY - parentRect.top + parent.scrollTop - offsetRef.current.y,
       });
     };
-    const onUp = () => setDragging(false);
+
     window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
+    window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
     return () => {
       window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
+      window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
     };
-  }, [dragging]);
+  }, [tracking]);
 
   const positionStyle: CSSProperties = pos
     ? { position: "absolute", left: pos.x, top: pos.y }
@@ -501,7 +571,8 @@ function MobilePolaroidFrame({
         cursor: dragging ? "grabbing" : "grab",
         zIndex: dragging ? 10 : 3,
         userSelect: "none",
-        touchAction: "none",
+        // pan-y, not none — see the gesture note above the component.
+        touchAction: "pan-y",
       }}
     >
       <div
