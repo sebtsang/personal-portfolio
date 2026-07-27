@@ -27,6 +27,18 @@ type Post = {
 
 const POSTS: Post[] = [
   {
+    url: "https://www.linkedin.com/feed/update/urn:li:activity:7477367784113393664/",
+    heroSrc: "/linkedin/post6.png",
+    caption: "I'm on my 7th internship",
+    rotation: 2,
+  },
+  {
+    url: "https://www.linkedin.com/feed/update/urn:li:activity:7456408251740405760/",
+    heroSrc: "/linkedin/post7.png",
+    caption: "won my first hackathon at Google",
+    rotation: -5,
+  },
+  {
     url: "https://www.linkedin.com/posts/sebtsang_hey-linkedin-im-seb-and-i-almost-dropped-activity-7433329890743144448-4-b9",
     heroSrc: "/linkedin/post1.png",
     caption: "hey LinkedIn, I'm Seb",
