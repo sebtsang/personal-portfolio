@@ -1,6 +1,8 @@
 # Experience
 
-Seven roles across four companies. Arc: data analyst → data engineer → data + AI developer → AI consultant.
+Eight roles across six companies. Arc: technical analyst → data analyst → data engineer → data + AI developer → AI & data consultant.
+
+Currently at **EY** (AI & Data Consultant, since May 2026) and **Polarity** (AI Engineer, since Apr 2026) in parallel.
 
 ## How to talk about experience (note to the bot)
 
@@ -8,16 +10,24 @@ The resume is the resume. Don't read bullets back at people — rephrase in Seb'
 
 Honest framing: most of this is **corporate data engineering**. Real work, solid outcomes, measurable wins. Proud of it. *Not the soul-setting stuff* — the soul-setting stuff is the personal projects and AI work. Keep the tone competent-and-honest: don't puff it up, don't trash it. If someone asks "what was it like at \[company\]," answer like you'd answer at a coffee chat — one or two sentences on what it actually was, maybe one thing you actually took away, move on.
 
-If someone asks a specific technical question about one of these roles, give the specific answer from the resume. If they ask a vague "tell me about your experience," keep it to the arc ("four companies, seven roles, mostly data engineering, now moving into AI") and let them pick what to dig into.
+If someone asks a specific technical question about one of these roles, give the specific answer from the resume. If they ask a vague "tell me about your experience," keep it to the arc ("six companies, eight roles, mostly data engineering, now doing AI consulting at EY") and let them pick what to dig into.
 
 ---
 
-## EY (Ernst & Young) — Incoming AI & Data Consultant Intern
-*May 2026 – Sep 2026 · Toronto · co-op*
+## EY (Ernst & Young) — AI & Data Consultant Intern *(current role)*
+*May 2026 – Present · Toronto · co-op through Sep 2026*
 
-- **Incoming.** Seb hasn't started yet — starts May 2026, co-op term, back to Guelph after.
-- Joining the AI & Data team. Natural next step from the data + orchestration + AI work at BMO — applied AI consulting is the continuation, not a pivot.
-- If someone asks "how's EY?" before May, correct them politely — he hasn't started. If it's after May, speak in present tense about what he's doing there, not in retrospective.
+- **This is where Seb is right now.** Started May 2026. Co-op term runs through September, back to Guelph after.
+- Consulting on **enterprise-scale AI & Data delivery in financial services**.
+- Natural continuation of the data + orchestration + AI work at BMO — applied AI consulting is the next step, not a pivot.
+- Speak in **present tense**. "He's at EY," not "he's starting at EY" or "he'll be at EY." If someone asks what he's up to right now, this is the answer.
+- Client work specifics are confidential — talk about the shape of the work (enterprise AI & data delivery, financial services), never named clients or engagement details.
+
+## Polarity — AI Engineer
+*Apr 2026 – Present · Waterloo*
+
+- Frontier **AI QA research**, backed by Afore Capital. Founding cohort of the fellowship.
+- Runs alongside EY — this is the AI-building side of what he's doing right now.
 
 ## BMO Financial Group — Data & AI Developer Intern
 *Jan 2026 – Apr 2026 · Toronto*
@@ -25,6 +35,12 @@ If someone asks a specific technical question about one of these roles, give the
 - Built an **automated DAG-generation pipeline** that turns ingestion specs into Airflow-ready orchestration artifacts.
 - The idea: instead of writing each Airflow DAG by hand, a spec file goes in, a ready-to-run DAG comes out. Significantly cuts DAG development time.
 - Same "systems person" instinct Seb is known for — take a manual process, wrap it in automation.
+
+## Stan — Growth Fellow
+*Mar 2026 – Apr 2026 · Toronto*
+
+- Creator platform backed by Gary Vee, Steven Bartlett, and Forerunner.
+- Helped scale their AI product **Stanley to $10M ARR**.
 
 ## Interac — Data Engineering Intern
 *May 2025 – Aug 2025 · Toronto*

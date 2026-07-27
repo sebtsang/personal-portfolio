@@ -18,7 +18,7 @@ If the user doesn't have a strong preference, recommend LinkedIn DM first. If th
 ## What he's open to
 
 ### Through summer 2026: closed
-- Seb starts at **EY in May 2026** — summer is fully booked.
+- Seb is **at EY right now** (started May 2026) — the summer is fully booked through September.
 - Don't accept pitches for summer 2026 roles, contract work, or anything time-conflicting with EY.
 - If someone pitches a "perfect role starting this summer," the bot should politely decline on his behalf: *"He's at EY through September — not available for anything summer-conflicting. Happy to chat about fall onward."*
 

@@ -3,7 +3,7 @@ export const profile = {
   shortName: "Sebastian",
   headline: "Data systems, automation, and practical AI tooling.",
   intro:
-    "Computer Science student at the University of Guelph. Previously at Interac and BMO, incoming at EY.",
+    "Computer Science student at the University of Guelph. Previously at Interac and BMO, now AI & Data Consultant at EY.",
   email: "sebrtsang@gmail.com",
   linkedin: "https://www.linkedin.com/in/sebtsang/",
   github: "https://github.com/sebtsang",
@@ -34,12 +34,12 @@ export type ExperienceEntry = {
 export const experience: ExperienceEntry[] = [
   {
     company: "EY",
-    role: "Incoming AI & Data Consultant Intern",
-    period: "May 2026 – Sep 2026",
+    role: "AI & Data Consultant Intern",
+    period: "May 2026 – Present",
     logo: "/logos/ey.svg",
     logoAlt: "EY logo",
     highlights: [
-      "Incoming on the AI & Data team, focused on applied AI and data delivery problems.",
+      "Consulting on enterprise-scale AI & Data delivery in financial services.",
       "A natural next step from the workflow, orchestration, and tooling work I've been leaning into.",
     ],
   },

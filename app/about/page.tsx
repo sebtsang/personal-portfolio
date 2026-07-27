@@ -3,7 +3,7 @@ import { NotebookShell } from "@/components/notebook/NotebookShell";
 export const metadata = {
   title: "Sebastian Tsang — About",
   description:
-    "The about page of Sebastian's journal — builder in the tech/AI space, CS at Guelph, incoming at EY.",
+    "The about page of Sebastian's journal — builder in the tech/AI space, CS at Guelph, AI & Data Consultant at EY.",
 };
 
 export default function AboutRoute() {
