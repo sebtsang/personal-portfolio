@@ -552,10 +552,31 @@ export function NotebookShell({
   const commitFlipEnd = useCallback(() => {
     if (pendingKind === null) return;
     const dest = pendingKind;
+    const src = currentKind;
     setCurrentKind(dest);
     setPendingKind(null);
     setFlippingKind(null);
     setFlipTransition(null);
+    // Force the flip's END rotations. On the normal transitionend path
+    // the CSS transition has already landed these, so this is a no-op
+    // (we return `prev` untouched). It matters when we arrive via the
+    // timeout fallback below WITHOUT the animation ever having run:
+    // the double-rAF that starts the transition is paused in a
+    // backgrounded tab while the fallback's setTimeout keeps firing, so
+    // committing currentKind alone left the pages at their flip-START
+    // rotations — destination stuck at -180° (closing, invisible behind
+    // its own hidden backface) or still covered by the source at 0°
+    // (opening) — with the URL and currentKind already moved on. The
+    // return-to-home case was unrecoverable without a reload, since
+    // Escape then no-ops on currentKind === "home".
+    setRotations((prev) => {
+      // Closing flip (dest === home): home lands at 0° and covers the
+      // source, which legitimately stays at 0° underneath it.
+      // Opening flip: the source is the page that flips away to -180°.
+      const wantSrc = dest === "home" ? (prev[src] ?? 0) : -180;
+      if (prev[dest] === 0 && prev[src] === wantSrc) return prev;
+      return { ...prev, [dest]: 0, [src]: wantSrc };
+    });
     setReadyKinds((prev) => {
       if (prev.has(dest)) return prev;
       const next = new Set(prev);
@@ -567,7 +588,7 @@ export function NotebookShell({
     // stale (opacity 1) polaroids / stickers from the previous visit
     // while the flip was in progress, which would then "disappear"
     // at flip-end and fade back in.
-  }, [pendingKind]);
+  }, [pendingKind, currentKind]);
 
   const handlePageFlipEnd = useCallback(
     (e: React.TransitionEvent<HTMLDivElement>) => {

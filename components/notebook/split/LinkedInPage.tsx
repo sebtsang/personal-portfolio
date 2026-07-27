@@ -86,10 +86,14 @@ function cardFadeDelay(offset: number): number {
 
 export function LinkedInPage({
   onClose,
+  active = true,
   animate = true,
   sessionKey = 0,
 }: {
   onClose: () => void;
+  /** True only while this is the page the user is looking at. Gates the
+   *  window-level arrow-key listener — see the effect below. */
+  active?: boolean;
   animate?: boolean;
   sessionKey?: number;
 }) {
@@ -107,7 +111,13 @@ export function LinkedInPage({
     [],
   );
 
+  // Arrow-key carousel control. Gated on `active`: this page stays mounted
+  // after it's been visited, so an ungated window listener kept stealing
+  // ArrowLeft/ArrowRight (preventDefault included) from whatever page the
+  // user had flipped to — and silently advanced the carousel behind their
+  // back, so returning to /linkedin showed a different card than they left.
   useEffect(() => {
+    if (!active) return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (
@@ -128,7 +138,7 @@ export function LinkedInPage({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [next, prev]);
+  }, [active, next, prev]);
 
   // Touch swipe — horizontal swipe past SWIPE_THRESHOLD_PX advances the
   // carousel. Mirrors the landing page's swipe pattern in NotebookShell.
