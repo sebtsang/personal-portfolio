@@ -8,7 +8,7 @@
  * - messages with empty content
  * - role: "system" from clients (that's ours to inject, not theirs)
  * - garbage content (see lib/sanitize.ts)
- * - total prompt budget blown (> ~10000 tokens system + history)
+ * - total prompt budget blown (see MAX_TOTAL_TOKENS)
  */
 
 import { z } from "zod";
@@ -17,7 +17,24 @@ import { estimateTokens } from "./llm/prompt";
 
 export const MAX_MESSAGE_CHARS = 2000;
 export const MAX_MESSAGES_PER_REQUEST = 30;
-export const MAX_TOTAL_TOKENS = 12000;
+/**
+ * Ceiling on system prompt + conversation history, in estimated tokens.
+ *
+ * Was 12000, which was picked when the corpus was small and the
+ * configured models were assumed to have tight context windows. Neither
+ * holds: the system prompt now sits around 8.5-9k, and every configured
+ * default model has at least a 128k window (gpt-oss:120b 128k, Claude
+ * Haiku 4.5 200k, gpt-4.1-mini 1M). At 12000 the corpus was crowding
+ * out conversation history and a long chat would have 413'd for no
+ * reason the model actually cared about.
+ *
+ * 30000 is still a hard ceiling, not an invitation: MAX_MESSAGES_PER_
+ * REQUEST (30) x MAX_MESSAGE_CHARS (2000) already bounds history at
+ * ~15k tokens, so system + history can't realistically exceed ~24k.
+ * This constant is the backstop for a pathological request, not the
+ * thing shaping normal conversations.
+ */
+export const MAX_TOTAL_TOKENS = 30000;
 
 /**
  * Per-role schema. Assistant messages are allowed to have empty content

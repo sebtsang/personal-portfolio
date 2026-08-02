@@ -9,14 +9,29 @@
  * Result is memoized per-provider so we read the markdown files once
  * per process (not once per request).
  *
- * CORPUS BUDGET WARNING: if the assembled prompt exceeds 9000 tokens
- * (~32,000 chars), console.warn at module load so you catch runaway
- * corpus growth before it hits prompt-cache thresholds or the small
- * models' context window. Threshold bumped from 5000 after the full
- * corpus landed (bio + experience + projects + opinions + taste +
- * quirks + looking-for + faq) — we're comfortably inside every
- * configured model's context window and well under any retrieval
- * cutover point. Revisit if the corpus grows past ~12k tokens.
+ * CORPUS BUDGET WARNING: console.warn at module load if the assembled
+ * prompt exceeds CORPUS_WARN_TOKENS, so runaway corpus growth is caught
+ * early.
+ *
+ * The old threshold (9000) was justified by "the small models' context
+ * window" — that rationale is dead. Every configured default now has at
+ * least a 128k window (gpt-oss:120b 128k, Claude Haiku 4.5 200k,
+ * gpt-4.1-mini 1M), so a 9k prompt is ~7% of the smallest one and the
+ * context window is nowhere near the binding constraint.
+ *
+ * What actually binds is MAX_TOTAL_TOKENS in lib/validation.ts (30000),
+ * which covers system prompt + conversation history. The warning is set
+ * to leave comfortable room for history under that ceiling: at 20k the
+ * prompt would still leave ~10k for the conversation, which is more
+ * than MAX_MESSAGES_PER_REQUEST x MAX_MESSAGE_CHARS can realistically
+ * produce.
+ *
+ * Retrieval is NOT the answer if this trips. Published guidance puts the
+ * stuff-vs-retrieve crossover around ~50k tokens, and more importantly
+ * most of this corpus is unconditional behavioural rules (never mention
+ * GPA, never share phone, the project deflection) rather than lookup
+ * facts — similarity search would drop exactly the parts that must be
+ * present on every request. If this warning fires, dedupe first.
  */
 
 import fs from "node:fs";
@@ -27,6 +42,9 @@ import { override as claudeOverride } from "@/lib/persona/overrides/claude";
 import { override as openaiOverride } from "@/lib/persona/overrides/openai";
 import { override as githubOverride } from "@/lib/persona/overrides/github";
 import type { LLMProvider } from "@/lib/llm";
+
+/** See the CORPUS BUDGET WARNING note at the top of this file. */
+const CORPUS_WARN_TOKENS = 20000;
 
 const CORPUS_DIR = path.join(process.cwd(), "content", "corpus");
 const CORPUS_FILES = [
@@ -74,10 +92,11 @@ function buildForProvider(provider: LLMProvider): string {
 
   // ~1 token per 4 chars (rough English estimate — good enough for a warning threshold)
   const approxTokens = Math.round(assembled.length / 4);
-  if (approxTokens > 9000) {
+  if (approxTokens > CORPUS_WARN_TOKENS) {
     console.warn(
-      `[prompt] Assembled system prompt is ~${approxTokens} tokens (>9000). ` +
-        `Consider trimming content/corpus/*.md or moving to retrieval.`
+      `[prompt] Assembled system prompt is ~${approxTokens} tokens ` +
+        `(>${CORPUS_WARN_TOKENS}). Dedupe content/corpus/*.md — see the ` +
+        `note at the top of this file before reaching for retrieval.`
     );
   }
 
