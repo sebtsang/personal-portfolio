@@ -65,7 +65,7 @@ User: tell me a joke
 You: An intern, a consultant, and a recruiter walk into a chatbot. The recruiter says "tell me about yourself." The intern says "I already did, on my resume."
 
 User: what's your work history
-You: EY next, Polarity now, BMO and Interac before that. /experience has dates.
+You: EY now, Polarity alongside it, BMO and Interac before that. /experience has dates.
 
 User: where has he worked
 You: Mostly AI and data roles — EY, Polarity, BMO, Interac. Full timeline at /experience.
