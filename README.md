@@ -32,6 +32,15 @@ stickers). The full state model lives in
 [components/notebook/NotebookShell.tsx](components/notebook/NotebookShell.tsx)
 — see the long header comment.
 
+**Consequence worth remembering:** a mounted-but-invisible page still
+runs its effects. Anything binding a `window`-level listener has to
+gate on whether it's the active view, or it keeps reacting while the
+user is looking at something else. `LinkedInPage` learned this the
+hard way — its arrow-key carousel listener was ungated, so after one
+visit to `/linkedin` the arrow keys were being swallowed on every other
+page (and silently advancing the carousel behind the user's back). It
+now takes an `active` prop threaded down from `ContentPage`.
+
 ### Page-flip vocabulary
 - **Opening flip** (1.5s, `cubic-bezier(0.76, 0, 0.24, 1)`) — every
   nav *except* returning home. Current page rotates `0° → -180°`
@@ -44,6 +53,27 @@ stickers). The full state model lives in
 - **Cover flip** (1.2s open, 1.7s close) — landing ↔ chat home,
   owned by [PageFlipTransition.tsx](components/notebook/PageFlipTransition.tsx).
   Closing also resets the chat session so the next open is fresh.
+
+### Flip-end commit (and the backgrounded-tab trap)
+The flip starts its CSS transition from inside a double
+`requestAnimationFrame` (paint at the start rotation, *then* set the
+end rotation so the transition actually fires). `transitionend` commits
+the new `currentKind`, and a `setTimeout` fallback — sized off
+`max(FLIP_OPENING_MS, FLIP_CLOSING_MS)` — covers the case where the
+event doesn't reach React.
+
+The trap: browsers **pause rAF in a hidden tab but keep `setTimeout`
+running**. Background the tab mid-flip and the fallback would fire
+while the rotations were still at their flip-*start* values, committing
+`currentKind` and the URL to a destination that was never actually
+revealed — leaving the previous page on screen. Returning to home was
+unrecoverable without a reload, since Escape no-ops once `currentKind`
+is already `home`.
+
+So `commitFlipEnd` now lands the flip's end rotations itself. On the
+normal path the transition has already set exactly those values, so the
+updater returns `prev` untouched and nothing re-renders; it only does
+work when the animation never ran.
 
 ### Per-page reveal timing
 A bumped session counter + `PageAnimateContext`
@@ -74,19 +104,26 @@ SSR + hydration consistent). Below the breakpoint:
   Auto-closes when navigation triggers a view change so the freshly-
   flipped page isn't covered.
 - Each content page switches to a single-column layout. About's
-  polaroids + stickers move into a stacked strip below the body text
-  (still draggable via the same Pointer Events code). Margin notes
-  are hidden — the wide left gutter doesn't exist on mobile.
+  polaroids + stickers move into a stacked strip below the body text.
+  Margin notes are hidden — the wide left gutter doesn't exist on
+  mobile.
+- **Polaroid drag vs. page scroll.** The mobile strip is ~57% of the
+  viewport width and runs ~1000px down the page, so the desktop
+  frame's `touch-action: none` turned most of `/about` into a scroll
+  dead zone — a swipe over a photo dragged it instead of scrolling.
+  Mobile polaroids use `touch-action: pan-y` *and* only commit a drag
+  once the gesture proves horizontal-dominant past `DRAG_INTENT_PX`.
+  Flipping `touch-action` alone isn't enough: the first ambiguous
+  moves of a vertical swipe would still write a position and pull the
+  polaroid out of the flow before the browser claimed the gesture.
+  Trade-off: a genuinely diagonal drag both moves the photo and
+  scrolls, which is inherent to `pan-y`.
 - LinkedIn cards shrink to 240×300 with touch swipe to flip between
   posts; arrow buttons are tightened.
 - Spiral binding narrows from 48px → 36px to give content more room.
 - Page-flip perspective tightens from `2400px` → `1400px` so the
   rotateY reads as 3D on a portrait viewport instead of a flat
   squeeze.
-- A render-time fallback in `NotebookShell` commits the flip-end
-  state via setTimeout if `transitionend` doesn't reach React (can
-  happen when framer-motion's `AnimatePresence` for the drawer is
-  mid-exit during a flip).
 
 ### Handwriting, not type
 Caveat body, JetBrains Mono for small meta labels, Fraunces +
@@ -176,12 +213,37 @@ All env vars I read from are documented in [.env.example](.env.example).
     loves, preferences, the gated driving fear
   - [content/corpus/looking-for.md](content/corpus/looking-for.md) —
     contact policy, open-buckets, LinkedIn preferred
-  - [content/corpus/faq.md](content/corpus/faq.md) — canned replies
-    for classic questions
+  - [content/corpus/faq.md](content/corpus/faq.md) — questions that
+    need a *rule* rather than a punchline (project deflection, never-
+    share-phone, page routing). The classic one-liners live in the
+    `voice.ts` few-shots; they used to be duplicated here word-for-word
+    until the two copies started drifting.
 
-Current corpus lands at ~8.4k tokens of system prompt. Warning
-threshold in `prompt.ts` is 9k. If it grows past 12k, time to think
-about retrieval.
+### Prompt budget
+The assembled system prompt is **~8.6k tokens** (provider-reported;
+`voice.ts` ~1.5k, the corpus ~7k, provider override ~0.1k). Two
+constants bound it:
+
+- `CORPUS_WARN_TOKENS` in [lib/llm/prompt.ts](lib/llm/prompt.ts) —
+  **20k**, a console.warn to catch runaway growth.
+- `MAX_TOTAL_TOKENS` in [lib/validation.ts](lib/validation.ts) —
+  **30k**, the hard cap on system prompt + conversation history, past
+  which `/api/chat` returns 413.
+
+Both were previously much tighter (9k / 12k) on the theory that the
+context window was the binding constraint. It isn't: every configured
+default model has at least a 128k window (gpt-oss:120b 128k, Claude
+Haiku 4.5 200k, gpt-4.1-mini 1M), so ~8.6k is around 7% of the
+smallest. The old 12k cap was the real problem — it left only ~3k for
+conversation history and would eventually 413 a long chat for no
+reason the model cared about.
+
+**If the warning ever fires, dedupe before reaching for retrieval.**
+Published guidance puts the stuff-vs-retrieve crossover near ~50k
+tokens, and more to the point most of this corpus is *unconditional
+behavioural rules* (never mention GPA, never share phone, the project
+deflection) rather than lookup facts. Similarity search would drop
+exactly the parts that must be present on every single request.
 
 ### Tool definitions
 Tools live in three places today (Zod schemas in
@@ -223,7 +285,13 @@ the historical split-view layout):
   and their slots (`STICKER_SLOTS`), plus margin notes. Polaroid and
   sticker assignments shuffle on every mount (Fisher-Yates,
   `shuffleIndexes()`); once placed, users can drag individual pieces
-  around (`PolaroidFrame` / `Sticker` own their drag state).
+  around. Two polaroid components own their own drag state:
+  `PolaroidFrame` (desktop, absolutely positioned) and
+  `MobilePolaroidFrame` (the flow-positioned strip, with the
+  intent-gated gesture handling described under Mobile above).
+  `MOBILE_STICKER_OFFSETS` positions stickers in the mobile strip;
+  the desktop `STICKER_SLOTS` positions are gutter-relative and don't
+  apply there.
 - **Experience** —
   [ExperiencePage.tsx](components/notebook/split/ExperiencePage.tsx).
   `ROLES` array at the top: company, title, dates, logo path, URL,
@@ -258,7 +326,7 @@ the historical split-view layout):
   referenced by `logoSrc` in `ExperiencePage`.
 - Portrait / polaroid photos → `public/photos/seb-{1,2,3}.jpg`;
   referenced by `src` in `AboutPage.PHOTOS`.
-- LinkedIn post previews → `public/linkedin/post{1..5}.png`.
+- LinkedIn post previews → `public/linkedin/post{1..7}.png`.
 
 ## Hosting notes (Vercel)
 
@@ -286,7 +354,7 @@ Most config is pinned in code so the dashboard rarely needs touching:
 
 ### Smoke test
 ```bash
-npm run smoke https://seb.tsang.io
+npm run smoke https://sebastiantsang.com
 ```
 Runs validation-error paths, a streaming success, and a rate-limit
 burst. Exits 0 on all-pass.
@@ -328,7 +396,8 @@ components/notebook/
   pageOrder.ts             → canonical PAGE_ORDER (z-stack order)
   chrome/
     Paper.tsx              → cream bg + ruled lines + margin rule
-    SpiralBinding.tsx      → 22 coils pinned to viewport left
+    SpiralBinding.tsx      → 22 coils pinned to viewport left;
+                             48px rail, 36px on mobile
     SpreadMarginRule.tsx   → red vertical rule at chat/content seam
     PageChrome.tsx         → top-left handwritten date
     PageCorner.tsx         → dog-eared bottom-right with page number
@@ -371,7 +440,7 @@ components/notebook/
                              draggable polaroids + stickers
     ExperiencePage.tsx     → vertical spine timeline, 9 roles, logo
                              stickers, metric highlights
-    LinkedInPage.tsx       → stacked polaroid-card carousel (5 posts)
+    LinkedInPage.tsx       → stacked polaroid-card carousel (7 posts)
     ContactPage.tsx        → handwritten note + taped index card
     ContentPagePlaceholder.tsx → fallback for un-built page kinds
   primitives/
@@ -407,8 +476,9 @@ lib/
                              between desktop sidebar and mobile drawer
   store.ts                 → Zustand view store + dispatchTool
   validation.ts            → Zod request schema + budget check
-                             (discriminated union allows empty
-                             assistant content — see safety net)
+                             (MAX_TOTAL_TOKENS 30k; discriminated
+                             union allows empty assistant content —
+                             see safety net)
   sanitize.ts              → garbage heuristics (non-printable /
                              repeat / base64 detection)
   ratelimit.ts             → Upstash ratelimit wrapper
@@ -419,10 +489,8 @@ lib/
                              UPSTASH_REDIS_REST_* or KV_REST_API_*
   utils.ts                 → cn() — clsx + tailwind-merge
 content/
-  site.ts                  → profile, socialLinks, experience array,
-                             currentFocus (UI-facing)
-  linkedin.ts              → LinkedIn post metadata (5 posts)
-  corpus/                  → prose corpus (LLM-facing, 8 files):
+  corpus/                  → prose corpus (LLM-facing, 8 files) — the
+                             ONLY thing under content/ now:
                              bio.md, experience.md, projects.md,
                              opinions.md, taste.md, quirks.md,
                              looking-for.md, faq.md
@@ -431,7 +499,7 @@ public/
   photos/seb-{1,2,3}.jpg   → portrait polaroids
   logos/{ey,polarity,bmo,stan,interac,toastmasters,spirit-of-math}.*
                            → company logo stickers
-  linkedin/post{1..5}.png  → post hero images for LinkedIn carousel
+  linkedin/post{1..7}.png  → post hero images for LinkedIn carousel
 scripts/
   logs-recent.ts           → CLI for reading chat logs
   smoke-test.ts            → post-deploy smoke test
