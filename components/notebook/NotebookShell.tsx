@@ -30,24 +30,53 @@ const TOOL_FALLBACK_REPLY: Record<ToolName, string> = {
   showLinkedIn: "Flipping through the posts.",
 };
 
-function rateLimitReply(err: unknown): string | null {
+// Said when the request failed for any reason we don't have specific
+// copy for — upstream down, bad gateway, network dropped, DNS, a body
+// some proxy rewrote on the way through.
+const GENERIC_ERROR_REPLY =
+  "brain's offline for a sec — that one's on me, not you. try again in a bit, or /contact if it keeps happening.";
+
+/**
+ * Turn a failed request into something the user actually SEES.
+ *
+ * Returns null ONLY for aborts (user navigated away or cancelled),
+ * where a bubble would be noise. Every other failure gets copy —
+ * previously this returned null for anything that wasn't a rate limit,
+ * so a real outage rendered as complete silence: you typed, the writing
+ * indicator stopped, nothing appeared. That's indistinguishable from
+ * "the site is broken", and it's exactly how the Ollama credential
+ * failure presented.
+ *
+ * Deliberately does NOT depend on the response body being intact. It
+ * parses the body when it can (for the specific rate-limit copy) and
+ * falls through to the generic line when it can't — so a proxy-rewritten
+ * body, an HTML error page, or a network-level failure with no body at
+ * all still produce a visible reply.
+ */
+function errorReply(err: unknown): string | null {
+  // Aborts aren't failures — the user left, or a new request superseded
+  // this one. DOMException name is the reliable signal; the message
+  // check covers wrappers that lose the name.
+  const name = typeof err === "object" && err && "name" in err ? String((err as { name?: unknown }).name) : "";
   const msg = err instanceof Error ? err.message : String(err);
+  if (name === "AbortError" || /\babort(ed)?\b/i.test(msg)) return null;
+
   const jsonStart = msg.indexOf("{");
-  if (jsonStart < 0) return null;
+  if (jsonStart < 0) return GENERIC_ERROR_REPLY;
   try {
     const body = JSON.parse(msg.slice(jsonStart)) as {
       error?: string;
       retryAfter?: number;
       which?: "burst" | "hourly";
     };
-    if (body.error !== "rate-limited") return null;
+    if (body.error !== "rate-limited") return GENERIC_ERROR_REPLY;
     if (body.which === "hourly") {
       const mins = Math.max(1, Math.round((body.retryAfter ?? 60) / 60));
       return `ok i need a coffee break — too many questions in an hour. try me again in ~${mins} min.`;
     }
     return "easy there — you're typing faster than i can write. give me a sec and try again.";
   } catch {
-    return null;
+    return GENERIC_ERROR_REPLY;
   }
 }
 
@@ -265,7 +294,9 @@ export function NotebookShell({
     },
     onError: (err) => {
       console.error("[chat] request failed:", err);
-      const reply = rateLimitReply(err);
+      // null only for aborts — see errorReply. Everything else lands a
+      // visible bubble rather than failing silently.
+      const reply = errorReply(err);
       if (!reply) return;
       setMessages((prev) => [
         ...prev,

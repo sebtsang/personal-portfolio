@@ -273,6 +273,40 @@ bubble. Three layers of defense:
    streaming `useChat` the assistant message often hasn't been
    appended yet when the tool call fires.
 
+### When the chat fails
+A failed request must always produce a **visible** reply. This is
+load-bearing: the bot going quiet is indistinguishable from the site
+being broken, and that's exactly how an expired Ollama credential
+presented — you typed, the writing indicator stopped, nothing appeared.
+
+- **Client** — `errorReply()` in
+  [NotebookShell.tsx](components/notebook/NotebookShell.tsx) always
+  returns copy, with one exception: aborts (user navigated away, or a
+  newer request superseded this one) stay silent, because a bubble
+  there is noise. It previously returned null for anything that wasn't
+  a rate limit, which is what made the outage invisible — note the
+  app's *own* upstream-failure body isn't `"rate-limited"` either, so
+  the silence had nothing to do with the CDN.
+  It deliberately does **not** depend on the response body being
+  parseable: a rewritten body, an HTML error page, or a network failure
+  with no response at all all still land the generic line.
+- **Server** — upstream failures return **503, never 502**. Cloudflare's
+  Error Pages "do not apply to responses with an HTTP status code of
+  500, 501, 503, or 505" (explicitly, to avoid breaking API endpoints).
+  502 is *not* on that list, and in production Cloudflare did replace
+  the JSON body with its own `error code: 502` page — swallowing the
+  "check OLLAMA_API_KEY" hint that identified the problem. 503 is also
+  the honest code: the upstream is unavailable, we didn't get a
+  malformed response from a gateway.
+- `jsonError()` takes a **stable machine code** (`upstream-unavailable`,
+  `upstream-unreachable`, matching the rate limiter's `rate-limited`)
+  separate from the human `detail`. Branch on the code; matching on
+  prose breaks the moment the wording changes.
+
+What this does *not* do: make failures diagnosable from the UI. The
+bubble deliberately won't say whether it was a 401 or a quota trip —
+that's what the `[ollama] <status>:` server log line is for.
+
 ## Editing the pages
 
 Each content page is a single file under
