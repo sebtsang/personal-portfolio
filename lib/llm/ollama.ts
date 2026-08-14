@@ -204,6 +204,7 @@ export async function streamOllama({
     emitLog("upstream-error");
     return jsonError(
       503,
+      "upstream-unreachable",
       `Couldn't reach Ollama at ${baseURL}. Is it running? (ollama serve, or check OLLAMA_API_KEY for cloud).`
     );
   }
@@ -212,8 +213,17 @@ export async function streamOllama({
     const text = await ollamaRes.text().catch(() => "");
     console.error(`[ollama] ${ollamaRes.status}:`, text);
     emitLog("upstream-error");
+    // 503, NOT 502. Cloudflare's Error Pages explicitly exclude 500,
+    // 501, 503 and 505 ("to avoid breaking API endpoints"), but 502 is
+    // fair game for substitution — which is exactly what bit us: an
+    // upstream 401 became this handler's 502, and Cloudflare replaced
+    // the JSON body with its own "error code: 502" page, hiding the
+    // "check OLLAMA_API_KEY" hint. 503 is also the more honest code:
+    // the upstream is unavailable, we didn't get a malformed response
+    // from a gateway.
     return jsonError(
-      502,
+      503,
+      "upstream-unavailable",
       `Ollama returned ${ollamaRes.status}. If using cloud, check OLLAMA_API_KEY. If local, try \`ollama pull ${model}\`.`
     );
   }
@@ -562,8 +572,15 @@ function pickFallback(): string {
   return FALLBACKS[Math.floor(Math.random() * FALLBACKS.length)];
 }
 
-function jsonError(status: number, error: string): Response {
-  return new Response(JSON.stringify({ error }), {
+/**
+ * `error` is a STABLE MACHINE CODE the client branches on (same
+ * convention as the rate limiter's "rate-limited"), never prose —
+ * matching on prose breaks the moment the wording changes. `detail` is
+ * the human hint, for curl and local dev; the full upstream body is in
+ * the server log line above each call site.
+ */
+function jsonError(status: number, error: string, detail?: string): Response {
+  return new Response(JSON.stringify(detail ? { error, detail } : { error }), {
     status,
     headers: { "Content-Type": "application/json" },
   });
