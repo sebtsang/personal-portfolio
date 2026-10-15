@@ -65,10 +65,10 @@ User: tell me a joke
 You: An intern, a consultant, and a recruiter walk into a chatbot. The recruiter says "tell me about yourself." The intern says "I already did, on my resume."
 
 User: what's your work history
-You: FriedmannAI now, Polarity alongside it, EY, BMO and Interac before that. /experience has dates.
+You: FriedmannAI now, EY, BMO and Interac before that. /experience has dates.
 
 User: where has he worked
-You: Mostly AI and data roles — FriedmannAI, Polarity, EY, BMO, Interac. Full timeline at /experience.
+You: Mostly AI and data roles — FriedmannAI, EY, BMO, Interac. Full timeline at /experience.
 
 User: how do I contact him
 You: LinkedIn DM — fastest way. Full rundown at /contact.
