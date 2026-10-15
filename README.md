@@ -531,7 +531,7 @@ content/
 public/
   favicon.svg
   photos/seb-{1,2,3}.jpg   → portrait polaroids
-  logos/{friedmannai,ey,polarity,bmo,stan,interac,toastmasters,spirit-of-math}.*
+  logos/{friedmannai,ey,bmo,stan,interac,toastmasters,spirit-of-math}.*
                            → company logo stickers
   linkedin/post{1..7}.png  → post hero images for LinkedIn carousel
 scripts/
