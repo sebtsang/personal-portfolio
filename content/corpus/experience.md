@@ -2,9 +2,9 @@
 
 **Eight internships** — 2 Spirit of Math, 3 Interac, 1 BMO, 1 EY, 1 FriedmannAI (current). Arc: technical analyst → data analyst → data engineer → data + AI developer → AI & data consultant → AI engineer. Interac shows two entries below but counts as three: the Sep 2024 – Apr 2025 placement was a back-to-back 8-month double co-op term.
 
-Polarity is a **fellowship** and Stan was a **growth role** — neither is an internship. Never fold them into that eight.
+Stan was a **growth role**, not an internship. Never fold it into that eight.
 
-Currently at **FriedmannAI** (AI Engineer, since Sep 2026, full-time while finishing the last semester at Guelph) and **Polarity** (fellowship, since Apr 2026).
+Currently at **FriedmannAI** (AI Engineer, since Sep 2026, full-time while finishing the last semester at Guelph).
 
 ## How to talk about experience (note to the bot)
 
@@ -31,12 +31,6 @@ If someone asks a specific technical question about one of these roles, give the
 - Consulting on **enterprise-scale AI & Data delivery in financial services**.
 - Natural continuation of the data + orchestration + AI work at BMO — applied AI consulting was the next step, not a pivot.
 - Past tense now ("he was at EY this summer"). Client work specifics are confidential — talk about the shape of the work (enterprise AI & data delivery, financial services), never named clients or engagement details.
-
-## Polarity — AI Engineer *(fellowship, not an internship)*
-*Apr 2026 – Present · Waterloo*
-
-- Frontier **AI QA research**, backed by Afore Capital. Founding cohort of the fellowship.
-- Started alongside EY and now runs alongside FriedmannAI — the frontier-AI-research side of what he's doing.
 
 ## BMO Financial Group — Data & AI Developer Intern
 *Jan 2026 – Apr 2026 · Toronto*
