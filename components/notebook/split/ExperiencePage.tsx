@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { roleFact } from "@/lib/experience";
 import { useIsMobile } from "@/lib/hooks/useIsMobile";
 import { PageBackButton } from "../chrome/PageBackButton";
 import { PageCorner } from "../chrome/PageCorner";
@@ -11,6 +12,7 @@ import {
 } from "../primitives/PageAnimateContext";
 
 type Role = {
+  /** company / title / dates come from lib/experience.ts (`roleFact`). */
   company: string;
   title: string;
   dates: string;
@@ -50,9 +52,19 @@ function Metric({ children }: { children: ReactNode }) {
 
 const ROLES: Role[] = [
   {
-    company: "EY",
-    title: "AI & Data Consultant",
-    dates: "May 2026 – Present",
+    ...roleFact("friedmannai"),
+    logoSrc: "/logos/friedmannai.svg",
+    companyUrl: "https://www.friedmann.ai/",
+    logoRotation: 4,
+    blurb: (
+      <>
+        Building AI agent infrastructure, LLM evals and privacy middleware
+        for financial planning.
+      </>
+    ),
+  },
+  {
+    ...roleFact("ey"),
     location: "Toronto",
     logoSrc: "/logos/ey.jpeg",
     companyUrl: "https://www.ey.com/en_ca",
@@ -65,9 +77,7 @@ const ROLES: Role[] = [
     ),
   },
   {
-    company: "Polarity",
-    title: "AI Engineer",
-    dates: "Apr 2026 – Present",
+    ...roleFact("polarity"),
     location: "Waterloo",
     logoSrc: "/logos/polarity.jpeg",
     companyUrl: "https://www.polarity.so/",
@@ -80,9 +90,7 @@ const ROLES: Role[] = [
     ),
   },
   {
-    company: "BMO",
-    title: "Data & AI Developer",
-    dates: "Jan 2026 – Apr 2026",
+    ...roleFact("bmo"),
     location: "Toronto",
     logoSrc: "/logos/bmo.jpeg",
     companyUrl: "https://www.bmo.com/en-ca/main/personal",
@@ -95,9 +103,7 @@ const ROLES: Role[] = [
     ),
   },
   {
-    company: "Stan",
-    title: "Growth Fellow",
-    dates: "Mar 2026 – Apr 2026",
+    ...roleFact("stan"),
     location: "Toronto",
     logoSrc: "/logos/stan.jpeg",
     companyUrl: "https://www.stan.store/",
@@ -105,15 +111,12 @@ const ROLES: Role[] = [
     stickerBg: "#efe8fb",
     blurb: (
       <>
-        Creator platform backed by Gary Vee, Steven Bartlett, Forerunner —
-        helping scale their AI product Stanley to <Metric>$10M ARR</Metric>.
+        Wrote content reaching <Metric>500k+ impressions</Metric>.
       </>
     ),
   },
   {
-    company: "Interac",
-    title: "Data Engineering Intern",
-    dates: "May 2025 – Aug 2025",
+    ...roleFact("interac-de"),
     location: "Toronto",
     logoSrc: "/logos/interac.jpeg",
     companyUrl: "https://www.interac.ca/en/",
@@ -126,9 +129,7 @@ const ROLES: Role[] = [
     ),
   },
   {
-    company: "Interac",
-    title: "Data Analyst, IT Operations",
-    dates: "Sep 2024 – Apr 2025",
+    ...roleFact("interac-da"),
     location: "Toronto",
     logoSrc: "/logos/interac.jpeg",
     companyUrl: "https://www.interac.ca/en/",
@@ -141,9 +142,7 @@ const ROLES: Role[] = [
     ),
   },
   {
-    company: "Toastmasters",
-    title: "President",
-    dates: "May 2024 – Apr 2025",
+    ...roleFact("toastmasters"),
     location: "Guelph",
     logoSrc: "/logos/toastmasters.jpeg",
     companyUrl: "https://www.toastmasters.org/",
@@ -156,9 +155,7 @@ const ROLES: Role[] = [
     ),
   },
   {
-    company: "Spirit of Math",
-    title: "Data Engineering Intern",
-    dates: "May 2024 – Aug 2024",
+    ...roleFact("spirit-of-math-de"),
     location: "Toronto",
     logoSrc: "/logos/spirit-of-math.jpeg",
     companyUrl: "https://spiritofmath.com/",
@@ -166,9 +163,7 @@ const ROLES: Role[] = [
     blurb: <>Built the data backbone for a new ERP — finance ops ran smoother for it.</>,
   },
   {
-    company: "Spirit of Math",
-    title: "Technical Analyst Intern",
-    dates: "May 2023 – Aug 2023",
+    ...roleFact("spirit-of-math-ta"),
     location: "Toronto",
     logoSrc: "/logos/spirit-of-math.jpeg",
     companyUrl: "https://spiritofmath.com/",
