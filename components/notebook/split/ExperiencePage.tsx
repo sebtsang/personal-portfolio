@@ -380,7 +380,8 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
 // ── Logo sticker ──────────────────────────────────────────────────────
 
 function LogoSticker({ role }: { role: Role }) {
-  const size = 70;
+  // Two grid lines tall — matches the dates + company/role header.
+  const size = "calc(var(--line) * 2)";
   const bg = role.stickerBg ?? "#fbfaf4";
 
   const inner = (
