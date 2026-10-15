@@ -77,19 +77,6 @@ const ROLES: Role[] = [
     ),
   },
   {
-    ...roleFact("polarity"),
-    location: "Waterloo",
-    logoSrc: "/logos/polarity.jpeg",
-    companyUrl: "https://www.polarity.so/",
-    logoRotation: 5,
-    blurb: (
-      <>
-        Frontier AI QA research backed by Afore Capital — fellowship founding
-        cohort.
-      </>
-    ),
-  },
-  {
     ...roleFact("bmo"),
     location: "Toronto",
     logoSrc: "/logos/bmo.jpeg",

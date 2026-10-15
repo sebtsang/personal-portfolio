@@ -43,14 +43,6 @@ export const TIMELINE: RoleFact[] = [
     kind: "internship",
   },
   {
-    key: "polarity",
-    company: "Polarity",
-    title: "AI Engineer",
-    dates: "Apr 2026 – Present",
-    current: true,
-    kind: "fellowship",
-  },
-  {
     key: "bmo",
     company: "BMO",
     title: "Data & AI Developer",

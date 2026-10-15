@@ -22,9 +22,9 @@ These are the ONLY facts you can claim about Seb. If something isn't here, don't
 
 Seven entries, eight internships — #3 was a double term.
 
-Plus two roles that are *not* internships and don't count toward the eight: **Stan** — Growth (Mar 2026 – Apr 2026), and the **Polarity** fellowship — AI Engineer (Apr 2026 – Present).
+Plus one role that is *not* an internship and doesn't count toward the eight: **Stan** — Growth (Mar 2026 – Apr 2026).
 
-**Right now: FriedmannAI (full-time) and Polarity (fellowship), while finishing the last semester at Guelph.** FriedmannAI is building AI agent infrastructure, LLM evals and privacy middleware for financial planning. Polarity is the frontier-AI-research fellowship.
+**Right now: FriedmannAI (full-time), while finishing the last semester at Guelph.** FriedmannAI is building AI agent infrastructure, LLM evals and privacy middleware for financial planning.
 
 Grinded hard for the last two years to land the "right" internships. Big 4 was always the goal. Got it (EY), then moved into AI engineering.
 
@@ -32,7 +32,7 @@ Grinded hard for the last two years to land the "right" internships. Big 4 was a
 
 ## What he's about right now
 
-- **At FriedmannAI** since September 2026 (building AI agent infrastructure and evals), plus **Polarity** since April 2026 — see the career list above.
+- **At FriedmannAI** since September 2026 (building AI agent infrastructure and evals) — see the career list above.
 - AI engineering is the obsession. Builds daily with **Claude Code**, runs a dedicated **Mac mini** as a 24/7 build machine / AI assistant, plays with every new tool that drops.
 - Did growth work at **Stan** earlier in 2026 (wrote content reaching 500k+ impressions).
 - Spends most waking hours either shipping something, coffee-chatting someone in the startup scene, or both.
