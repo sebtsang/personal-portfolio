@@ -1,10 +1,10 @@
 # Experience
 
-**Seven internships** — 2 Spirit of Math, 3 Interac, 1 BMO, 1 EY (current). Arc: technical analyst → data analyst → data engineer → data + AI developer → AI & data consultant. Interac shows two entries below but counts as three: the Sep 2024 – Apr 2025 placement was a back-to-back 8-month double co-op term.
+**Eight internships** — 2 Spirit of Math, 3 Interac, 1 BMO, 1 EY, 1 FriedmannAI (current). Arc: technical analyst → data analyst → data engineer → data + AI developer → AI & data consultant → AI engineer. Interac shows two entries below but counts as three: the Sep 2024 – Apr 2025 placement was a back-to-back 8-month double co-op term.
 
-Stan and Polarity are **fellowships, not internships** — never fold them into that seven.
+Polarity is a **fellowship** and Stan was a **growth role** — neither is an internship. Never fold them into that eight.
 
-Currently at **EY** (AI & Data Consultant, since May 2026) and **Polarity** (fellowship, since Apr 2026) in parallel.
+Currently at **FriedmannAI** (AI Engineer, since Sep 2026, full-time while finishing the last semester at Guelph) and **Polarity** (fellowship, since Apr 2026).
 
 ## How to talk about experience (note to the bot)
 
@@ -12,24 +12,31 @@ The resume is the resume. Don't read bullets back at people — rephrase in Seb'
 
 Honest framing: most of this is **corporate data engineering**. Real work, solid outcomes, measurable wins. Proud of it. *Not the soul-setting stuff* — the soul-setting stuff is the personal projects and AI work. Keep the tone competent-and-honest: don't puff it up, don't trash it. If someone asks "what was it like at \[company\]," answer like you'd answer at a coffee chat — one or two sentences on what it actually was, maybe one thing you actually took away, move on.
 
-If someone asks a specific technical question about one of these roles, give the specific answer from the resume. If they ask a vague "tell me about your experience," keep it to the arc ("seven internships, mostly data engineering, now doing AI consulting at EY") and let them pick what to dig into.
+If someone asks a specific technical question about one of these roles, give the specific answer from the resume. If they ask a vague "tell me about your experience," keep it to the arc ("eight internships, mostly data engineering, now building AI agent infra at FriedmannAI") and let them pick what to dig into.
 
 ---
 
-## EY (Ernst & Young) — AI & Data Consultant Intern *(current role)*
-*May 2026 – Present · Toronto · co-op through Sep 2026*
+## FriedmannAI — AI Engineer *(current role)*
+*Sep 2026 – Present*
 
-- **This is where Seb is right now.** Started May 2026. Co-op term runs through September, back to Guelph after.
+- **This is where Seb is right now.** Full-time, alongside his last semester at Guelph (all courses done by December 2026).
+- **Building AI agent infrastructure, LLM evals and privacy middleware for financial planning.**
+- Direct continuation of the data + orchestration + AI path: BMO pipelines → EY consulting → building the AI systems themselves.
+- Speak in **present tense**. If someone asks what he's up to right now, this is the answer.
+- Don't invent specifics beyond the line above (no client names, architecture, or metrics).
+
+## EY (Ernst & Young) — AI & Data Consultant Intern
+*May 2026 – Aug 2026 · Toronto*
+
 - Consulting on **enterprise-scale AI & Data delivery in financial services**.
-- Natural continuation of the data + orchestration + AI work at BMO — applied AI consulting is the next step, not a pivot.
-- Speak in **present tense**. "He's at EY," not "he's starting at EY" or "he'll be at EY." If someone asks what he's up to right now, this is the answer.
-- Client work specifics are confidential — talk about the shape of the work (enterprise AI & data delivery, financial services), never named clients or engagement details.
+- Natural continuation of the data + orchestration + AI work at BMO — applied AI consulting was the next step, not a pivot.
+- Past tense now ("he was at EY this summer"). Client work specifics are confidential — talk about the shape of the work (enterprise AI & data delivery, financial services), never named clients or engagement details.
 
 ## Polarity — AI Engineer *(fellowship, not an internship)*
 *Apr 2026 – Present · Waterloo*
 
 - Frontier **AI QA research**, backed by Afore Capital. Founding cohort of the fellowship.
-- Runs alongside EY — this is the AI-building side of what he's doing right now.
+- Started alongside EY and now runs alongside FriedmannAI — the frontier-AI-research side of what he's doing.
 
 ## BMO Financial Group — Data & AI Developer Intern
 *Jan 2026 – Apr 2026 · Toronto*
@@ -38,11 +45,12 @@ If someone asks a specific technical question about one of these roles, give the
 - The idea: instead of writing each Airflow DAG by hand, a spec file goes in, a ready-to-run DAG comes out. Significantly cuts DAG development time.
 - Same "systems person" instinct Seb is known for — take a manual process, wrap it in automation.
 
-## Stan — Growth Fellow *(fellowship, not an internship)*
+## Stan — Growth *(not an internship)*
 *Mar 2026 – Apr 2026 · Toronto*
 
 - Creator platform backed by Gary Vee, Steven Bartlett, and Forerunner.
-- Helped scale their AI product **Stanley to $10M ARR**.
+- Wrote content reaching **500k+ impressions**.
+- Don't claim anything beyond that (no ARR or product-scale numbers). Call the role "Growth" — don't say fellow, fellowship or contract.
 
 ## Interac — Data Engineering Intern
 *May 2025 – Aug 2025 · Toronto*
@@ -66,7 +74,13 @@ If someone asks a specific technical question about one of these roles, give the
 - Built automated **ETL pipelines in Microsoft Fabric** for a Finance ERP Integration project.
 - Designed a **Medallion-architecture Data Lakehouse** for structured and unstructured ERP ingestion.
 - Wrote **SQL stored procedures** with error handling + logging for pipeline reliability.
-- First internship. Learned the shape of "build it so it runs without you."
+- Learned the shape of "build it so it runs without you."
+
+## Spirit of Math Schools — Technical Analyst Intern
+*May 2023 – Aug 2023 · Toronto*
+
+- Designed a **centralized access system** — APIs and automation to keep IT processes simple.
+- Seb's **first internship**, and the start of the "automate the manual stuff" thread. Don't add detail beyond this; if pressed, say it was an early role and move on.
 
 ---
 
