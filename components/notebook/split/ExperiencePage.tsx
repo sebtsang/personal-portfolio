@@ -325,7 +325,12 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
               <span style={{ opacity: 0.6 }}> · {role.location}</span>
             ) : null}
           </div>
-          {/* Company name — big handwriting */}
+          {/* Company — role on one line. Company in big handwriting, role
+              in italic Caveat a shade softer. The role span has
+              lineHeight 0 so its smaller font can't stretch the line box
+              past --line (it did, by ~2px, drifting every entry off the
+              ruled grid); the parent's strut keeps each line exactly one
+              rule tall, including when the role wraps. */}
           <div
             style={{
               fontFamily: "var(--font-script)",
@@ -336,18 +341,18 @@ function RoleEntry({ role, delayMs }: { role: Role; delayMs: number }) {
             }}
           >
             {role.company}
-          </div>
-          {/* Role title — italic Caveat, a shade softer */}
-          <div
-            style={{
-              fontFamily: "var(--font-script)",
-              fontSize: "var(--fs-script)",
-              fontStyle: "italic",
-              color: "var(--color-ink-soft)",
-              lineHeight: "var(--line)",
-            }}
-          >
-            {role.title}
+            <span
+              style={{
+                fontSize: "var(--fs-script)",
+                lineHeight: 0,
+                fontStyle: "italic",
+                fontWeight: 400,
+                color: "var(--color-ink-soft)",
+              }}
+            >
+              {" — "}
+              {role.title}
+            </span>
           </div>
         </div>
       </div>
