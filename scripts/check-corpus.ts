@@ -4,7 +4,7 @@
  *
  * Checks:
  *   1. every role's date range appears in experience.md (and bio.md for
- *      internships/fellowships), so ending a role means updating the prose
+ *      internships), so ending a role means updating the prose
  *   2. "Present" shows up in those files only next to current roles
  *   3. "<number-word> internships" always matches INTERNSHIP_COUNT
  *   4. ExperiencePage lists roles in the same order as TIMELINE
