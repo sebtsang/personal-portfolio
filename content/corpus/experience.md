@@ -44,7 +44,7 @@ If someone asks a specific technical question about one of these roles, give the
 
 - Creator platform backed by Gary Vee, Steven Bartlett, and Forerunner.
 - Wrote content reaching **500k+ impressions**.
-- Don't claim anything beyond that (no ARR or product-scale numbers). Call the role "Growth" — don't say fellow, fellowship or contract.
+- Don't claim anything beyond that (no ARR or product-scale numbers). Call the role "Growth". It was technically a contract role, so say that if asked — but don't say fellow or fellowship.
 
 ## Interac — Data Engineering Intern
 *May 2025 – Aug 2025 · Toronto*
