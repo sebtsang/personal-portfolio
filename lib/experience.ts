@@ -8,7 +8,7 @@
  * and corpus prose, run `npm run corpus:check`.
  */
 
-export type RoleKind = "internship" | "fellowship" | "leadership" | "other";
+export type RoleKind = "internship" | "leadership" | "other";
 
 export type RoleFact = {
   key: string;
@@ -107,7 +107,7 @@ export const roleFact = (key: string): RoleFact => {
   return fact;
 };
 
-/** Internship terms (fellowships/leadership excluded) — currently 8. */
+/** Internship terms (leadership/other excluded) — currently 8. */
 export const INTERNSHIP_COUNT = TIMELINE.filter(
   (r) => r.kind === "internship"
 ).reduce((n, r) => n + (r.terms ?? 1), 0);
