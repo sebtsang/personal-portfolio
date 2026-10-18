@@ -273,7 +273,7 @@ export function AboutPage({
           }}
         >
           <DrawnText
-            text="hi — I'm Seb"
+            text="Hi, I'm Seb"
             fontFamily="Caveat"
             fontSize={isMobile ? 38 : 56}
             fontWeight={500}
