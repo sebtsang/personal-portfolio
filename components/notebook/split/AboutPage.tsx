@@ -15,8 +15,8 @@ import { Sticker } from "../primitives/Sticker";
 
 const BODY_PARAGRAPHS = [
   "I like AI and I like building things with it.",
-  "Career path so far:\n→ data analyst\n→ data engineer\n→ AI & data developer\n→ AI & data consultant\n→ AI engineer",
   "I'm from Toronto. I play basketball (90% chance I smoke you), drink my coffee black, snowboard when there's snow, read a lot of fantasy (The Name of the Wind is my favourite), and have a cologne collection that's gotten out of hand. This site was a couple of evenings with Claude Code, and it's aggressively overengineered. The chatbot is me, sort of.",
+  "Career path so far:\n→ data analyst\n→ data engineer\n→ AI & data developer\n→ AI & data consultant\n→ AI engineer",
 ];
 
 // Photos + slot positions split into two lists so the site can randomly
