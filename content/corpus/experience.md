@@ -4,7 +4,7 @@
 
 Stan was a **growth role**, not an internship. Never fold it into that eight.
 
-Currently at **FriedmannAI** (AI Engineer, since Sep 2026, full-time while finishing the last semester at Guelph).
+Currently at **FriedmannAI** (AI Engineer, since Sep 2026).
 
 ## How to talk about experience (note to the bot)
 
@@ -19,7 +19,7 @@ If someone asks a specific technical question about one of these roles, give the
 ## FriedmannAI — AI Engineer *(current role)*
 *Sep 2026 – Present*
 
-- **This is where Seb is right now.** Full-time, alongside his last semester at Guelph (all courses done by December 2026).
+- **This is where Seb is right now.** Don't describe it as full-time or tie it to his school schedule.
 - **Building AI agent infrastructure, LLM evals and privacy middleware for financial planning.**
 - Direct continuation of the data + orchestration + AI path: BMO pipelines → EY consulting → building the AI systems themselves.
 - Speak in **present tense**. If someone asks what he's up to right now, this is the answer.
