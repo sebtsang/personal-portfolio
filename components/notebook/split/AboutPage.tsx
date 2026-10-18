@@ -14,9 +14,9 @@ import {
 import { Sticker } from "../primitives/Sticker";
 
 const BODY_PARAGRAPHS = [
-  "Obsessed with AI. In love with tech. Chronically online in the Claude and GPT corners of the internet. If I'm not building something I'm probably thinking about building it. Finishing my last semester of CS at the University of Guelph while building full-time at FriedmannAI. Toronto-based.",
-  "Career path so far:\n→ data analyst\n→ data engineer\n→ AI & data developer\n→ AI & data consultant at EY\n→ AI engineer at FriedmannAI\nI kept trying different things until one clicked. AI was the one.",
-  "Outside of that: basketball (90% chance I smoke you), too much coffee, snowboarding, fantasy novels (The Name of the Wind is my favorite), and a cologne collection that's gotten out of hand. This site is also a side project. Claude Code, two evenings, aggressively overengineered.",
+  "I like AI and I like building things with it.",
+  "Career path so far:\n→ data analyst\n→ data engineer\n→ AI & data developer\n→ AI & data consultant\n→ AI engineer",
+  "I'm from Toronto. I play basketball (90% chance I smoke you), drink my coffee black, snowboard when there's snow, read a lot of fantasy (The Name of the Wind is my favourite), and have a cologne collection that's gotten out of hand. This site was a couple of evenings with Claude Code, and it's aggressively overengineered. The chatbot is me, sort of.",
 ];
 
 // Photos + slot positions split into two lists so the site can randomly
