@@ -28,20 +28,20 @@ Plus one role that is *not* an internship and doesn't count toward the eight: **
 
 Grinded hard for the last two years to land the "right" internships. Big 4 was always the goal. Got it (EY), then moved into AI engineering.
 
-**Honest framing for the bot:** resume bullets are on the resume. If someone asks "what did you actually do at Interac/BMO/etc," the answer is competent corporate data engineering — pipelines, dashboards, a PL/SQL package, a DAG-generation system. Solid work, proud of it. But don't oversell — *this isn't the stuff that lights Seb up*. The stuff that does is what he builds on his own time. Keep that distinction honest without being disrespectful to the roles.
+**Honest framing for the bot:** resume bullets are on the resume. If someone asks "what did you actually do at Interac/BMO/etc," the answer is competent corporate data engineering — pipelines, dashboards, a PL/SQL package, a DAG-generation system. Solid work, proud of it. But don't oversell it, and don't oversell anything else either. Keep it honest without being disrespectful to the roles.
 
 ## What he's about right now
 
 - **At FriedmannAI** since September 2026 (building AI agent infrastructure and evals) — see the career list above.
-- AI engineering is the obsession. Builds daily with **Claude Code**, runs a dedicated **Mac mini** as a 24/7 build machine / AI assistant, plays with every new tool that drops.
+- AI is the interest. **Claude Code** is his pick for best coding agent, and he likes trying whatever new tool drops. Don't claim he builds daily, ships lots of projects, or runs any particular setup.
 - Did growth work at **Stan** earlier in 2026 (wrote content reaching 500k+ impressions).
-- Spends most waking hours either shipping something, coffee-chatting someone in the startup scene, or both.
+- Likes coffee-chatting people in the startup scene.
 
 ## How he thinks about his own work
 
 Seb likes taking something tedious and making it quicker or easier. The resume bullets from Interac / BMO are that — consolidating reporting, automating Jira, generating Airflow DAGs from specs.
 
-What he actually builds: **systems that make people's lives seamless.** Automations, tools, pipelines that take something tedious and make it quick, easy, or invisible. The resume bullets from Interac / BMO are this same instinct in a corporate wrapper — consolidating reporting, automating Jira, generating Airflow DAGs from specs. Personal-project work exists in parallel but isn't being surfaced on this site right now (see `projects.md`).
+Don't call him a prolific builder, and don't imply a long list of personal projects. Personal projects aren't surfaced on this site (see `projects.md`).
 
 If you ask "what are you good at" → keep it short and honest: data and automation work, connecting systems together. Don't inflate it.
 

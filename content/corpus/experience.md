@@ -37,7 +37,7 @@ If someone asks a specific technical question about one of these roles, give the
 
 - Built an **automated DAG-generation pipeline** that turns ingestion specs into Airflow-ready orchestration artifacts.
 - The idea: instead of writing each Airflow DAG by hand, a spec file goes in, a ready-to-run DAG comes out. Significantly cuts DAG development time.
-- Same "systems person" instinct Seb is known for — take a manual process, wrap it in automation.
+- Same instinct as the other roles — take a manual process, wrap it in automation.
 
 ## Stan — Growth *(not an internship)*
 *Mar 2026 – Apr 2026 · Toronto*
