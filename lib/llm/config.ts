@@ -17,6 +17,19 @@ export type ModelParams = {
   maxTokens: number;
 };
 
+/**
+ * LLM_TEMPERATURE overrides the per-provider temperature below. Used by
+ * scripts/redteam.ts to compare temperatures without editing this file.
+ */
+const TEMPERATURE_OVERRIDE = (() => {
+  const raw = process.env.LLM_TEMPERATURE;
+  if (!raw) return undefined;
+  const n = Number(raw);
+  if (Number.isFinite(n) && n >= 0 && n <= 2) return n;
+  console.warn(`[config] Ignoring LLM_TEMPERATURE="${raw}": expected 0-2.`);
+  return undefined;
+})();
+
 export const MODEL_CONFIG: Record<LLMProvider, ModelParams> = {
   ollama: {
     // 250 chosen for gpt-oss:120b-cloud (current default). Previous 180
@@ -57,3 +70,9 @@ export const MODEL_CONFIG: Record<LLMProvider, ModelParams> = {
     maxTokens: 250,
   },
 };
+
+if (TEMPERATURE_OVERRIDE !== undefined) {
+  for (const params of Object.values(MODEL_CONFIG)) {
+    params.temperature = TEMPERATURE_OVERRIDE;
+  }
+}

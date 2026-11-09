@@ -10,7 +10,8 @@
     "logs:recent": "tsx --env-file=.env.local scripts/logs-recent.ts",
     "logs:errors": "tsx --env-file=.env.local scripts/logs-recent.ts --errors",
     "smoke": "tsx scripts/smoke-test.ts",
-    "corpus:check": "tsx scripts/check-corpus.ts"
+    "corpus:check": "tsx scripts/check-corpus.ts",
+    "redteam": "tsx --env-file=.env.local scripts/redteam.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
