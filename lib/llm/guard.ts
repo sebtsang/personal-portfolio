@@ -16,9 +16,11 @@
 
 /** Strings that only appear in the system prompt. Seeing one = a leak. */
 const PROMPT_MARKERS = [
+  "SCOPE (highest priority",
   "THE VOICE (critical",
   "FEW-SHOT EXAMPLES",
-  "OUT-OF-SCOPE EXAMPLES",
+  "CREATIVE EXAMPLES (",
+  "CURVEBALL EXAMPLES (",
   "TOOL CALLING — HARD RULES",
   "FINAL CHECK BEFORE EVERY REPLY",
   "<reference_material>",
@@ -28,34 +30,27 @@ const PROMPT_MARKERS = [
 /**
  * Lines that start like code. Anchored to line start and case-sensitive
  * (keywords are lowercase), so a sentence starting "Import tariffs..."
- * or "For anyone in Toronto:" doesn't trip it.
+ * or "For anyone in Toronto:" doesn't trip it. Shell commands also need
+ * a flag, a path, or a pipe, so a rap line like "git push at midnight"
+ * isn't mistaken for one.
  */
 const CODE_LINE =
-  /^\s*(def \w+\(|class \w+\s*[(:{]|import [\w{*]|from [\w.]+ import |function\s*\w*\s*\(|(const|let|var) \w+\s*=|#include\b|public (static|class)\b|SELECT\s.+\sFROM\s|<\?php|<script\b|console\.log\(|print\(|\$ \S|(sudo|curl|wget|grep|npm|npx|pip|brew|git|chmod|rm) -?\w)/m;
+  /^\s*(def \w+\(|class \w+\s*[(:{]|import [\w{*]|from [\w.]+ import |function\s*\w*\s*\(|(const|let|var) \w+\s*=|#include\b|public (static|class)\b|SELECT\s.+\sFROM\s|<\?php|<script\b|console\.log\(|print\(|\$ \S|(sudo|curl|wget|grep|npm|npx|pip|brew|git|chmod|rm)(?=\s)[^\n]*(\s-{1,2}[a-z]|\S\/|\|))/m;
 
 /** Code the line check can't anchor: SQL in any case, inline code spans, regex escapes. */
 const CODE_ANYWHERE = [
-  /\bselect\s+(\*|\w+\s*,[\w\s,]*)\s+from\s+\w+|\bselect\s.+\sfrom\s+\w+\s+(where|limit|order by|group by|join)\b/i,
+  /\bselect\s+(\*|\w+\s*,[\w\s,]*)\s+from\s+\w+|^\s*select\s.+\sfrom\s+\w+\s+(where|limit|order by|group by|join)\b/im,
   /^\s*select\s+\w+(\.\w+)?\s+from\s+\w+(\.\w+)?\s*(;|$)/im,
   /`[^`\n]*([(){}[\];=<>|$\\&]|\s-\w)[^`\n]*`/,
   /(\\[wdsbWDSB.]).*\\[wdsbWDSB.]/,
 ];
 
-/**
- * The persona writes one or two sentences. Past 8 lines it's a poem or a
- * dump. Short lists stay under it, so a detailed in-scope answer isn't
- * swapped for an off-topic refusal.
- */
-const MAX_LINES = 8;
-
-export type Violation = "code" | "prompt-leak" | "too-many-lines";
+export type Violation = "code" | "prompt-leak";
 
 export function detectViolation(text: string): Violation | null {
   if (text.includes("```") || CODE_LINE.test(text)) return "code";
   if (CODE_ANYWHERE.some((re) => re.test(text))) return "code";
   if (PROMPT_MARKERS.some((m) => text.includes(m))) return "prompt-leak";
-  const lines = text.split("\n").filter((l) => l.trim() !== "");
-  if (lines.length > MAX_LINES) return "too-many-lines";
   return null;
 }
 
