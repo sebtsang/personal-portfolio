@@ -55,6 +55,22 @@ export function detectViolation(text: string): Violation | null {
   return null;
 }
 
+/**
+ * Seb's style rule: visitors never see em dashes. Only em dashes change:
+ * between numbers one becomes a range dash ("2023–2024"); before
+ * punctuation or a closing quote it's dropped; anywhere else it becomes
+ * ", ". En dashes, including spaced date ranges like "May 2023 – Aug
+ * 2023" from the corpus, are left alone.
+ */
+export function stripEmDashes(text: string): string {
+  if (!text.includes("—")) return text;
+  return text
+    .replace(/(\d)[ \t]*—[ \t]*(\d)/g, "$1–$2")
+    .replace(/[ \t]*—[ \t]*(?=[,.!?;:)\]"'”’]|$)/gm, "")
+    .replace(/^[ \t]*—[ \t]*/gm, "")
+    .replace(/[ \t]*—[ \t]*/g, ", ");
+}
+
 export const BLOCKED_REPLIES = [
   "That one's outside my lane. I only do Seb questions.",
   "Not my department. Ask me something about Seb instead.",
@@ -112,7 +128,7 @@ export function guardResponse(res: Response): Response {
           .map((p) => p.value as string)
           .join("");
         const violation = text ? detectViolation(text) : null;
-        const finalText = violation ? pickBlockedReply() : text;
+        const finalText = violation ? pickBlockedReply() : stripEmDashes(text);
         if (violation) {
           console.warn(`[guard] blocked reply (${violation}), ${text.length} chars`);
         }

@@ -19,14 +19,14 @@ import { HomePage } from "./home/HomePage";
 import { ContentPage } from "./content/ContentPage";
 
 const WELCOME_BUBBLES = [
-  "You've opened Seb's journal. I'm SebBot — handling the easy questions while he ships.",
+  "You've opened Seb's journal. I'm SebBot, handling the easy questions while he ships.",
   "Ask anything about him, or try the slash commands below.",
 ];
 
 const TOOL_FALLBACK_REPLY: Record<ToolName, string> = {
   showAbout: "Here's the about page.",
   showExperience: "Pulling up the timeline.",
-  showContact: "Contact page — on it.",
+  showContact: "Contact page, on it.",
   showLinkedIn: "Flipping through the posts.",
 };
 
@@ -34,7 +34,7 @@ const TOOL_FALLBACK_REPLY: Record<ToolName, string> = {
 // copy for — upstream down, bad gateway, network dropped, DNS, a body
 // some proxy rewrote on the way through.
 const GENERIC_ERROR_REPLY =
-  "brain's offline for a sec — that one's on me, not you. try again in a bit, or /contact if it keeps happening.";
+  "brain's offline for a sec. that one's on me, not you. try again in a bit, or /contact if it keeps happening.";
 
 /**
  * Turn a failed request into something the user actually SEES.
@@ -72,9 +72,9 @@ function errorReply(err: unknown): string | null {
     if (body.error !== "rate-limited") return GENERIC_ERROR_REPLY;
     if (body.which === "hourly") {
       const mins = Math.max(1, Math.round((body.retryAfter ?? 60) / 60));
-      return `ok i need a coffee break — too many questions in an hour. try me again in ~${mins} min.`;
+      return `ok i need a coffee break. too many questions in an hour. try me again in ~${mins} min.`;
     }
-    return "easy there — you're typing faster than i can write. give me a sec and try again.";
+    return "easy there, you're typing faster than i can write. give me a sec and try again.";
   } catch {
     return GENERIC_ERROR_REPLY;
   }

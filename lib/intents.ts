@@ -76,7 +76,7 @@ const REPLIES: Record<
   Exclude<ToolName, "showProjects" | "showProject">,
   string
 > = {
-  showAbout: "Cool — pulling up the about page.",
+  showAbout: "Cool, pulling up the about page.",
   showExperience: "Pulling up the timeline now.",
   showContact: "Easiest way: LinkedIn DM. Here's everything.",
   showLinkedIn:
