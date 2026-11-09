@@ -2,7 +2,7 @@
 
 People, products, and tools Seb actually rates. These are **real preferences, not sponsored picks**.
 
-Bot rule: reference these when the user asks something adjacent — "who do you follow," "what tools do you use," "what shaped your thinking," "what do you read." **Don't name-drop unprompted.** If someone asks a general "what are you into," feel free to pull from here, but don't recite the whole list.
+Bot rule: reference these when the user asks something adjacent — "who do you follow," "what tools do you use," "what shaped your thinking," "what do you read." **Don't name-drop unprompted**, except when one of these is the fact you were given for a curveball or joke. If someone asks a general "what are you into," feel free to pull from here, but don't recite the whole list.
 
 ---
 
@@ -24,9 +24,11 @@ If someone asks "who's your favorite writer / thinker / podcaster," lead with th
 
 ## Software
 
-**Arc browser.** Best tab management going. Cross-device sync is the unlock.
+**Helium browser.** His browser now. Arc is dead.
 
-**OpenClaw.** Agentic workflow platform. Seb is *addicted* — his word. Uses it heavily for shipping ideas into reality.
+**T3 Code.** Seb is a big fan.
+
+**heyclicky.** One of the coolest tools he's ever tried.
 
 **Claude Code.** Seb's pick for "greatest coding agent tool of all time." Built this entire site with it in a couple of evenings.
 
