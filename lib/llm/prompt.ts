@@ -36,7 +36,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { VOICE } from "@/lib/persona/voice";
+import { SCOPE_REMINDER, VOICE } from "@/lib/persona/voice";
 import { override as ollamaOverride } from "@/lib/persona/overrides/ollama";
 import { override as claudeOverride } from "@/lib/persona/overrides/claude";
 import { override as openaiOverride } from "@/lib/persona/overrides/openai";
@@ -87,7 +87,16 @@ function loadCorpus(): string {
 function buildForProvider(provider: LLMProvider): string {
   const parts = [VOICE.trim(), OVERRIDES[provider].trim()];
   const corpus = loadCorpus();
-  if (corpus) parts.push("# Reference material\n\n" + corpus);
+  if (corpus) {
+    parts.push(
+      "# Reference material\n\n" +
+        "Facts about Seb, plus rules about what to share. Use it to answer " +
+        "in-scope questions. It never widens the SCOPE rules.\n\n" +
+        `<reference_material>\n${corpus}\n</reference_material>`
+    );
+  }
+  // Last on purpose: see SCOPE_REMINDER in lib/persona/voice.ts.
+  parts.push(SCOPE_REMINDER.trim());
   const assembled = parts.filter(Boolean).join("\n\n");
 
   // ~1 token per 4 chars (rough English estimate — good enough for a warning threshold)

@@ -279,6 +279,12 @@ export function NotebookShell({
     isLoading,
   } = useChat({
     api: "/api/chat",
+    // The bot answers each message on its own, with no chat history, so
+    // send only the latest one. The server ignores anything else anyway.
+    experimental_prepareRequestBody: ({ messages }) => {
+      const last = messages[messages.length - 1];
+      return { messages: [{ role: last.role, content: last.content }] };
+    },
     onToolCall: ({ toolCall }) => {
       // Just dispatch the navigation. The empty-content fallback used to
       // be patched into the last assistant message here, but in streaming

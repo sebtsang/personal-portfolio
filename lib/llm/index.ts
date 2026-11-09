@@ -25,6 +25,7 @@
  */
 
 import { buildSystemPrompt } from "./prompt";
+import { guardResponse } from "./guard";
 import { streamOllama } from "./ollama";
 import { streamClaude } from "./claude";
 import { streamOpenAI } from "./openai";
@@ -110,7 +111,15 @@ function shouldFallback(response: Response): boolean {
   return false;
 }
 
+/**
+ * Every provider response goes through guardResponse (lib/llm/guard.ts):
+ * it holds the reply and swaps out-of-scope output for a refusal.
+ */
 export async function streamChat(req: ChatRequest): Promise<Response> {
+  return guardResponse(await streamUnguarded(req));
+}
+
+async function streamUnguarded(req: ChatRequest): Promise<Response> {
   const model = process.env.LLM_MODEL ?? DEFAULT_MODELS[PROVIDER];
 
   try {

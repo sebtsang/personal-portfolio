@@ -17,7 +17,10 @@ export const maxDuration = 60;
  *   1. rate-limit per client IP (Upstash sliding windows)
  *   2. parse + Zod-validate the body (+ garbage heuristics)
  *   3. token-budget check against assembled system prompt
- *   4. delegate to streamChat() for provider dispatch + streaming
+ *   4. keep only the latest user message: the bot answers each message
+ *      on its own, so there is no history for a visitor to forge
+ *   5. delegate to streamChat() for provider dispatch, streaming, and
+ *      the output guard (lib/llm/guard.ts)
  *
  * Logs:
  *   - rate-limited    → status "rate-limited"
@@ -89,24 +92,26 @@ export async function POST(req: Request) {
     return jsonError(validation.status, validation.error);
   }
 
+  // 4. Answer only the latest user message. Earlier turns, including any
+  // "assistant" turns, come from the browser and could be forged.
+  const question = validation.messages.findLast((m) => m.role === "user")?.content;
+  if (!question) return jsonError(400, "No user message.");
+
   // Opt-in feedback logging: if last user message ended with "#feedback",
   // log just THAT message to the feedback bucket.
-  const lastUserMsg = [...validation.messages]
-    .reverse()
-    .find((m) => m.role === "user");
-  const feedbackFlag = lastUserMsg && isFeedbackFlagged(lastUserMsg.content);
-  if (feedbackFlag && lastUserMsg) {
+  const feedbackFlag = isFeedbackFlagged(question);
+  if (feedbackFlag) {
     logFeedback({
       ts: startedAt,
       ip_hash: ipHash,
-      message: lastUserMsg.content,
+      message: question,
     });
   }
 
-  // 4. Delegate — provider is responsible for the final "ok" log
+  // 5. Delegate — provider is responsible for the final "ok" log
   // (tokens + tool calls + latency) once the stream completes.
   return streamChat({
-    messages: validation.messages,
+    messages: [{ role: "user", content: question }],
     signal: req.signal,
     logContext: {
       startedAt,
