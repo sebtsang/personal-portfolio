@@ -23,6 +23,7 @@ const PROMPT_MARKERS = [
   "CURVEBALL EXAMPLES (",
   "TOOL CALLING — HARD RULES",
   "FINAL CHECK BEFORE EVERY REPLY",
+  "FACT FOR THIS REPLY",
   "<reference_material>",
   "Extra for this runtime",
 ];

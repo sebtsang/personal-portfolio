@@ -95,8 +95,6 @@ function buildForProvider(provider: LLMProvider): string {
         `<reference_material>\n${corpus}\n</reference_material>`
     );
   }
-  // Last on purpose: see SCOPE_REMINDER in lib/persona/voice.ts.
-  parts.push(SCOPE_REMINDER.trim());
   const assembled = parts.filter(Boolean).join("\n\n");
 
   // ~1 token per 4 chars (rough English estimate — good enough for a warning threshold)
@@ -112,12 +110,18 @@ function buildForProvider(provider: LLMProvider): string {
   return assembled;
 }
 
-export function buildSystemPrompt(provider: LLMProvider): string {
-  const cached = promptCache.get(provider);
-  if (cached) return cached;
-  const built = buildForProvider(provider);
-  promptCache.set(provider, built);
-  return built;
+/**
+ * The shared prefix is memoized. `perRequest` (the random curveball fact)
+ * goes after it and before SCOPE_REMINDER, which stays last on purpose:
+ * see SCOPE_REMINDER in lib/persona/voice.ts.
+ */
+export function buildSystemPrompt(provider: LLMProvider, perRequest = ""): string {
+  let prefix = promptCache.get(provider);
+  if (!prefix) {
+    prefix = buildForProvider(provider);
+    promptCache.set(provider, prefix);
+  }
+  return [prefix, perRequest, SCOPE_REMINDER.trim()].filter(Boolean).join("\n\n");
 }
 
 /**

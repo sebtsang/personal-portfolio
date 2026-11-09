@@ -25,6 +25,7 @@
  */
 
 import { buildSystemPrompt } from "./prompt";
+import { factForThisReply } from "@/lib/persona/facts";
 import { guardResponse } from "./guard";
 import { streamOllama } from "./ollama";
 import { streamClaude } from "./claude";
@@ -78,7 +79,7 @@ async function callProvider(
   req: ChatRequest,
   model: string
 ): Promise<Response> {
-  const system = buildSystemPrompt(provider);
+  const system = buildSystemPrompt(provider, factForThisReply());
   switch (provider) {
     case "ollama":
       return streamOllama({ ...req, system, model });

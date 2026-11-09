@@ -8,6 +8,8 @@
  *   2. "Present" shows up in those files only next to current roles
  *   3. "<number-word> internships" always matches INTERNSHIP_COUNT
  *   4. ExperiencePage lists roles in the same order as TIMELINE
+ *   5. every fact in lib/persona/facts.ts still has its source text in
+ *      the corpus file it cites
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -16,6 +18,7 @@ import {
   INTERNSHIP_COUNT_WORD,
   TIMELINE,
 } from "../lib/experience";
+import { FACTS } from "../lib/persona/facts";
 
 const root = path.join(__dirname, "..");
 const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8");
@@ -81,10 +84,17 @@ if (pageKeys.join() !== timelineKeys.join()) {
   );
 }
 
+// Every fact in the curveball deck must still be backed by the corpus.
+for (const f of FACTS) {
+  if (!read(`content/corpus/${f.file}`).includes(f.source)) {
+    errors.push(`lib/persona/facts.ts: "${f.fact}" — source text not found in ${f.file}`);
+  }
+}
+
 if (errors.length) {
   console.error("corpus:check FAILED\n" + errors.map((e) => `  - ${e}`).join("\n"));
   process.exit(1);
 }
 console.log(
-  `corpus:check ok — ${TIMELINE.length} roles, ${INTERNSHIP_COUNT} internships`
+  `corpus:check ok — ${TIMELINE.length} roles, ${INTERNSHIP_COUNT} internships, ${FACTS.length} facts`
 );
