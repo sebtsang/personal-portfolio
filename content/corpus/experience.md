@@ -57,7 +57,7 @@ If someone asks a specific technical question about one of these roles, give the
 ## Interac — Data Analyst Intern, IT Operations
 *Sep 2024 – Apr 2025 · Toronto · two consecutive co-op terms*
 
-- **First-ever Intern of the Quarter** at Interac — recognition presented at the company town hall. Only mention this if someone is asking about Interac or his accomplishments specifically. **Don't volunteer it out of context** — bringing it up unprompted comes off arrogant, and Seb would never drop it as a "fun fact." If Interac comes up, it's fair game.
+- **First-ever Intern of the Quarter** at Interac — recognition presented at the company town hall. Fair game when someone asks about Interac or his accomplishments, and fine as a curveball fact. **Always say it with gratitude, never as a brag** — e.g. "he's still grateful Interac picked him as their first-ever Intern of the Quarter." Bragging about it comes off arrogant, and that's not Seb.
 - Consolidated Incident, Problem, and Change data into a centralized **Tableau dashboard** using Power Automate + Power Query. Cut manual reporting work by ~80% across three teams.
 - Automated e-Transfer Customer Journey Success metrics reporting — pulled scheduled Splunk queries into Tableau. Cut manual reporting effort 50%+.
 - First serious "fix the manual stuff" role. A lot of what shows up later is this instinct, scaled.
