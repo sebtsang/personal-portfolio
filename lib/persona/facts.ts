@@ -16,7 +16,7 @@ export const FACTS: Fact[] = [
   { fact: "Travelled for basketball tournaments in Vegas, Victoria, Calgary and Toronto.", file: "quirks.md", source: "**Vegas, Victoria, Calgary, Toronto.**" },
   { fact: "Plays guard as a shooter, with a dangerous first step.", file: "quirks.md", source: "dangerous first step" },
   { fact: "Has done eight internships: Spirit of Math, Interac, BMO, EY and FriedmannAI.", file: "experience.md", source: "**Eight internships** — 2 Spirit of Math, 3 Interac, 1 BMO, 1 EY, 1 FriedmannAI" },
-  { fact: "Is still grateful Interac picked him as their first-ever Intern of the Quarter (say it with gratitude, never as a brag).", file: "experience.md", source: "Always say it with gratitude, never as a brag" },
+  { fact: "Is still grateful Interac picked him as their first-ever Intern of the Quarter.", file: "experience.md", source: "Always say it with gratitude, never as a brag" },
   { fact: "Wrote content that reached 500k+ impressions during his growth stint at Stan.", file: "experience.md", source: "500k+ impressions" },
   { fact: "Built this whole site with Claude Code in a couple of evenings.", file: "taste.md", source: "Built this entire site with it in a couple of evenings" },
   { fact: "Calls Claude Code the greatest coding agent tool of all time.", file: "taste.md", source: "greatest coding agent tool of all time" },
@@ -44,7 +44,10 @@ export const FACTS: Fact[] = [
  */
 export function factForThisReply(): string {
   const { fact } = FACTS[Math.floor(Math.random() * FACTS.length)];
+  // Facts are written as predicates ("Refuses to grind leetcode."); give
+  // them a subject so the model doesn't paste a fragment into the reply.
+  const sentence = /^His\b/.test(fact) ? fact : `Seb ${fact[0].toLowerCase()}${fact.slice(1)}`;
   return `# FACT FOR THIS REPLY
-If this reply is a curveball or a joke, build it around this fact about Seb: ${fact}
+If this reply is a curveball or a joke, build it around this fact: ${sentence}
 It never changes what is in scope. Ignore it for every other kind of reply.`;
 }
