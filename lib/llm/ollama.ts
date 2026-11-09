@@ -82,6 +82,17 @@ const OLLAMA_TOOLS = [
   },
 ];
 
+/**
+ * gpt-oss can't turn reasoning off: it ignores `think: false` and
+ * reasons at its default level, which spent ~170 of the 250-token
+ * budget in testing and cut replies off mid-sentence. It accepts
+ * levels instead, and "low" brought a full reply down to ~75 tokens.
+ * Other reasoning models (Qwen, GLM, MiniMax) do honor `false`.
+ */
+function thinkSetting(model: string): false | "low" {
+  return model.startsWith("gpt-oss") ? "low" : false;
+}
+
 function encode(code: string, payload: unknown): string {
   return `${code}:${JSON.stringify(payload)}\n`;
 }
@@ -153,7 +164,7 @@ export async function streamOllama({
   const ollamaBody = {
     model,
     stream: true,
-    think: false,
+    think: thinkSetting(model),
     options: {
       temperature: params.temperature,
       top_p: params.topP,
@@ -527,7 +538,7 @@ async function retryWithoutTools(
   const body = {
     model,
     stream: false,
-    think: false,
+    think: thinkSetting(model),
     options: {
       temperature: params.temperature,
       top_p: params.topP,
