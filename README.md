@@ -1,540 +1,144 @@
-# Sebastian Tsang — Journal
+# sebastiantsang.com
 
-My personal site, rendered as a spiral-bound journal. The chat is the
-home page; every section (`/about`, `/experience`, `/linkedin`,
-`/contact`) is a page in the journal that you flip to. Slash commands
-inside the chat — or matching free-form questions — flip the journal
-to the relevant page. Everything else streams from the LLM.
+My personal site, built as a spiral-bound journal with a chatbot on the
+first page.
 
-Live at [sebastiantsang.com](https://sebastiantsang.com) (or wherever the latest
-deploy is).
+Live at [sebastiantsang.com](https://sebastiantsang.com).
 
-Stack: Next.js 15 (App Router) · React 19 · TypeScript 5 · Tailwind v4 ·
-Framer Motion 11 · Zustand 5 · Vercel AI SDK v4 · Zod 3 · Upstash
-Redis (rate limit + logs) · hosted on Vercel. Full deps in
-[package.json](package.json).
+## What it is
 
-## Architecture
+- The home page is a chat. The bot answers questions about me, in my
+  voice.
+- The other pages (`/about`, `/experience`, `/linkedin`, `/contact`)
+  are pages of the journal. The site flips to them like paper.
+- Typing `/about`, or asking "show me his experience", flips to that
+  page.
+- The bot only talks about me. Ask it to write code or do your homework
+  and it changes the subject.
 
-### Page stack (the journal metaphor)
-The notebook contains five pages in a fixed canonical order — `home`,
-`about`, `experience`, `linkedin`, `contact`. Each one is a full
-viewport. They sit on top of each other in z-order, with `home`
-nearest the cover and `contact` deepest. The user only ever sees the
-topmost visible page; navigating means flipping the current page out
-of the way to reveal the next one. Page order lives in a single
-constant ([components/notebook/pageOrder.ts](components/notebook/pageOrder.ts)).
+## Run it locally
 
-Pages stay mounted once visited. Every page touched in the session
-keeps its DOM, image cache, and revealed animations — flipping back
-snaps you to where you left it (drag positions, scroll, peeled
-stickers). The full state model lives in
-[components/notebook/NotebookShell.tsx](components/notebook/NotebookShell.tsx)
-— see the long header comment.
-
-**Consequence worth remembering:** a mounted-but-invisible page still
-runs its effects. Anything binding a `window`-level listener has to
-gate on whether it's the active view, or it keeps reacting while the
-user is looking at something else. `LinkedInPage` learned this the
-hard way — its arrow-key carousel listener was ungated, so after one
-visit to `/linkedin` the arrow keys were being swallowed on every other
-page (and silently advancing the carousel behind the user's back). It
-now takes an `active` prop threaded down from `ContentPage`.
-
-### Page-flip vocabulary
-- **Opening flip** (1.5s, `cubic-bezier(0.76, 0, 0.24, 1)`) — every
-  nav *except* returning home. Current page rotates `0° → -180°`
-  around its left seam, peeling away to reveal the destination
-  underneath. Same vocabulary regardless of canonical index — pages
-  are peers, not a sequence.
-- **Closing flip** (1.5s, `cubic-bezier(0.32, 0.72, 0.18, 1)`) — only
-  for returning to `home`. Home flips in from `-180° → 0°`, covering
-  the current content page.
-- **Cover flip** (1.2s open, 1.7s close) — landing ↔ chat home,
-  owned by [PageFlipTransition.tsx](components/notebook/PageFlipTransition.tsx).
-  Closing also resets the chat session so the next open is fresh.
-
-### Flip-end commit (and the backgrounded-tab trap)
-The flip starts its CSS transition from inside a double
-`requestAnimationFrame` (paint at the start rotation, *then* set the
-end rotation so the transition actually fires). `transitionend` commits
-the new `currentKind`, and a `setTimeout` fallback — sized off
-`max(FLIP_OPENING_MS, FLIP_CLOSING_MS)` — covers the case where the
-event doesn't reach React.
-
-The trap: browsers **pause rAF in a hidden tab but keep `setTimeout`
-running**. Background the tab mid-flip and the fallback would fire
-while the rotations were still at their flip-*start* values, committing
-`currentKind` and the URL to a destination that was never actually
-revealed — leaving the previous page on screen. Returning to home was
-unrecoverable without a reload, since Escape no-ops once `currentKind`
-is already `home`.
-
-So `commitFlipEnd` now lands the flip's end rotations itself. On the
-normal path the transition has already set exactly those values, so the
-updater returns `prev` untouched and nothing re-renders; it only does
-work when the animation never ran.
-
-### Per-page reveal timing
-A bumped session counter + `PageAnimateContext`
-([components/notebook/primitives/PageAnimateContext.tsx](components/notebook/primitives/PageAnimateContext.tsx))
-gates reveal primitives (`HandwrittenText`, `DrawnText`, `Sticker`,
-polaroids, margin notes) so they hold at their opening frame during a
-flip and cascade in only after the destination lands. Bumping the key
-*before* the flip (rather than at flip-end) prevents stale full-opacity
-elements from leaking through. Every revisit replays the cascade.
-
-### Chat sidebar on content pages (desktop)
-Every content page renders a 28%-viewport chat column on the left
-([components/notebook/content/ChatSidebar.tsx](components/notebook/content/ChatSidebar.tsx))
-with a red margin rule at the seam. Home is the same chat, full
-viewport. Same `<ChatPage>` component in both — `compact` toggles the
-visual mode. No animated morph between widths.
-
-### Mobile (≤768px)
-Single breakpoint at `max-width: 768px`, detected via
-[lib/hooks/useIsMobile.ts](lib/hooks/useIsMobile.ts) (a thin
-`matchMedia` wrapper that initializes to `false` server-side to keep
-SSR + hydration consistent). Below the breakpoint:
-- The 28% chat sidebar is replaced by a **bottom-sheet drawer**
-  ([components/notebook/content/MobileChatDrawer.tsx](components/notebook/content/MobileChatDrawer.tsx))
-  — floating chat button at bottom-left (clears the spiral-binding
-  rail), tap to slide up an 85vh sheet that contains the same
-  `<ChatPage compact>`. Backdrop tap or swipe-down dismisses.
-  Auto-closes when navigation triggers a view change so the freshly-
-  flipped page isn't covered.
-- Each content page switches to a single-column layout. About's
-  polaroids + stickers move into a stacked strip below the body text.
-  Margin notes are hidden — the wide left gutter doesn't exist on
-  mobile.
-- **Polaroid drag vs. page scroll.** The mobile strip is ~57% of the
-  viewport width and runs ~1000px down the page, so the desktop
-  frame's `touch-action: none` turned most of `/about` into a scroll
-  dead zone — a swipe over a photo dragged it instead of scrolling.
-  Mobile polaroids use `touch-action: pan-y` *and* only commit a drag
-  once the gesture proves horizontal-dominant past `DRAG_INTENT_PX`.
-  Flipping `touch-action` alone isn't enough: the first ambiguous
-  moves of a vertical swipe would still write a position and pull the
-  polaroid out of the flow before the browser claimed the gesture.
-  Trade-off: a genuinely diagonal drag both moves the photo and
-  scrolls, which is inherent to `pan-y`.
-- LinkedIn cards shrink to 240×300 with touch swipe to flip between
-  posts; arrow buttons are tightened.
-- Spiral binding narrows from 48px → 36px to give content more room.
-- Page-flip perspective tightens from `2400px` → `1400px` so the
-  rotateY reads as 3D on a portrait viewport instead of a flat
-  squeeze.
-
-### Handwriting, not type
-Caveat body, JetBrains Mono for small meta labels, Fraunces +
-Instrument Serif for display. Every chat message reveals per-character
-with a staggered opacity fade (`HandwrittenText`). Every size is
-fluid — the baseline grid (`--line`) and the full type scale
-(`--fs-kbd` through `--fs-display`) are `clamp()` tokens in
-[app/globals.css](app/globals.css) interpolating between 1280–2560px,
-anchored so 1440p preserves the original look. Below 768px the
-clamp() tokens are overridden with fixed mobile-tuned values so the
-`vw`-based formulas don't bottom out below their floors. Ruled lines
-travel with the scroll content so text never drifts between rules.
-
-### Hybrid engine
-Intent-matched slash commands (`/about`, `/experience`, `/linkedin`,
-`/contact`) and "tell me about yourself"-style phrases dispatch a tool
-locally via [lib/intents.ts](lib/intents.ts) — no network call. The
-matcher has two modes: an **exact/short pattern** list (slash commands
-and bare nouns like `experience`) and a **nav-phrase regex + per-tool
-topic keyword combo** ("can I see his work history" / "show me the
-contact page"). False positives just open a safe view; false
-negatives are worse because the LLM occasionally emits a tool call
-without text, leaving an empty SEBBOT bubble.
-
-Free-form questions stream through `/api/chat` to the LLM. LLM tool
-calls (`showAbout`, `showExperience`, `showContact`, `showLinkedIn`)
-route through the same Zustand `dispatchTool` path so either the
-regex matcher or the model can open a page.
-
-### URL ↔ page sync
-Each content page has its own Next route
-([app/about/page.tsx](app/about/page.tsx),
-[app/experience/page.tsx](app/experience/page.tsx),
-[app/linkedin/page.tsx](app/linkedin/page.tsx),
-[app/contact/page.tsx](app/contact/page.tsx)) mounting
-`<NotebookShell initialView={...}>` — deep-linkable, shareable,
-indexable. `/home` skips the cover flip and lands directly on the
-chat. `/` is the landing page; first user gesture flips into the
-journal. The shell `pushState`s on every navigation and listens to
-`popstate` so back/forward replays flips.
-
-## LLM setup
-
-Currently running on **Ollama Cloud, `gpt-oss:120b-cloud`**. The
-provider abstraction in [lib/llm/index.ts](lib/llm/index.ts) also
-supports GitHub Models, Claude, and OpenAI — flip `LLM_PROVIDER` in
-`.env.local` (or Vercel env) to swap. Each provider has a default
-model and a tuned generation config ([lib/llm/config.ts](lib/llm/config.ts)).
-
-`LLM_FALLBACK_PROVIDER` triggers an automatic retry with a backup
-provider on 5xx / 429 / pre-stream errors. Useful when running on a
-free tier as the primary.
-
-**Why hand-rolled Ollama instead of `@ai-sdk/openai-compatible`:** I
-send `think: false` to skip chain-of-thought on reasoning models like
-Qwen / GLM / MiniMax, which otherwise burn 500+ tokens before
-replying. None of the v4-compatible providers expose that flag.
-`gpt-oss:120b-cloud` isn't a reasoning model so it doesn't actually
-need this anymore — the flag's a no-op there — but the path stays
-hand-rolled so swapping back is one env var.
-
-All env vars I read from are documented in [.env.example](.env.example).
-
-## Editing the bot
-
-- **Voice** (rarely changes):
-  [lib/persona/voice.ts](lib/persona/voice.ts)
-- **Per-provider nudges**:
-  [lib/persona/overrides/](lib/persona/overrides/) — `ollama.ts` is
-  the one in use; `github.ts` / `claude.ts` / `openai.ts` are
-  pre-tuned for if I swap.
-- **Generation params** (temperature, top_p, max tokens):
-  [lib/llm/config.ts](lib/llm/config.ts)
-- **Prose corpus** — markdown, ships in the system prompt
-  (loaded by [lib/llm/prompt.ts](lib/llm/prompt.ts)):
-  - [content/corpus/bio.md](content/corpus/bio.md) — identity, career,
-    voice calibration, hard privacy rules
-  - [content/corpus/experience.md](content/corpus/experience.md) —
-    per-role bot-facing notes + stack
-  - [content/corpus/projects.md](content/corpus/projects.md) —
-    deflection ruleset (projects not surfaced)
-  - [content/corpus/opinions.md](content/corpus/opinions.md) — real
-    takes + gated AI-and-economy take
-  - [content/corpus/taste.md](content/corpus/taste.md) — people, tools,
-    products I rate
-  - [content/corpus/quirks.md](content/corpus/quirks.md) — basketball,
-    loves, preferences, the gated driving fear
-  - [content/corpus/looking-for.md](content/corpus/looking-for.md) —
-    contact policy, open-buckets, LinkedIn preferred
-  - [content/corpus/faq.md](content/corpus/faq.md) — questions that
-    need a *rule* rather than a punchline (project deflection, never-
-    share-phone, page routing). The classic one-liners live in the
-    `voice.ts` few-shots; they used to be duplicated here word-for-word
-    until the two copies started drifting.
-
-### Prompt budget
-The assembled system prompt is **~8.6k tokens** (provider-reported;
-`voice.ts` ~1.5k, the corpus ~7k, provider override ~0.1k). Two
-constants bound it:
-
-- `CORPUS_WARN_TOKENS` in [lib/llm/prompt.ts](lib/llm/prompt.ts) —
-  **20k**, a console.warn to catch runaway growth.
-- `MAX_TOTAL_TOKENS` in [lib/validation.ts](lib/validation.ts) —
-  **30k**, the hard cap on system prompt + conversation history, past
-  which `/api/chat` returns 413.
-
-Both were previously much tighter (9k / 12k) on the theory that the
-context window was the binding constraint. It isn't: every configured
-default model has at least a 128k window (gpt-oss:120b 128k, Claude
-Haiku 4.5 200k, gpt-4.1-mini 1M), so ~8.6k is around 7% of the
-smallest. The old 12k cap was the real problem — it left only ~3k for
-conversation history and would eventually 413 a long chat for no
-reason the model cared about.
-
-**If the warning ever fires, dedupe before reaching for retrieval.**
-Published guidance puts the stuff-vs-retrieve crossover near ~50k
-tokens, and more to the point most of this corpus is *unconditional
-behavioural rules* (never mention GPA, never share phone, the project
-deflection) rather than lookup facts. Similarity search would drop
-exactly the parts that must be present on every single request.
-
-### Tool definitions
-Tools live in three places today (Zod schemas in
-[lib/tools.ts](lib/tools.ts), Ollama JSON Schema inline in
-[lib/llm/ollama.ts](lib/llm/ollama.ts), regex matcher in
-[lib/intents.ts](lib/intents.ts)). [lib/tools/index.ts](lib/tools/index.ts)
-is a scaffold for collapsing all three into a single registry — see
-its top-level comment for the planned shape. Deferred until the tool
-surface stops churning.
-
-### Blank-bubble safety net
-Tool-calling LLMs occasionally emit a tool call with no preceding
-text, which renders as a silent page open with an empty SEBBOT
-bubble. Three layers of defense:
-
-1. **Intent matcher** ([lib/intents.ts](lib/intents.ts)) — catches
-   common phrasings client-side and dispatches with a canned
-   one-liner before the LLM is involved.
-2. **voice.ts hard rule** — explicit "never emit a tool call with
-   empty content; never write \[showTool\] bracket notation as
-   literal text" with correct/wrong contrast examples.
-3. **Render-time fallback** ([components/notebook/NotebookShell.tsx](components/notebook/NotebookShell.tsx)) —
-   the `messages` useMemo computes display text deterministically:
-   if an assistant message has a tool invocation but no text, it
-   substitutes a per-tool default (`TOOL_FALLBACK_REPLY`).
-   Render-time rather than the `onToolCall` callback because in
-   streaming `useChat` the assistant message often hasn't been
-   appended yet when the tool call fires.
-
-### When the chat fails
-A failed request must always produce a **visible** reply. This is
-load-bearing: the bot going quiet is indistinguishable from the site
-being broken, and that's exactly how an expired Ollama credential
-presented — you typed, the writing indicator stopped, nothing appeared.
-
-- **Client** — `errorReply()` in
-  [NotebookShell.tsx](components/notebook/NotebookShell.tsx) always
-  returns copy, with one exception: aborts (user navigated away, or a
-  newer request superseded this one) stay silent, because a bubble
-  there is noise. It previously returned null for anything that wasn't
-  a rate limit, which is what made the outage invisible — note the
-  app's *own* upstream-failure body isn't `"rate-limited"` either, so
-  the silence had nothing to do with the CDN.
-  It deliberately does **not** depend on the response body being
-  parseable: a rewritten body, an HTML error page, or a network failure
-  with no response at all all still land the generic line.
-- **Server** — upstream failures return **503, never 502**. Cloudflare's
-  Error Pages "do not apply to responses with an HTTP status code of
-  500, 501, 503, or 505" (explicitly, to avoid breaking API endpoints).
-  502 is *not* on that list, and in production Cloudflare did replace
-  the JSON body with its own `error code: 502` page — swallowing the
-  "check OLLAMA_API_KEY" hint that identified the problem. 503 is also
-  the honest code: the upstream is unavailable, we didn't get a
-  malformed response from a gateway.
-- `jsonError()` takes a **stable machine code** (`upstream-unavailable`,
-  `upstream-unreachable`, matching the rate limiter's `rate-limited`)
-  separate from the human `detail`. Branch on the code; matching on
-  prose breaks the moment the wording changes.
-
-What this does *not* do: make failures diagnosable from the UI. The
-bubble deliberately won't say whether it was a 401 or a quota trip —
-that's what the `[ollama] <status>:` server log line is for.
-
-## Editing the pages
-
-Each content page is a single file under
-[components/notebook/split/](components/notebook/split/) (named for
-the historical split-view layout):
-
-- **About** — [AboutPage.tsx](components/notebook/split/AboutPage.tsx).
-  Owns the copy (`BODY_PARAGRAPHS`), polaroid photos (`PHOTOS`) and
-  their on-page slots (`POLAROID_SLOTS`), sticker data (`STICKERS`)
-  and their slots (`STICKER_SLOTS`), plus margin notes. Polaroid and
-  sticker assignments shuffle on every mount (Fisher-Yates,
-  `shuffleIndexes()`); once placed, users can drag individual pieces
-  around. Two polaroid components own their own drag state:
-  `PolaroidFrame` (desktop, absolutely positioned) and
-  `MobilePolaroidFrame` (the flow-positioned strip, with the
-  intent-gated gesture handling described under Mobile above).
-  `MOBILE_STICKER_OFFSETS` positions stickers in the mobile strip;
-  the desktop `STICKER_SLOTS` positions are gutter-relative and don't
-  apply there.
-- **Experience** —
-  [ExperiencePage.tsx](components/notebook/split/ExperiencePage.tsx).
-  `ROLES` array at the top: company, title, dates, logo path, URL,
-  1–2-line `blurb`. Metrics wrapped in `<Metric>` render larger +
-  heavier.
-- **LinkedIn** —
-  [LinkedInPage.tsx](components/notebook/split/LinkedInPage.tsx).
-  `POSTS` array holds URL + hero-image path + caption per card.
-- **Contact** —
-  [ContactPage.tsx](components/notebook/split/ContactPage.tsx).
-  `FIELDS` array defines the rows. Email row copies to clipboard on
-  plain click; shift/cmd-click follows the mailto: link.
-
-### Adding a page
-1. Add the kind to `PAGE_ORDER` in
-   [pageOrder.ts](components/notebook/pageOrder.ts) (z-stack position
-   matters — earlier = closer to the cover).
-2. Drop a new file under
-   [components/notebook/split/](components/notebook/split/) and wire
-   it into the `ContentBody` switch in
-   [content/ContentPage.tsx](components/notebook/content/ContentPage.tsx).
-3. Add a tool entry to [lib/tools.ts](lib/tools.ts), an intent
-   pattern in [lib/intents.ts](lib/intents.ts), and the Ollama
-   schema in [lib/llm/ollama.ts](lib/llm/ollama.ts).
-4. Add a `StageView` kind in [lib/store.ts](lib/store.ts) and a
-   fallback reply in `NotebookShell.TOOL_FALLBACK_REPLY`.
-5. Optional: add an `app/<kind>/page.tsx` route mounting the shell
-   with `initialView={{ kind: "<kind>" }}` for direct deep-linking.
-
-### Swapping media
-- Company logos → `public/logos/{name}.jpeg` (or .png/.svg);
-  referenced by `logoSrc` in `ExperiencePage`.
-- Portrait / polaroid photos → `public/photos/seb-{1,2,3}.jpg`;
-  referenced by `src` in `AboutPage.PHOTOS`.
-- LinkedIn post previews → `public/linkedin/post{1..7}.png`.
-
-## Hosting notes (Vercel)
-
-Most config is pinned in code so the dashboard rarely needs touching:
-
-- **Function limits + security headers** —
-  [vercel.json](vercel.json). `/api/chat` runs with `maxDuration: 60s`,
-  `memory: 1024`. HSTS, X-Frame-Options DENY, Referrer-Policy,
-  Permissions-Policy (camera/mic/geo/topics off), no-store on
-  `/api/chat`. CSP intentionally not set — Framer Motion's inline
-  styles would need permissive `style-src 'unsafe-inline'`.
-- **Metadata + OG** — [app/layout.tsx](app/layout.tsx).
-  `metadataBase` resolves from `VERCEL_PROJECT_PRODUCTION_URL` (auto)
-  or `NEXT_PUBLIC_SITE_URL` (custom domain override). OG image is
-  edge-rendered at [app/opengraph-image.tsx](app/opengraph-image.tsx).
-- **Upstash Redis** — installed via the Vercel-Upstash integration,
-  injects `KV_REST_API_*` vars. [lib/redis.ts](lib/redis.ts) reads
-  either those or `UPSTASH_REDIS_REST_*` (manual). Without Upstash,
-  rate limiting and logging silently fail-open.
-- **`LOG_SALT`** — generated once with `openssl rand -hex 16`, never
-  rotated (rotating breaks IP-hash continuity in chat logs). Marked
-  Sensitive in Production + Preview.
-- **Deployment Protection** is on Standard for previews so WIP
-  branches can't be indexed.
-
-### Smoke test
 ```bash
-npm run smoke https://sebastiantsang.com
+npm install
+cp .env.example .env.local   # then add one provider key
+npm run dev
 ```
-Runs validation-error paths, a streaming success, and a rate-limit
-burst. Exits 0 on all-pass.
 
-### Monitoring
-```bash
-npm run logs:recent        # last 50 chat logs (anonymized)
-npm run logs:recent 200    # last 200
-npm run logs:errors        # only non-"ok" statuses
-```
-Logs are stored in Upstash Redis under `chat:logs` (7-day TTL) and
-`chat:feedback` (30-day TTL, opt-in only — when users end a message
-with `#feedback`). IPs are hashed with `LOG_SALT`; raw messages are
-never logged outside the feedback bucket.
+Open http://localhost:3000.
+
+The pages work without any key. The chat needs one model provider. The
+default is GitHub Models, which is free: set `GITHUB_TOKEN` in
+`.env.local`.
+
+## Stack
+
+- Next.js 15 (App Router), React 19, TypeScript
+- Tailwind v4 and Framer Motion
+- Zustand for page state
+- Vercel AI SDK v4 for the chat
+- Upstash Redis for rate limits and logs
+- Hosted on Vercel
+
+## How the chat works
+
+1. **Shortcuts stay in the browser.** Slash commands and obvious
+   requests ("show me the contact page") are matched in
+   [lib/intents.ts](lib/intents.ts). They open the page with no network
+   call.
+2. **Everything else goes to the model.** `/api/chat` rate-limits and
+   validates the request, then keeps only the latest message. The bot
+   has no memory of earlier messages.
+3. **The prompt is built from files.** It combines the voice rules, the
+   facts about me in [content/corpus/](content/corpus/), and one random
+   fact so jokes vary between visitors.
+4. **A guard checks the reply.** [lib/llm/guard.ts](lib/llm/guard.ts)
+   holds the full reply until the model finishes. If it contains code
+   or leaked instructions, the visitor gets a canned refusal.
+
+Production runs on Ollama Cloud with `gpt-oss:120b-cloud`. GitHub
+Models, Claude and OpenAI also work.
+
+## Where to change things
+
+| To change | Edit |
+| --- | --- |
+| What the bot knows about me | [content/corpus/](content/corpus/) (eight markdown files) |
+| The bot's voice and what it refuses | [lib/persona/voice.ts](lib/persona/voice.ts) |
+| The random facts used for jokes | [lib/persona/facts.ts](lib/persona/facts.ts) |
+| Job titles, dates and order | [lib/experience.ts](lib/experience.ts) |
+| Experience page blurbs and logos | [ExperiencePage.tsx](components/notebook/split/ExperiencePage.tsx) |
+| About page text, photos and stickers | [AboutPage.tsx](components/notebook/split/AboutPage.tsx) |
+| LinkedIn posts | [LinkedInPage.tsx](components/notebook/split/LinkedInPage.tsx) |
+| Contact details | [ContactPage.tsx](components/notebook/split/ContactPage.tsx) |
+| Model, temperature and reply length | [lib/llm/config.ts](lib/llm/config.ts) |
+| Phrases that open a page without the model | [lib/intents.ts](lib/intents.ts) |
+
+Images live in `public/`:
+
+- `public/photos/` for the About page polaroids
+- `public/logos/` for company logos
+- `public/linkedin/` for post previews
+
+After changing a job, a date, or the corpus, run `npm run
+corpus:check`. Dates and titles are written in two places:
+`lib/experience.ts` and the corpus prose. The check fails if they
+disagree.
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the site at localhost:3000. |
+| `npm run build` | Build for production. |
+| `npm run lint` | Lint the code. |
+| `npm run corpus:check` | Check that the corpus matches `lib/experience.ts` and `lib/persona/facts.ts`. |
+| `npm run redteam` | Try to push the bot off topic and grade the replies. Makes real, paid model calls. |
+| `npm run smoke <url>` | Test a deployed site: bad input, a normal reply, and the rate limit. |
+| `npm run logs:recent` | Show the last 50 chat logs. Add a number for more. |
+| `npm run logs:errors` | Show only the failed requests. |
+
+## Environment variables
+
+[.env.example](.env.example) explains each one. Never commit
+`.env.local`.
+
+| Variable | Purpose |
+| --- | --- |
+| `LLM_PROVIDER` | `github` (default), `ollama`, `claude` or `openai`. |
+| `LLM_MODEL` | Optional. Overrides the provider's default model. |
+| `LLM_FALLBACK_PROVIDER` | Optional. A second provider to try when the first one fails. |
+| `LLM_TEMPERATURE` | Optional. Overrides the temperature. |
+| `GITHUB_TOKEN`, `OLLAMA_API_KEY`, `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` | The key for the provider you picked. |
+| `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` | Rate limits and logs. Leave blank locally. |
+| `LOG_SALT` | Hashes IP addresses before they are logged. |
 
 ## Project layout
 
 ```
-vercel.json                → function limits, security headers,
-                             no-store on /api/chat
-next.config.ts             → Next framework config
-app/
-  layout.tsx               → root wrapper + metadata + Analytics/SpeedInsights
-  page.tsx                 → /  → <NotebookShell /> (landing first)
-  home/page.tsx            → /home → <NotebookShell skipLanding />
-  about/page.tsx           → /about → shell with initialView={about}
-  experience/page.tsx      → /experience → shell with initialView={experience}
-  linkedin/page.tsx        → /linkedin → shell with initialView={linkedin}
-  contact/page.tsx         → /contact → shell with initialView={contact}
-  api/chat/route.ts        → validates, rate-limits, logs, delegates
-  globals.css              → Tailwind v4 @theme tokens + keyframes
-  opengraph-image.tsx      → 1200×630 edge-rendered social card
-  not-found.tsx            → "page torn out" 404
-  manifest.ts              → PWA manifest (/manifest.webmanifest)
-components/notebook/
-  NotebookShell.tsx        → page-stack state machine, useChat wiring,
-                             flip orchestration, URL ↔ view sync
-  PageFlipTransition.tsx   → 3D rotateY landing ↔ chat cover flip
-  pageOrder.ts             → canonical PAGE_ORDER (z-stack order)
-  chrome/
-    Paper.tsx              → cream bg + ruled lines + margin rule
-    SpiralBinding.tsx      → 22 coils pinned to viewport left;
-                             48px rail, 36px on mobile
-    SpreadMarginRule.tsx   → red vertical rule at chat/content seam
-    PageChrome.tsx         → top-left handwritten date
-    PageCorner.tsx         → dog-eared bottom-right with page number
-    PageBackButton.tsx     → "← home [esc]" shared back button
-    CoverBackButton.tsx    → home-page back-to-cover (closing flip)
-  landing/
-    LandingPage.tsx        → drawn name + role cycler + scraps +
-                             ambient lines + scroll cue + corner peel
-    AmbientLines.tsx       → SVG lines with pulse animation
-    CornerPeel.tsx         → bottom-right triangular page peel
-    Scraps.tsx             → taped card, yellow sticky, interactive
-                             todo list, margin annotations
-    ScrollCue.tsx          → chevron cue
-  chat/
-    ChatPage.tsx           → scrollable message list + pinned input;
-                             `compact` selects home vs sidebar mode
-    NotebookMessage.tsx    → single message; inline label (home) or
-                             stacked label (compact)
-    NotebookInput.tsx      → handwritten "you —" input with fade mask
-    SlashCommandRow.tsx    → /about /experience /linkedin /contact
-    PromptSuggestions.tsx  → seed prompts shown above input on a
-                             fresh chat
-    WritingIndicator.tsx   → "writing…" with cycling dots
-    seenMessages.ts        → session set of already-animated message
-                             IDs so a remount doesn't re-pen-write
-  home/
-    HomePage.tsx           → full-viewport chat + cover-back button
-                             + "journal · home" label + corner doodle
-  content/
-    ContentPage.tsx        → branches on useIsMobile: desktop renders
-                             ChatSidebar + body; mobile renders body
-                             full-width + MobileChatDrawer
-    ChatSidebar.tsx        → 28%-viewport ChatPage wrapper
-                             (SIDEBAR_PCT exported) — desktop only
-    MobileChatDrawer.tsx   → bottom-left floating chat button + 85vh
-                             bottom-sheet (framer-motion AnimatePresence
-                             + drag-to-dismiss). Mobile only.
-  split/                   → page bodies:
-    AboutPage.tsx          → drawn greeting, body paragraphs,
-                             draggable polaroids + stickers
-    ExperiencePage.tsx     → vertical spine timeline, 9 roles, logo
-                             stickers, metric highlights
-    LinkedInPage.tsx       → stacked polaroid-card carousel (7 posts)
-    ContactPage.tsx        → handwritten note + taped index card
-    ContentPagePlaceholder.tsx → fallback for un-built page kinds
-  primitives/
-    DrawnText.tsx          → clip-path stroke→fill reveal
-    HandwrittenText.tsx    → per-character opacity fade
-    RoleCycler.tsx         → draws / erases cycling role words
-    FitToWidth.tsx         → ResizeObserver-based auto-scale
-    Sticker.tsx            → round sticker base with drag + peel
-    PageAnimateContext.tsx → per-page { animate, sessionKey } passed
-                             down so reveal primitives gate + remount
-                             on every revisit
-components/ui/             → small reusable display primitives
-  ArrowList.tsx, CustomCursor.tsx, InView.tsx, LetterReveal.tsx,
-  NumberedHeading.tsx, Overline.tsx, SmoothScroll.tsx
-lib/
-  llm/
-    index.ts               → streamChat() + provider dispatch + fallback
-    prompt.ts              → buildSystemPrompt() assembly
-    config.ts              → MODEL_CONFIG (temp / top_p / maxTokens)
-    github.ts, ollama.ts, claude.ts, openai.ts → provider implementations
-  persona/
-    voice.ts               → stable voice + few-shot
-    overrides/             → per-provider nudges (github, ollama,
-                             claude, openai)
-  tools.ts                 → shared Zod tool schemas (4 tools)
-  tools/index.ts           → SCAFFOLD for the planned single-source
-                             tool registry (deferred — see comment)
-  intents.ts               → function-based matcher: exact patterns +
-                             nav-phrase + per-tool topic keyword combo
-  hooks/
-    useIsMobile.ts         → matchMedia(max-width: 768px) wrapper;
-                             SSR-safe, swaps the entire chat layout
-                             between desktop sidebar and mobile drawer
-  store.ts                 → Zustand view store + dispatchTool
-  validation.ts            → Zod request schema + budget check
-                             (MAX_TOTAL_TOKENS 30k; discriminated
-                             union allows empty assistant content —
-                             see safety net)
-  sanitize.ts              → garbage heuristics (non-printable /
-                             repeat / base64 detection)
-  ratelimit.ts             → Upstash ratelimit wrapper
-                             (8/10s burst + 40/hour sliding windows)
-  logger.ts                → structured log writer (fire-and-forget
-                             via @vercel/functions waitUntil)
-  redis.ts                 → shared Upstash client; reads either
-                             UPSTASH_REDIS_REST_* or KV_REST_API_*
-  utils.ts                 → cn() — clsx + tailwind-merge
-content/
-  corpus/                  → prose corpus (LLM-facing, 8 files) — the
-                             ONLY thing under content/ now:
-                             bio.md, experience.md, projects.md,
-                             opinions.md, taste.md, quirks.md,
-                             looking-for.md, faq.md
-public/
-  favicon.svg
-  photos/seb-{1,2,3}.jpg   → portrait polaroids
-  logos/{friedmannai,ey,bmo,stan,interac,toastmasters,spirit-of-math}.*
-                           → company logo stickers
-  linkedin/post{1..7}.png  → post hero images for LinkedIn carousel
-scripts/
-  logs-recent.ts           → CLI for reading chat logs
-  smoke-test.ts            → post-deploy smoke test
+app/                  Routes, the /api/chat endpoint, global styles
+components/notebook/  The journal: pages, flips, chat, landing page
+content/corpus/       What the bot knows about me
+lib/llm/              Model providers, prompt builder, output guard
+lib/persona/          Voice rules, random facts, per-provider notes
+lib/                  Intent matcher, page state, validation, rate limit, logs
+scripts/              corpus check, red-team, smoke test, log reader
+public/               Photos, logos, LinkedIn previews
+docs/                 Architecture notes
 ```
+
+Most files start with a comment that explains what they do and why.
+
+## Going deeper
+
+[docs/architecture.md](docs/architecture.md) explains the decisions
+behind the code:
+
+- [The journal](docs/architecture.md#the-journal): the page stack, the
+  flips, and a bug with hidden tabs
+- [Mobile](docs/architecture.md#mobile): the layout and touch handling
+- [The chatbot](docs/architecture.md#the-chatbot): scope rules, the
+  guard, prompt size, providers
+- [When the chat fails](docs/architecture.md#when-the-chat-fails): why
+  errors always show a reply
+- [Adding a page](docs/architecture.md#adding-a-page)
+- [Hosting on Vercel](docs/architecture.md#hosting-on-vercel)
