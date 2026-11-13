@@ -290,7 +290,7 @@ search would drop exactly those.
 | --- | --- |
 | `ollama` | `gpt-oss:120b-cloud` |
 | `github` | `openai/gpt-4.1-mini` |
-| `claude` | `claude-haiku-4-5-20251001` |
+| `claude` | `claude-haiku-5-5` |
 | `openai` | `gpt-4.1-mini` |
 
 - `LLM_MODEL` overrides the model.
@@ -299,7 +299,30 @@ search would drop exactly those.
   main provider is a free tier.
 - Temperature, top_p and max tokens for each provider are in
   [lib/llm/config.ts](../lib/llm/config.ts). `LLM_TEMPERATURE` overrides
-  the temperature.
+  the temperature. Claude is the exception: it gets a token cap and an
+  effort level, and ignores `LLM_TEMPERATURE`.
+
+### Why the Claude client uses the Anthropic SDK
+
+Claude Haiku 5.5 returns a 400 for any temperature or top_p other than
+the defaults. The AI SDK v4 adapter always sends a temperature (0 when
+unset) and cannot set `effort`, so
+[lib/llm/claude.ts](../lib/llm/claude.ts) uses `@anthropic-ai/sdk` and
+writes the reply in the AI SDK data-stream format itself.
+
+- **Thinking.** Haiku 5.5 always thinks a little first, and thinking
+  counts toward `max_tokens`. The cap is 1024 so a short reply still
+  fits, and effort is `low` to keep thinking short. A reply with no text
+  (all budget spent on thinking, or a refusal) gets a fallback line.
+- **One call, no streaming.** The guard holds the whole reply anyway, so
+  streaming would not show text sooner. A single call also means every
+  failure is known before the response starts, so
+  `LLM_FALLBACK_PROVIDER` still works.
+- **Prompt caching.** The voice, override and corpus go in a cached
+  system block. The random fact and the scope reminder go in a second,
+  uncached block after it, so the cached part never changes. Cached
+  reads cost a tenth of the normal input price. The `[claude]` log line
+  shows `cached=` tokens per reply.
 
 ### Why the Ollama client is hand-written
 
@@ -319,7 +342,8 @@ API directly.
 ### Tool definitions live in three places
 
 - Zod schemas in [lib/tools.ts](../lib/tools.ts)
-- JSON Schema in [lib/llm/ollama.ts](../lib/llm/ollama.ts)
+- JSON Schema in [lib/llm/ollama.ts](../lib/llm/ollama.ts) (the Claude
+  client builds its tool list from the Zod schemas)
 - The matcher in [lib/intents.ts](../lib/intents.ts)
 
 [lib/tools/index.ts](../lib/tools/index.ts) is a scaffold for merging
@@ -368,8 +392,8 @@ machine code, because matching on wording breaks when the wording
 changes.
 
 **What this does not do.** The chat bubble will not say whether the
-cause was a 401 or a quota limit. Look for the `[ollama] <status>:`
-line in the server logs.
+cause was a 401 or a quota limit. Look for the `[claude] <status>:` or
+`[ollama] <status>:` line in the server logs.
 
 ## Adding a page
 

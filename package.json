@@ -14,9 +14,9 @@
     "redteam": "tsx --env-file=.env.local scripts/redteam.ts"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^1.2.12",
     "@ai-sdk/openai": "^1.3.24",
     "@ai-sdk/react": "^1.0.6",
+    "@anthropic-ai/sdk": "^1.8.0",
     "@fontsource-variable/fraunces": "^5.2.6",
     "@fontsource/caveat": "^5.2.5",
     "@fontsource/instrument-serif": "^5.2.5",

@@ -248,7 +248,7 @@ async function main() {
   const cases = CASES.filter((c) => !ONLY || c.category === ONLY || c.kind === ONLY || c.id === ONLY);
   out(
     `Red-team: ${cases.length} cases x ${RUNS} runs, provider=${cfg.provider} model=${cfg.model} ` +
-      `temperature=${MODEL_CONFIG[cfg.provider].temperature}, judge=${JUDGE_MODEL}, max calls=${MAX_CALLS}`
+      `${cfg.provider === "claude" ? `effort=${MODEL_CONFIG.claude.effort}` : `temperature=${MODEL_CONFIG[cfg.provider].temperature}`}, judge=${JUDGE_MODEL}, max calls=${MAX_CALLS}`
   );
 
   const results: CaseResult[] = [];

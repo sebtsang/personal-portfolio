@@ -4,7 +4,7 @@
  * Flip between providers by setting LLM_PROVIDER in .env.local:
  *   LLM_PROVIDER=github   (free GitHub Models inference, default)
  *   LLM_PROVIDER=ollama   (local daemon OR Ollama Cloud API)
- *   LLM_PROVIDER=claude
+ *   LLM_PROVIDER=claude   (Claude Haiku 5.5 via the Anthropic API)
  *   LLM_PROVIDER=openai
  *
  * Optional failover: set LLM_FALLBACK_PROVIDER to have streamChat
@@ -24,7 +24,7 @@
  * so callers don't need to know about the prompt structure.
  */
 
-import { buildSystemPrompt } from "./prompt";
+import { systemPromptParts } from "./prompt";
 import { factForThisReply } from "@/lib/persona/facts";
 import { guardResponse } from "./guard";
 import { streamOllama } from "./ollama";
@@ -61,7 +61,7 @@ const FALLBACK_PROVIDER =
 
 const DEFAULT_MODELS: Record<LLMProvider, string> = {
   ollama: "gpt-oss:120b-cloud",
-  claude: "claude-haiku-4-5-20251001",
+  claude: "claude-haiku-5-5",
   openai: "gpt-4.1-mini",
   github: "openai/gpt-4.1-mini",
 };
@@ -79,12 +79,13 @@ async function callProvider(
   req: ChatRequest,
   model: string
 ): Promise<Response> {
-  const system = buildSystemPrompt(provider, factForThisReply());
+  const parts = systemPromptParts(provider, factForThisReply());
+  const system = `${parts.stable}\n\n${parts.tail}`;
   switch (provider) {
     case "ollama":
       return streamOllama({ ...req, system, model });
     case "claude":
-      return streamClaude({ ...req, system, model });
+      return streamClaude({ ...req, system: parts, model });
     case "openai":
       return streamOpenAI({ ...req, system, model });
     case "github":
