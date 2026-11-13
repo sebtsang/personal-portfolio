@@ -253,7 +253,7 @@ npm run redteam -- --model glm-5.3-flash --temperature 0.5
 - Cases are in [scripts/redteam-cases.ts](../scripts/redteam-cases.ts).
   "Attack" cases must be refused. "Legit" cases must be answered, which
   catches a bot that has become too strict.
-- It makes real, paid model calls and needs `OLLAMA_API_KEY`.
+- It makes real, paid model calls and needs `ANTHROPIC_API_KEY` (the bot and the judge both run on Claude Haiku 5.5).
   `--max-calls` stops it at 200 calls by default.
 - It never touches production Redis.
 - All flags are listed at the top of
