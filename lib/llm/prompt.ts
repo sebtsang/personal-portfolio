@@ -116,12 +116,26 @@ function buildForProvider(provider: LLMProvider): string {
  * see SCOPE_REMINDER in lib/persona/voice.ts.
  */
 export function buildSystemPrompt(provider: LLMProvider, perRequest = ""): string {
-  let prefix = promptCache.get(provider);
-  if (!prefix) {
-    prefix = buildForProvider(provider);
-    promptCache.set(provider, prefix);
+  const { stable, tail } = systemPromptParts(provider, perRequest);
+  return [stable, tail].join("\n\n");
+}
+
+/**
+ * The same prompt split where it starts to change between requests.
+ * `stable` is byte-identical on every request, so Claude can cache it;
+ * `tail` holds the per-request fact and SCOPE_REMINDER.
+ */
+export function systemPromptParts(
+  provider: LLMProvider,
+  perRequest = ""
+): { stable: string; tail: string } {
+  let stable = promptCache.get(provider);
+  if (!stable) {
+    stable = buildForProvider(provider);
+    promptCache.set(provider, stable);
   }
-  return [prefix, perRequest, SCOPE_REMINDER.trim()].filter(Boolean).join("\n\n");
+  const tail = [perRequest, SCOPE_REMINDER.trim()].filter(Boolean).join("\n\n");
+  return { stable, tail };
 }
 
 /**

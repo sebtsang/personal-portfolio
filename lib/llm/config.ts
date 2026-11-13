@@ -6,15 +6,24 @@
  * persona's voice on each model.
  */
 
-import type { LLMProvider } from "./index";
-
 export type ModelParams = {
-  /** 0-2 for OpenAI / Claude, 0-2 for Ollama (native API). */
+  /** 0-2 for OpenAI and Ollama (native API). */
   temperature: number;
   /** 0-1. 1.0 = consider all tokens. Lower = more focused. */
   topP: number;
   /** Max tokens to generate in the completion. */
   maxTokens: number;
+};
+
+/**
+ * Claude Haiku 5.5 returns a 400 for any temperature, top_p or top_k
+ * other than the defaults, so Claude has no sampling settings. Effort
+ * sets how much it thinks before replying.
+ */
+export type ClaudeParams = {
+  /** Covers thinking plus the visible reply. */
+  maxTokens: number;
+  effort: "low" | "medium" | "high";
 };
 
 /**
@@ -30,7 +39,12 @@ const TEMPERATURE_OVERRIDE = (() => {
   return undefined;
 })();
 
-export const MODEL_CONFIG: Record<LLMProvider, ModelParams> = {
+export const MODEL_CONFIG: {
+  ollama: ModelParams;
+  claude: ClaudeParams;
+  openai: ModelParams;
+  github: ModelParams;
+} = {
   ollama: {
     // 250 chosen for gpt-oss:120b-cloud (current default). Previous 180
     // was tuned for qwen3.5:cloud's reasoning-spiral failure mode —
@@ -45,11 +59,12 @@ export const MODEL_CONFIG: Record<LLMProvider, ModelParams> = {
     maxTokens: 250,
   },
   claude: {
-    // Claude defaults toward verbose + helpful. Dialing temp down helps
-    // match the terse few-shot examples.
-    temperature: 0.75,
-    topP: 0.95,
-    maxTokens: 400,
+    // Thinking counts toward max_tokens, so the cap is well above the
+    // ~100-token replies the prompt asks for. "low" keeps thinking short
+    // and is the level Anthropic suggests for chat. A reply that still
+    // hits the cap gets the fallback line in lib/llm/claude.ts.
+    maxTokens: 1024,
+    effort: "low",
   },
   openai: {
     // GPT needs a nudge to commit to humor over helpful. Higher temp
@@ -72,7 +87,7 @@ export const MODEL_CONFIG: Record<LLMProvider, ModelParams> = {
 };
 
 if (TEMPERATURE_OVERRIDE !== undefined) {
-  for (const params of Object.values(MODEL_CONFIG)) {
+  for (const params of [MODEL_CONFIG.ollama, MODEL_CONFIG.openai, MODEL_CONFIG.github]) {
     params.temperature = TEMPERATURE_OVERRIDE;
   }
 }

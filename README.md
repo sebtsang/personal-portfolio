@@ -55,8 +55,8 @@ default is GitHub Models, which is free: set `GITHUB_TOKEN` in
    holds the full reply until the model finishes. If it contains code
    or leaked instructions, the visitor gets a canned refusal.
 
-Production runs on Ollama Cloud with `gpt-oss:120b-cloud`. GitHub
-Models, Claude and OpenAI also work.
+Production runs on Claude Haiku 5.5 (`LLM_PROVIDER=claude`). GitHub
+Models, Ollama and OpenAI also work.
 
 ## Where to change things
 
