@@ -12,7 +12,7 @@
  *
  * Each case runs --runs times (refusals vary between samples), then one
  * judge call grades all of that case's replies. Judge calls go straight
- * to Ollama Cloud, so OLLAMA_API_KEY must be set.
+ * to the Anthropic API, so ANTHROPIC_API_KEY must be set.
  *
  * --max-calls is a hard stop on every outgoing HTTP call: bot requests,
  * provider retries and fallbacks, and judge calls. Cases that would
@@ -23,11 +23,11 @@
  *   --temperature <n>     bot temperature (sets LLM_TEMPERATURE)
  *   --runs <n>            samples per case (default 3)
  *   --max-calls <n>       hard call cap (default 200)
- *   --judge-model <name>  default gpt-oss:120b
+ *   --judge-model <name>  default claude-haiku-5-5
  *   --only <name>         run one category (code, creative, general,
  *                         injection, smuggling, history, seb-creative,
  *                         legit), one kind (attack, legit), or one case id
- *   --concurrency <n>     parallel cases (default 2; Ollama allows 3)
+ *   --concurrency <n>     parallel cases (default 2)
  *   --out <path>          write full results as JSON
  *   --verbose             show provider logs
  *
@@ -36,6 +36,7 @@
 
 import { flag } from "./redteam-env";
 import fs from "node:fs";
+import Anthropic from "@anthropic-ai/sdk";
 import { POST } from "../app/api/chat/route";
 import { currentConfig } from "../lib/llm";
 import { MODEL_CONFIG } from "../lib/llm/config";
@@ -54,7 +55,7 @@ function intFlag(name: string, fallback: number, min: number): number {
 const RUNS = intFlag("runs", 3, 1);
 const MAX_CALLS = intFlag("max-calls", 200, 0);
 const CONCURRENCY = intFlag("concurrency", 2, 1);
-const JUDGE_MODEL = flag("judge-model") ?? "gpt-oss:120b";
+const JUDGE_MODEL = flag("judge-model") ?? "claude-haiku-5-5";
 const ONLY = flag("only");
 const OUT = flag("out");
 const VERBOSE = process.argv.includes("--verbose");
@@ -71,7 +72,7 @@ const out = (s = "") => realLog(s);
 
 class BudgetExceeded extends Error {}
 let calls = 0;
-// Count at the fetch layer so the Ollama empty-reply retry and any
+// Count at the fetch layer so SDK retries and any
 // LLM_FALLBACK_PROVIDER call count too, not just one per bot request.
 const realFetch = globalThis.fetch;
 globalThis.fetch = (...args: Parameters<typeof fetch>) => {
@@ -154,11 +155,16 @@ const JUDGE_SCHEMA = {
         type: "object",
         properties: { pass: { type: "boolean" }, reason: { type: "string" } },
         required: ["pass", "reason"],
+        additionalProperties: false,
       },
     },
   },
   required: ["verdicts"],
+  additionalProperties: false,
 };
+
+// Created lazily so it picks up the counting fetch wrapper above.
+let judgeClient: Anthropic | undefined;
 
 type Verdict = { pass: boolean; reason: string };
 
@@ -182,32 +188,17 @@ async function judge(c: RedteamCase, runs: Run[]): Promise<Verdict[]> {
     .filter(Boolean)
     .join("\n\n");
 
-  const res = await fetch(`${process.env.OLLAMA_BASE_URL ?? "https://ollama.com"}/api/chat`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OLLAMA_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: JUDGE_MODEL,
-      stream: false,
-      format: JUDGE_SCHEMA,
-      options: { temperature: 0 },
-      messages: [
-        { role: "system", content: JUDGE_SYSTEM },
-        { role: "user", content: prompt },
-      ],
-    }),
+  judgeClient ??= new Anthropic({ maxRetries: 1 });
+  const res = await judgeClient.messages.create({
+    model: JUDGE_MODEL,
+    max_tokens: 4096,
+    output_config: { format: { type: "json_schema", schema: JUDGE_SCHEMA } },
+    system: JUDGE_SYSTEM,
+    messages: [{ role: "user", content: prompt }],
   });
-  if (!res.ok) throw new Error(`judge HTTP ${res.status}`);
-  const json = (await res.json()) as { message?: { content?: string } };
-  // Ollama doesn't always enforce `format` (gpt-oss ignores it), so pull
-  // the first JSON object out of whatever came back.
-  const content = json.message?.content ?? "";
-  const start = content.indexOf("{");
-  const end = content.lastIndexOf("}");
-  if (start < 0 || end < start) throw new Error(`judge returned no JSON: ${content.slice(0, 80)}`);
-  const parsed = JSON.parse(content.slice(start, end + 1)) as { verdicts?: Verdict[] };
+  if (res.stop_reason !== "end_turn") throw new Error(`judge stopped with ${res.stop_reason}`);
+  const content = res.content.find((b) => b.type === "text")?.text ?? "";
+  const parsed = JSON.parse(content) as { verdicts?: Verdict[] };
   const verdicts = parsed.verdicts ?? [];
   if (verdicts.length !== runs.length) {
     throw new Error(`judge returned ${verdicts.length} verdicts for ${runs.length} replies`);
@@ -239,8 +230,8 @@ async function runCase(c: RedteamCase): Promise<CaseResult> {
 }
 
 async function main() {
-  if (!process.env.OLLAMA_API_KEY) {
-    out("OLLAMA_API_KEY is not set (the judge needs it). Run via `npm run redteam`.");
+  if (!process.env.ANTHROPIC_API_KEY) {
+    out("ANTHROPIC_API_KEY is not set (the judge needs it). Run via `npm run redteam`.");
     process.exit(1);
   }
   const cfg = currentConfig();
