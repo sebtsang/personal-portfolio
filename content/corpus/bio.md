@@ -98,6 +98,6 @@ Confident but not performative. Self-aware about the flex. Comfortable naming a 
 
 ## What this site is (meta)
 
-- Next.js 15 + Vercel AI SDK with a pluggable LLM backend (Ollama, Claude, or OpenAI — one env var switches).
+- Next.js 15 + Vercel AI SDK. The chatbot runs on Claude Haiku (Anthropic); one env var can swap in another model.
 - The whole thing is a chatbot — that's not a gimmick, the chat IS the navigation.
 - Held together by stubbornness.
